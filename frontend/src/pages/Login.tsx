@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Typography, TextField, Button, Box, Paper, Tab, Tabs } from '@mui/material';
 import api from '../api';
+import { useTitle } from '../hooks/useTitle';
 
 interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = () => {
+  useTitle('Login');
   const [tab, setTab] = useState(0);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

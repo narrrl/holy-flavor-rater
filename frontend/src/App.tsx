@@ -15,7 +15,8 @@ import {
 } from '@mui/material';
 import PaletteIcon from '@mui/icons-material/Palette';
 import { getTheme, type CatppuccinTheme } from './theme';
-import FlavorList from './pages/FlavorList';
+import CategoryList from './pages/CategoryList';
+import CategoryFlavors from './pages/categories/CategoryFlavors';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import api from './api';
@@ -74,7 +75,7 @@ const App: React.FC = () => {
             </Typography>
             
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Button color="inherit" component={Link} to="/">Flavors</Button>
+              <Button color="inherit" component={Link} to="/">Categories</Button>
               {user ? (
                 <>
                   <Button color="inherit" component={Link} to="/dashboard">Dashboard</Button>
@@ -103,7 +104,8 @@ const App: React.FC = () => {
 
         <Container sx={{ mt: 4 }}>
           <Routes>
-            <Route path="/" element={<FlavorList />} />
+            <Route path="/" element={<CategoryList />} />
+            <Route path="/category/:slug" element={<CategoryFlavors />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
           </Routes>

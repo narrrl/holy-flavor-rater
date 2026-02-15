@@ -30,6 +30,9 @@ interface Flavor {
   average_rating: number;
   user_rating: number | null;
   ratings: Rating[];
+  image_url: string | null;
+  is_available: boolean;
+  shop_url: string | null;
 }
 
 interface Category {
@@ -92,12 +95,52 @@ const FlavorList: React.FC = () => {
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {flavors.filter(f => f.category_name === category.name).map(flavor => (
               <Box sx={{ flex: '1 1 30%', minWidth: 280 }} key={flavor.id}>
-                <Card>
-                  <CardContent>
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                  {!flavor.is_available && (
+                    <Box sx={{ 
+                        position: 'absolute', 
+                        top: 10, 
+                        right: 10, 
+                        bgcolor: 'error.main', 
+                        color: 'white', 
+                        px: 1, 
+                        borderRadius: 1, 
+                        fontSize: '0.75rem',
+                        zIndex: 1
+                    }}>
+                        Out of Stock
+                    </Box>
+                  )}
+                  {flavor.image_url && (
+                    <Box 
+                        component="img" 
+                        src={flavor.image_url} 
+                        sx={{ 
+                            width: '100%', 
+                            height: 200, 
+                            objectFit: 'contain', 
+                            p: 2, 
+                            bgcolor: 'rgba(255,255,255,0.05)' 
+                        }} 
+                    />
+                  )}
+                  <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6">{flavor.name}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                       {flavor.description}
                     </Typography>
+                    {flavor.shop_url && (
+                        <Button 
+                            variant="outlined" 
+                            size="small" 
+                            component="a" 
+                            href={flavor.shop_url} 
+                            target="_blank" 
+                            sx={{ mb: 2, fontSize: '0.7rem' }}
+                        >
+                            View in Shop
+                        </Button>
+                    )}
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Typography variant="body2" sx={{ mr: 1 }}>Avg:</Typography>
                       <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} max={10} size="small" />

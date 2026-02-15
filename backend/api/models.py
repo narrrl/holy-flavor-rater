@@ -28,6 +28,10 @@ class Flavor(models.Model):
     category = models.ForeignKey(Category, related_name='flavors', on_delete=models.CASCADE)
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
+    image_url = models.URLField(max_length=500, blank=True, null=True)
+    shop_url = models.URLField(max_length=500, blank=True, null=True)
+    is_available = models.BooleanField(default=True)
+    external_id = models.BigIntegerField(unique=True, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
