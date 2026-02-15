@@ -8,6 +8,7 @@ class User(AbstractUser):
         ('frappe', 'Frappé'),
         ('macchiato', 'Macchiato'),
         ('mocha', 'Mocha'),
+        ('pink', 'Pastel Pink'),
     ]
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='mocha')
     pending_email = models.EmailField(max_length=254, blank=True, null=True)
@@ -59,3 +60,15 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.flavor.name}: {self.score}"
+
+class Reply(models.Model):
+    user = models.ForeignKey(User, related_name='replies', on_delete=models.CASCADE)
+    rating = models.ForeignKey(Rating, related_name='replies', on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Reply by {self.user.username} on {self.rating.id}"

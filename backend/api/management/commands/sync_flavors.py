@@ -35,6 +35,7 @@ class Command(BaseCommand):
             'hydration': Category.objects.get_or_create(name='Hydration', defaults={'slug': 'hydration'})[0],
             'iced-tea': Category.objects.get_or_create(name='Iced Tea', defaults={'slug': 'iced-tea'})[0],
             'milkshake': Category.objects.get_or_create(name='Milkshake', defaults={'slug': 'milkshake'})[0],
+            'packs': Category.objects.get_or_create(name='Packs and other', defaults={'slug': 'packs-and-other'})[0],
         }
 
         created_count = 0
@@ -43,14 +44,30 @@ class Command(BaseCommand):
         for p in products:
             title = p.get('title')
             tags = p.get('tags', [])
+            product_type = p.get('product_type', '').lower()
             if isinstance(tags, str):
                 tags = [t.strip() for t in tags.split(',')]
             
             # Determine category
             category = None
             tags_lower = [t.lower() for t in tags]
+            title_lower = title.lower()
+
+            # Check for Packs/Bundles/Samples first
+            is_pack = False
+            pack_keywords = ['bundle', 'pack', 'set', 'box', 'probe', 'sample', 'taster', 'shaker', 'starter']
             
-            if 'holy energy' in tags_lower or 'energy' in tags_lower:
+            # Check title keywords
+            if any(k in title_lower for k in pack_keywords):
+                is_pack = True
+            
+            # Check product type keywords
+            if any(k in product_type for k in pack_keywords):
+                is_pack = True
+
+            if is_pack:
+                category = cat_map['packs']
+            elif 'holy energy' in tags_lower or 'energy' in tags_lower:
                 category = cat_map['energy']
             elif 'holy hydration' in tags_lower or 'hydration' in tags_lower:
                 category = cat_map['hydration']
@@ -59,8 +76,12 @@ class Command(BaseCommand):
             elif 'milkshake' in tags_lower:
                 category = cat_map['milkshake']
             
-            # Skip if not a flavor product (e.g. merch, shakers)
-            if not category or 'merch' in tags_lower or 'shaker' in tags_lower:
+            # Skip only pure merch (clothing etc) if it's not a pack
+            if not category:
+                if 'merch' in tags_lower:
+                    continue
+                # If we still don't have a category but it's a product, maybe put it in Packs/Other as fallback?
+                # For now, let's skip to avoid clutter unless we are sure.
                 continue
 
             # Check availability

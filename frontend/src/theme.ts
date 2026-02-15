@@ -1,27 +1,41 @@
 import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { flavors } from '@catppuccin/palette';
 
-export type CatppuccinTheme = 'latte' | 'frappe' | 'macchiato' | 'mocha';
+export type CatppuccinTheme = 'latte' | 'frappe' | 'macchiato' | 'mocha' | 'pink';
 
 export const getTheme = (mode: CatppuccinTheme) => {
-  const flavor = flavors[mode].colors;
+  let palette;
+
+  if (mode === 'pink') {
+      palette = {
+          base: { hex: '#fff0f5' }, // Lavender Blush
+          surface0: { hex: '#ffe4e1' }, // Misty Rose
+          crust: { hex: '#ffc0cb' }, // Pink
+          text: { hex: '#5c4b51' }, // Darker text for contrast
+          subtext0: { hex: '#8b6b7a' },
+          mauve: { hex: '#ff69b4' }, // Hot Pink (Primary)
+          pink: { hex: '#db7093' }, // Pale Violet Red (Secondary)
+      };
+  } else {
+      palette = flavors[mode].colors;
+  }
   
   const themeOptions: ThemeOptions = {
     palette: {
-      mode: mode === 'latte' ? 'light' : 'dark',
+      mode: (mode === 'latte' || mode === 'pink') ? 'light' : 'dark',
       primary: {
-        main: flavor.mauve.hex,
+        main: palette.mauve.hex,
       },
       secondary: {
-        main: flavor.pink.hex,
+        main: palette.pink.hex,
       },
       background: {
-        default: flavor.base.hex,
-        paper: flavor.surface0.hex,
+        default: palette.base.hex,
+        paper: palette.surface0.hex,
       },
       text: {
-        primary: flavor.text.hex,
-        secondary: flavor.subtext0.hex,
+        primary: palette.text.hex,
+        secondary: palette.subtext0.hex,
       },
     },
     typography: {
@@ -31,16 +45,16 @@ export const getTheme = (mode: CatppuccinTheme) => {
         MuiCard: {
             styleOverrides: {
                 root: {
-                    backgroundColor: flavor.surface0.hex,
-                    color: flavor.text.hex,
+                    backgroundColor: palette.surface0.hex,
+                    color: palette.text.hex,
                 }
             }
         },
         MuiAppBar: {
             styleOverrides: {
                 root: {
-                    backgroundColor: flavor.crust.hex,
-                    color: flavor.text.hex,
+                    backgroundColor: palette.crust.hex,
+                    color: palette.text.hex,
                 }
             }
         }

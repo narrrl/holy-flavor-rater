@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { 
   Typography, 
   Box, 
@@ -7,13 +7,8 @@ import {
   CardContent, 
   Rating as MuiRating, 
   TextField, 
-  Button, 
-  Accordion, 
-  AccordionSummary, 
-  AccordionDetails,
-  InputAdornment 
+  InputAdornment
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import SearchIcon from '@mui/icons-material/Search';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
@@ -46,7 +41,6 @@ const CategoryFlavors: React.FC = () => {
   useTitle(categoryName || 'Flavors');
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [ratingInput, setRatingInput] = useState<{[key: number]: {score: number, comment: string}}>({});
 
   useEffect(() => {
     const fetchFlavors = async () => {
@@ -64,19 +58,6 @@ const CategoryFlavors: React.FC = () => {
     };
     fetchFlavors();
   }, [slug]);
-
-  const handleRate = async (flavorId: number) => {
-    const input = ratingInput[flavorId];
-    if (!input) return;
-    try {
-      await api.post('ratings/', { flavor: flavorId, score: input.score, comment: input.comment });
-      const res = await api.get(`flavors/?category__slug=${slug}`);
-      setFlavors(res.data);
-      alert('Rating submitted!');
-    } catch (err) {
-      alert("Failed to submit rating. Make sure you are logged in.");
-    }
-  };
 
   const filteredFlavors = flavors.filter(f => 
     f.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,60 +89,27 @@ const CategoryFlavors: React.FC = () => {
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {filteredFlavors.map(flavor => (
           <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%', xl: '1 1 18%' }, minWidth: 280 }} key={flavor.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              {!flavor.is_available && (
-                <Box sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'error.main', color: 'white', px: 1, borderRadius: 1, fontSize: '0.75rem', zIndex: 1 }}>
-                    Out of Stock
-                </Box>
-              )}
-              {flavor.image_url && (
-                <Box component="img" src={flavor.image_url} sx={{ width: '100%', height: 200, objectFit: 'contain', p: 2, bgcolor: 'rgba(255,255,255,0.05)' }} />
-              )}
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Typography variant="h6">{flavor.name}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{flavor.description}</Typography>
-                {flavor.shop_url && (
-                    <Button variant="outlined" size="small" component="a" href={flavor.shop_url} target="_blank" sx={{ mb: 2, fontSize: '0.7rem' }}>
-                        View in Shop
-                    </Button>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
+              <Box component={Link} to={`/flavor/${flavor.id}`} sx={{ textDecoration: 'none', color: 'inherit', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                {!flavor.is_available && (
+                    <Box sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'error.main', color: 'white', px: 1, borderRadius: 1, fontSize: '0.75rem', zIndex: 1 }}>
+                        Out of Stock
+                    </Box>
                 )}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <Typography variant="body2" sx={{ mr: 1 }}>Avg:</Typography>
-                  <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} max={10} size="small" />
-                  <Typography variant="body2" sx={{ ml: 1 }}>({(flavor.average_rating || 0).toFixed(1)})</Typography>
-                </Box>
-                {flavor.ratings && flavor.ratings.length > 0 && (
-                    <Accordion variant="outlined" sx={{ mt: 1, mb: 1 }}>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="caption">Comments ({flavor.ratings.filter(r => r.comment).length})</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails sx={{ maxHeight: 200, overflow: 'auto', p: 1 }}>
-                            {flavor.ratings.filter(r => r.comment).map(r => (
-                                <Box key={r.id} sx={{ mb: 1, borderBottom: '1px solid rgba(0,0,0,0.1)', pb: 0.5 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>{r.user} ({r.score}/10):</Typography>
-                                    <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>{r.comment}</Typography>
-                                </Box>
-                            ))}
-                        </AccordionDetails>
-                    </Accordion>
+                {flavor.image_url && (
+                    <Box component="img" src={flavor.image_url} sx={{ width: '100%', height: 200, objectFit: 'contain', p: 2, bgcolor: 'rgba(255,255,255,0.05)' }} />
                 )}
-                {flavor.user_rating ? (
-                  <Typography variant="body2" color="secondary">Your Rating: {flavor.user_rating}/10</Typography>
-                ) : (
-                  <Accordion variant="outlined" sx={{ mt: 2 }}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                      <Typography variant="body2">Rate this flavor</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        <MuiRating max={10} value={ratingInput[flavor.id]?.score || 0} onChange={(_, val) => setRatingInput({...ratingInput, [flavor.id]: {...(ratingInput[flavor.id] || {comment: ''}), score: val || 0}})} />
-                        <TextField label="Comment (Optional)" variant="outlined" size="small" multiline value={ratingInput[flavor.id]?.comment || ''} onChange={(e) => setRatingInput({...ratingInput, [flavor.id]: {...(ratingInput[flavor.id] || {score: 0}), comment: e.target.value}})} />
-                        <Button variant="contained" size="small" onClick={() => handleRate(flavor.id)}>Submit</Button>
-                      </Box>
-                    </AccordionDetails>
-                  </Accordion>
-                )}
-              </CardContent>
+                <CardContent sx={{ flexGrow: 1 }}>
+                    <Typography variant="h6">{flavor.name}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{flavor.description.substring(0, 100)}...</Typography>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} max={10} size="small" />
+                        <Typography variant="body2" sx={{ ml: 1 }}>({(flavor.average_rating || 0).toFixed(1)})</Typography>
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">{flavor.ratings.length} reviews</Typography>
+                </CardContent>
+              </Box>
             </Card>
           </Box>
         ))}

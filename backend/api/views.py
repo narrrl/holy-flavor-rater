@@ -4,11 +4,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import User, Flavor, Category, Rating
-from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer
+from .models import User, Flavor, Category, Rating, Reply
+from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer
 
 class FlavorViewSet(viewsets.ModelViewSet):
-# ... (rest of FlavorViewSet)
     queryset = Flavor.objects.annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
     serializer_class = FlavorSerializer
     filter_backends = [DjangoFilterBackend]
@@ -28,12 +27,35 @@ class RatingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
+        # Ensure user can only have one rating per flavor
+        flavor = serializer.validated_data['flavor']
+        if Rating.objects.filter(user=self.request.user, flavor=flavor).exists():
+             raise serializers.ValidationError('You have already rated this flavor.')
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        if self.action == 'list':
-            return Rating.objects.select_related('user', 'flavor')
-        return Rating.objects.filter(user=self.request.user)
+        if self.action in ['list', 'retrieve']:
+            return Rating.objects.select_related('user', 'flavor').prefetch_related('replies', 'replies__user')
+        # Allow users to see only their own ratings when editing/deleting? 
+        # No, for detail views they need to find it. 
+        # The permission class IsOwnerOrReadOnly (custom) would be better, 
+        # but standard ViewSet logic handles "get_object" which we can protect.
+        return Rating.objects.select_related('user', 'flavor').prefetch_related('replies', 'replies__user')
+
+    def check_object_permissions(self, request, obj):
+        super().check_object_permissions(request, obj)
+        if request.method in ['PUT', 'PATCH', 'DELETE'] and obj.user != request.user:
+            self.permission_denied(request, message='You cannot edit/delete this rating.')
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def reply(self, request, pk=None):
+        rating = self.get_object()
+        text = request.data.get('text')
+        if not text:
+            return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        reply = Reply.objects.create(user=request.user, rating=rating, text=text)
+        return Response(ReplySerializer(reply).data, status=status.HTTP_201_CREATED)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -104,45 +126,6 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'status': 'Account verified successfully!'})
         else:
             return Response({'error': 'Invalid verification code'}, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
-    def request_password_reset(self, request):
-        email = request.data.get('email')
-        try:
-            user = User.objects.get(email=email, is_active=True)
-        except User.DoesNotExist:
-            return Response({'status': 'If an account exists with this email, a reset code has been sent.'})
-            
-        import secrets
-        import string
-        code = ''.join(secrets.choice(string.digits) for _ in range(6))
-        user.email_confirmation_code = code
-        user.save()
-        
-        send_mail(
-            'Password Reset Request',
-            f'Hi {user.username},\n\nYour password reset code is: {code}',
-            'noreply@holyflavors.com',
-            [email],
-            fail_silently=False,
-        )
-        return Response({'status': 'If an account exists with this email, a reset code has been sent.'})
-
-    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
-    def complete_password_reset(self, request):
-        email = request.data.get('email')
-        code = request.data.get('code')
-        new_password = request.data.get('password')
-        
-        try:
-            user = User.objects.get(email=email, email_confirmation_code=code)
-        except User.DoesNotExist:
-            return Response({'error': 'Invalid email or code'}, status=status.HTTP_400_BAD_REQUEST)
-            
-        user.set_password(new_password)
-        user.email_confirmation_code = None
-        user.save()
-        return Response({'status': 'Password reset successful!'})
 
     @action(detail=False, methods=['get'])
     def me(self, request):
@@ -216,6 +199,45 @@ class UserViewSet(viewsets.ModelViewSet):
         user.email_confirmation_code = None
         user.save()
         return Response({'status': 'Email confirmed', 'email': user.email})
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def request_password_reset(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email, is_active=True)
+        except User.DoesNotExist:
+            return Response({'status': 'If an account exists with this email, a reset code has been sent.'})
+            
+        import secrets
+        import string
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
+        user.email_confirmation_code = code
+        user.save()
+        
+        send_mail(
+            'Password Reset Request',
+            f'Hi {user.username},\n\nYour password reset code is: {code}',
+            'noreply@holyflavors.com',
+            [email],
+            fail_silently=False,
+        )
+        return Response({'status': 'If an account exists with this email, a reset code has been sent.'})
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def complete_password_reset(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        new_password = request.data.get('password')
+        
+        try:
+            user = User.objects.get(email=email, email_confirmation_code=code)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid email or code'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user.set_password(new_password)
+        user.email_confirmation_code = None
+        user.save()
+        return Response({'status': 'Password reset successful!'})
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):

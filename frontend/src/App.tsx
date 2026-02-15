@@ -25,6 +25,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { getTheme, type CatppuccinTheme } from './theme';
 import CategoryList from './pages/CategoryList';
 import CategoryFlavors from './pages/categories/CategoryFlavors';
+import FlavorDetail from './pages/flavors/FlavorDetail';
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
@@ -154,10 +155,12 @@ const App: React.FC = () => {
                   onClose={() => setAnchorEl(null)}
                 >
                   <MenuItem onClick={() => handleThemeChange('latte')}>Latte</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha</MenuItem>
-                </Menu>
+                                  <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
+                                  <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
+                                  <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha</MenuItem>
+                                  <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
+                                </Menu>
+                  
               </Box>
           </Toolbar>
         </AppBar>
@@ -181,6 +184,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<CategoryList />} />
             <Route path="/category/:slug" element={<CategoryFlavors />} />
+            <Route path="/flavor/:id" element={<FlavorDetail />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />

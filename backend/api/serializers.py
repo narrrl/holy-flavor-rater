@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Flavor, Category, Rating
+from .models import User, Flavor, Category, Rating, Reply
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,14 +11,23 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['id', 'name', 'slug']
 
+class ReplySerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Reply
+        fields = ['id', 'user', 'rating', 'text', 'created_at']
+        read_only_fields = ['rating']
+
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
     flavor_name = serializers.CharField(source='flavor.name', read_only=True)
     flavor_image = serializers.CharField(source='flavor.image_url', read_only=True)
+    replies = ReplySerializer(many=True, read_only=True)
 
     class Meta:
         model = Rating
-        fields = ['id', 'user', 'flavor', 'flavor_name', 'flavor_image', 'score', 'comment', 'created_at']
+        fields = ['id', 'user', 'flavor', 'flavor_name', 'flavor_image', 'score', 'comment', 'created_at', 'replies']
 
 class FlavorSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
