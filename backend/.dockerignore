@@ -1,0 +1,7 @@
+# Ignore virtual environment and cache
+venv/
+__pycache__/
+*.pyc
+db.sqlite3*
+.idea/
+.vscode/

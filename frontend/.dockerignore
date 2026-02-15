@@ -1,0 +1,6 @@
+# Ignore dependencies and build artifacts
+node_modules/
+dist/
+.idea/
+.vscode/
+npm-debug.log

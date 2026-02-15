@@ -116,9 +116,8 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <AppBar position="sticky" elevation={1}>
-          <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
-            <Toolbar disableGutters sx={{ minHeight: { xs: 56, sm: 64 } }}>
+        <AppBar position="fixed" elevation={1}>
+          <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 2, sm: 4, md: 6 } }}>
               {isMobile && (
                 <IconButton
                   color="inherit"
@@ -160,9 +159,10 @@ const App: React.FC = () => {
                   <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha</MenuItem>
                 </Menu>
               </Box>
-            </Toolbar>
-          </Container>
+          </Toolbar>
         </AppBar>
+        {/* Spacer for the fixed AppBar */}
+        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
 
         <Drawer
           variant="temporary"
