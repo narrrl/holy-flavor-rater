@@ -107,7 +107,7 @@ const CategoryFlavors: React.FC = () => {
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {filteredFlavors.map(flavor => (
-          <Box sx={{ flex: '1 1 30%', minWidth: 280 }} key={flavor.id}>
+          <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%', xl: '1 1 18%' }, minWidth: 280 }} key={flavor.id}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
               {!flavor.is_available && (
                 <Box sx={{ position: 'absolute', top: 10, right: 10, bgcolor: 'error.main', color: 'white', px: 1, borderRadius: 1, fontSize: '0.75rem', zIndex: 1 }}>

@@ -41,35 +41,100 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action == 'signup':
+        if self.action in ['signup', 'verify_signup', 'request_password_reset', 'complete_password_reset']:
             return [permissions.AllowAny()]
         return super().get_permissions()
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
     def signup(self, request):
         username = request.data.get('username')
         email = request.data.get('email')
-        if not username or not email:
-            return Response({'error': 'Username and email required'}, status=status.HTTP_400_BAD_REQUEST)
+        password = request.data.get('password')
+        if not username or not email or not password:
+            return Response({'error': 'Username, email and password required'}, status=status.HTTP_400_BAD_REQUEST)
         
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exists():
+            return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create user with random password
         import secrets
-        password = secrets.token_urlsafe(10)
-        user = User.objects.create_user(username=username, email=email, password=password)
+        import string
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
         
-        # Send "Password Reset" / Welcome Email
+        user = User.objects.create_user(
+            username=username, 
+            email=email, 
+            password=password,
+            is_active=False,
+            email_confirmation_code=code
+        )
+        
         send_mail(
-            'Welcome to Holy Flavors!',
-            f'Hi {username},\n\nYour account has been created. Your temporary password is: {password}\n\nPlease login and change it.',
-            'from@holyflavors.com',
+            'Verify your Holy Flavors account',
+            f'Hi {username},\n\nYour verification code is: {code}',
+            'noreply@holyflavors.com',
             [email],
             fail_silently=False,
         )
         
-        return Response({'status': 'User created, check console/email for temporary password'}, status=status.HTTP_201_CREATED)
+        return Response({'status': 'User created, please verify your email'}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def verify_signup(self, request):
+        username = request.data.get('username')
+        code = request.data.get('code')
+        try:
+            user = User.objects.get(username=username, is_active=False)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found or already active'}, status=status.HTTP_404_NOT_FOUND)
+            
+        if user.email_confirmation_code == code:
+            user.is_active = True
+            user.email_confirmation_code = None
+            user.save()
+            return Response({'status': 'Account verified successfully!'})
+        else:
+            return Response({'error': 'Invalid verification code'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def request_password_reset(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email, is_active=True)
+        except User.DoesNotExist:
+            return Response({'status': 'If an account exists with this email, a reset code has been sent.'})
+            
+        import secrets
+        import string
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
+        user.email_confirmation_code = code
+        user.save()
+        
+        send_mail(
+            'Password Reset Request',
+            f'Hi {user.username},\n\nYour password reset code is: {code}',
+            'noreply@holyflavors.com',
+            [email],
+            fail_silently=False,
+        )
+        return Response({'status': 'If an account exists with this email, a reset code has been sent.'})
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def complete_password_reset(self, request):
+        email = request.data.get('email')
+        code = request.data.get('code')
+        new_password = request.data.get('password')
+        
+        try:
+            user = User.objects.get(email=email, email_confirmation_code=code)
+        except User.DoesNotExist:
+            return Response({'error': 'Invalid email or code'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user.set_password(new_password)
+        user.email_confirmation_code = None
+        user.save()
+        return Response({'status': 'Password reset successful!'})
 
     @action(detail=False, methods=['get'])
     def me(self, request):
@@ -85,6 +150,64 @@ class UserViewSet(viewsets.ModelViewSet):
             user.save()
             return Response({'status': 'theme updated', 'theme': theme})
         return Response({'error': 'Invalid theme'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def change_password(self, request):
+        user = request.user
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+        if not user.check_password(old_password):
+            return Response({'error': 'Wrong old password'}, status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(new_password)
+        user.save()
+        return Response({'status': 'password changed'})
+
+    @action(detail=False, methods=['patch'])
+    def update_profile(self, request):
+        user = request.user
+        username = request.data.get('username')
+        email = request.data.get('email')
+        
+        message = ""
+        if username and username != user.username:
+            if User.objects.filter(username=username).exists():
+                return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+            user.username = username
+            
+        if email and email != user.email:
+            import secrets
+            import string
+            code = ''.join(secrets.choice(string.digits) for _ in range(6))
+            user.pending_email = email
+            user.email_confirmation_code = code
+            send_mail(
+                'Confirm your new email',
+                f'Hi {user.username},\n\nYour confirmation code is: {code}',
+                'noreply@holyflavors.com',
+                [email],
+                fail_silently=False,
+            )
+            message = " Confirmation code sent to new email."
+            
+        user.save()
+        serializer = self.get_serializer(user)
+        data = serializer.data
+        if message:
+            data['message'] = message
+        return Response(data)
+
+    @action(detail=False, methods=['post'])
+    def confirm_email(self, request):
+        user = request.user
+        code = request.data.get('code')
+        if not user.email_confirmation_code or code != user.email_confirmation_code:
+            return Response({'error': 'Invalid or expired code'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.email = user.pending_email
+        user.pending_email = None
+        user.email_confirmation_code = None
+        user.save()
+        return Response({'status': 'Email confirmed', 'email': user.email})
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):

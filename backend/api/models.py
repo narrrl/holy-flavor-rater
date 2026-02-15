@@ -10,6 +10,8 @@ class User(AbstractUser):
         ('mocha', 'Mocha'),
     ]
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='mocha')
+    pending_email = models.EmailField(max_length=254, blank=True, null=True)
+    email_confirmation_code = models.CharField(max_length=6, blank=True, null=True)
 
     def __str__(self):
         return self.username

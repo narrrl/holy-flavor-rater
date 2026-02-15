@@ -66,7 +66,7 @@ const CategoryList: React.FC = () => {
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {filteredCategories.map(category => (
-          <Box key={category.id} sx={{ flex: '1 1 45%', minWidth: 280 }}>
+          <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 23%' }, minWidth: 280 }}>
             <Link to={`/category/${category.slug}`} style={{ textDecoration: 'none' }}>
               <Card sx={{ 
                 height: 150, 

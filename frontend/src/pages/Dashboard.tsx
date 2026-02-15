@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
     <Box>
       <Typography variant="h4" gutterBottom>Personal Dashboard</Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-        <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
+        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' }, minWidth: 300 }}>
             <Typography variant="h5" color="secondary" gutterBottom>My Ratings ({data.rated_count})</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {data.my_ratings.map((rating: any) => (
@@ -66,7 +66,7 @@ const Dashboard: React.FC = () => {
                 ))}
             </Box>
         </Box>
-        <Box sx={{ flex: '1 1 45%', minWidth: 300 }}>
+        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' }, minWidth: 300 }}>
             <Typography variant="h5" color="primary" gutterBottom>Missing Flavors ({data.missing_count})</Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {data.missing_flavors.map((flavor: any) => (
