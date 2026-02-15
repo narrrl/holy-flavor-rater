@@ -70,13 +70,22 @@ class UserViewSet(viewsets.ModelViewSet):
             email_confirmation_code=code
         )
         
-        send_mail(
-            'Verify your Holy Flavors account',
-            f'Hi {username},\n\nYour verification code is: {code}',
-            'noreply@holyflavors.com',
-            [email],
-            fail_silently=False,
-        )
+        from smtplib import SMTPException
+        try:
+            send_mail(
+                'Verify your Holy Flavors account',
+                f'Hi {username},\n\nYour verification code is: {code}',
+                'noreply@holyflavors.com',
+                [email],
+                fail_silently=False,
+            )
+        except SMTPException as e:
+            # If email fails, delete the user so they can try again
+            user.delete()
+            return Response(
+                {'error': f'Failed to send verification email. Please check your SMTP settings. Server said: {e}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
         return Response({'status': 'User created, please verify your email'}, status=status.HTTP_201_CREATED)
 
