@@ -53,18 +53,22 @@ class Command(BaseCommand):
             tags_lower = [t.lower() for t in tags]
             title_lower = title.lower()
 
-            # Check for Packs/Bundles/Samples first
-            is_pack = False
-            pack_keywords = ['bundle', 'pack', 'set', 'box', 'probe', 'sample', 'taster', 'shaker', 'starter']
+            # Check for Packs/Bundles/Samples
+            # We prioritize explicit "Pack" keywords in the title.
+            # We DO NOT rely solely on product_type 'Energy Bundle' because some single tubs might be mislabeled or the API uses that for all energy products.
             
-            # Check title keywords
+            is_pack = False
+            pack_keywords = ['bundle', 'set', 'box', 'probe', 'sample', 'taster', 'starter', 'collection', 'probier']
+            
+            # Check title keywords (strong indicator)
             if any(k in title_lower for k in pack_keywords):
                 is_pack = True
             
-            # Check product type keywords
-            if any(k in product_type for k in pack_keywords):
+            # Check for "Shaker" or "Merch" specifically
+            if 'shaker' in title_lower or 'merch' in tags_lower:
                 is_pack = True
 
+            # Determine Category
             if is_pack:
                 category = cat_map['packs']
             elif 'holy energy' in tags_lower or 'energy' in tags_lower:
@@ -76,13 +80,16 @@ class Command(BaseCommand):
             elif 'milkshake' in tags_lower:
                 category = cat_map['milkshake']
             
-            # Skip only pure merch (clothing etc) if it's not a pack
+            # If still no category (and not explicitly a pack yet), check loosely
             if not category:
-                if 'merch' in tags_lower:
+                if 'shaker' in tags_lower:
+                     category = cat_map['packs']
+                else:
+                    # Fallback: if we can't classify it, maybe it's just a general item/pack
+                    # But let's be careful not to hide real flavors.
+                    # If it has no known tag, skip it or put in Packs?
+                    # Let's skip unknown stuff to keep the list clean.
                     continue
-                # If we still don't have a category but it's a product, maybe put it in Packs/Other as fallback?
-                # For now, let's skip to avoid clutter unless we are sure.
-                continue
 
             # Check availability
             variants = p.get('variants', [])
