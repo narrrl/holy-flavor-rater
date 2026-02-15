@@ -1,0 +1,102 @@
+from django.core.mail import send_mail
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
+from .models import User, Flavor, Category, Rating
+from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer
+
+class FlavorViewSet(viewsets.ModelViewSet):
+# ... (rest of FlavorViewSet)
+    queryset = Flavor.objects.annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
+    serializer_class = FlavorSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['category', 'category__slug']
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        return Flavor.objects.select_related('category').annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+class RatingViewSet(viewsets.ModelViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return Rating.objects.select_related('user', 'flavor')
+        return Rating.objects.filter(user=self.request.user)
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == 'signup':
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
+    @action(detail=False, methods=['post'])
+    def signup(self, request):
+        username = request.data.get('username')
+        email = request.data.get('email')
+        if not username or not email:
+            return Response({'error': 'Username and email required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create user with random password
+        import secrets
+        password = secrets.token_urlsafe(10)
+        user = User.objects.create_user(username=username, email=email, password=password)
+        
+        # Send "Password Reset" / Welcome Email
+        send_mail(
+            'Welcome to Holy Flavors!',
+            f'Hi {username},\n\nYour account has been created. Your temporary password is: {password}\n\nPlease login and change it.',
+            'from@holyflavors.com',
+            [email],
+            fail_silently=False,
+        )
+        
+        return Response({'status': 'User created, check console/email for temporary password'}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['patch'])
+    def update_theme(self, request):
+        user = request.user
+        theme = request.data.get('theme')
+        if theme in dict(User.THEME_CHOICES):
+            user.theme = theme
+            user.save()
+            return Response({'status': 'theme updated', 'theme': theme})
+        return Response({'error': 'Invalid theme'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        user = request.user
+        rated_ids = user.ratings.values_list('flavor_id', flat=True)
+        missing_flavors = Flavor.objects.exclude(id__in=rated_ids).select_related('category')
+        rated_flavors = user.ratings.select_related('flavor', 'flavor__category')
+        
+        return Response({
+            'user': UserSerializer(user).data,
+            'rated_count': rated_flavors.count(),
+            'missing_count': missing_flavors.count(),
+            'missing_flavors': FlavorSerializer(missing_flavors, many=True, context={'request': request}).data,
+            'my_ratings': RatingSerializer(rated_flavors, many=True).data
+        })
