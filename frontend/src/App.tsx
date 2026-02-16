@@ -21,7 +21,8 @@ import {
   useMediaQuery,
   TextField,
   InputAdornment,
-  Autocomplete
+  Autocomplete,
+  ListSubheader
 } from '@mui/material';
 import PaletteIcon from '@mui/icons-material/Palette';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -259,12 +260,27 @@ const App: React.FC = () => {
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={() => setAnchorEl(null)}
+                  sx={{ maxHeight: 500 }}
                 >
+                  <ListSubheader>Light Themes</ListSubheader>
                   <MenuItem onClick={() => handleThemeChange('latte')}>Latte</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('solarized_light')}>Solarized Light</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('one_light')}>One Light</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('paper')}>Paper White</MenuItem>
+                  
+                  <Divider />
+                  
+                  <ListSubheader>Dark Themes</ListSubheader>
+                  <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha (Default)</MenuItem>
                   <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
                   <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('atom')}>Atom One Dark</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('dracula')}>Dracula</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('gruvbox')}>Gruvbox Dark</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('nord')}>Nord</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('cyberpunk')}>Cyberpunk</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('forest')}>Forest Dark</MenuItem>
                 </Menu>
               </Box>
           </Toolbar>

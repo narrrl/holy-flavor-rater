@@ -5,10 +5,19 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 class User(AbstractUser):
     THEME_CHOICES = [
         ('latte', 'Latte'),
+        ('pink', 'Pastel Pink'),
+        ('solarized_light', 'Solarized Light'),
+        ('one_light', 'One Light'),
+        ('paper', 'Paper White'),
         ('frappe', 'Frappé'),
         ('macchiato', 'Macchiato'),
         ('mocha', 'Mocha'),
-        ('pink', 'Pastel Pink'),
+        ('atom', 'Atom One Dark'),
+        ('dracula', 'Dracula'),
+        ('gruvbox', 'Gruvbox Dark'),
+        ('nord', 'Nord'),
+        ('cyberpunk', 'Cyberpunk'),
+        ('forest', 'Forest Dark'),
     ]
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='mocha')
     pending_email = models.EmailField(max_length=254, blank=True, null=True)
