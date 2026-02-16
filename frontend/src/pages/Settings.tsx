@@ -7,12 +7,24 @@ import {
   Paper, 
   Alert,
   Container,
-  Avatar
+  Avatar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ListSubheader,
+  Divider
 } from '@mui/material';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
+import { CatppuccinTheme } from '../theme';
 
-const Settings: React.FC = () => {
+interface SettingsProps {
+    themeName: CatppuccinTheme;
+    onThemeChange: (newTheme: CatppuccinTheme) => void;
+}
+
+const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   useTitle('Account Settings');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -112,6 +124,38 @@ const Settings: React.FC = () => {
           {message.text}
         </Alert>
       )}
+
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom>Appearance</Typography>
+        <FormControl fullWidth margin="normal">
+            <InputLabel>Theme</InputLabel>
+            <Select
+                value={themeName}
+                label="Theme"
+                onChange={(e) => onThemeChange(e.target.value as CatppuccinTheme)}
+            >
+                <ListSubheader>Light Themes</ListSubheader>
+                <MenuItem value="latte">Latte</MenuItem>
+                <MenuItem value="pink">Pastel Pink</MenuItem>
+                <MenuItem value="solarized_light">Solarized Light</MenuItem>
+                <MenuItem value="one_light">One Light</MenuItem>
+                <MenuItem value="paper">Paper White</MenuItem>
+                
+                <Divider />
+                
+                <ListSubheader>Dark Themes</ListSubheader>
+                <MenuItem value="mocha">Mocha (Default)</MenuItem>
+                <MenuItem value="frappe">Frappé</MenuItem>
+                <MenuItem value="macchiato">Macchiato</MenuItem>
+                <MenuItem value="atom">Atom One Dark</MenuItem>
+                <MenuItem value="dracula">Dracula</MenuItem>
+                <MenuItem value="gruvbox">Gruvbox Dark</MenuItem>
+                <MenuItem value="nord">Nord</MenuItem>
+                <MenuItem value="cyberpunk">Cyberpunk</MenuItem>
+                <MenuItem value="forest">Forest Dark</MenuItem>
+            </Select>
+        </FormControl>
+      </Paper>
 
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>Profile Picture</Typography>
