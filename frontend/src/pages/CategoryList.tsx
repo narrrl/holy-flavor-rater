@@ -11,7 +11,8 @@ import {
   Paper,
   Chip,
   Container,
-  IconButton
+  IconButton,
+  useMediaQuery
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import StarIcon from '@mui/icons-material/Star';
@@ -51,6 +52,7 @@ interface Review {
 }
 
 const CategoryList: React.FC = () => {
+  const isMobileSize = useMediaQuery('(max-width:600px)');
   const [categories, setCategories] = useState<Category[]>([]);
   const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
@@ -235,7 +237,7 @@ const CategoryList: React.FC = () => {
                 <Card sx={{ 
                     display: 'flex', 
                     flexDirection: { xs: 'column', md: 'row' }, 
-                    minHeight: 400,
+                    minHeight: { xs: 'auto', md: 400 },
                     borderRadius: 4,
                     overflow: 'hidden',
                     position: 'relative'
@@ -245,7 +247,7 @@ const CategoryList: React.FC = () => {
                         to={`/flavor/${currentTop.id}`}
                         sx={{ 
                             width: { xs: '100%', md: '45%' }, 
-                            aspectRatio: '1/1',
+                            aspectRatio: { xs: '16/9', md: '1/1' },
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -260,23 +262,29 @@ const CategoryList: React.FC = () => {
                             sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                     </Box>
-                    <CardContent sx={{ flex: 1, p: { xs: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                        <Chip label={`Rank #${activeIndex + 1}`} color="primary" sx={{ width: 'fit-content', mb: 2, fontWeight: 'bold' }} />
-                        <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold' }}>{currentTop.name}</Typography>
+                    <CardContent sx={{ flex: 1, p: { xs: 3, sm: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <Chip label={`Rank #${activeIndex + 1}`} color="primary" size="small" sx={{ width: 'fit-content', mb: 1, fontWeight: 'bold' }} />
+                        <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' } }}>
+                            {currentTop.name}
+                        </Typography>
                         
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                            <MuiRating value={currentTop.average_rating || 0} readOnly precision={0.5} max={10} size="large" />
-                            <Typography variant="h5" sx={{ ml: 2, fontWeight: 'bold' }}>{(currentTop.average_rating || 0).toFixed(1)} / 10</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, md: 3 }, flexWrap: 'wrap' }}>
+                            <MuiRating value={currentTop.average_rating || 0} readOnly precision={0.5} max={10} size={isMobileSize ? "medium" : "large"} />
+                            <Typography variant="h5" sx={{ ml: { xs: 0, sm: 2 }, mt: { xs: 1, sm: 0 }, fontWeight: 'bold', fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
+                                {(currentTop.average_rating || 0).toFixed(1)} / 10
+                            </Typography>
                         </Box>
 
                         {featuredReview && (
-                            <Box sx={{ mt: 2, p: 3, bgcolor: 'action.hover', borderRadius: 3, position: 'relative' }}>
-                                <Typography variant="body1" sx={{ fontStyle: 'italic', mb: 2, fontSize: '1.1rem' }}>
+                            <Box sx={{ mt: 1, p: { xs: 2, md: 3 }, bgcolor: 'action.hover', borderRadius: 3, position: 'relative' }}>
+                                <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1, fontSize: { xs: '0.9rem', md: '1.1rem' }, display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}>
                                     "{featuredReview.comment}"
                                 </Typography>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>{featuredReview.user.charAt(0)}</Avatar>
-                                    <Typography variant="subtitle2" color="text.secondary">— {featuredReview.user}</Typography>
+                                    <Avatar src={featuredReview.user_avatar || undefined} sx={{ width: 20, height: 24, fontSize: '0.6rem' }}>
+                                        {!featuredReview.user_avatar && featuredReview.user.charAt(0)}
+                                    </Avatar>
+                                    <Typography variant="caption" color="text.secondary">— {featuredReview.user}</Typography>
                                 </Box>
                             </Box>
                         )}
@@ -285,7 +293,7 @@ const CategoryList: React.FC = () => {
                             variant="contained" 
                             component={Link} 
                             to={`/flavor/${currentTop.id}`}
-                            sx={{ mt: 4, width: 'fit-content', px: 4, py: 1.5, borderRadius: 2 }}
+                            sx={{ mt: { xs: 3, md: 4 }, width: { xs: '100%', sm: 'fit-content' }, px: 4, py: 1.5, borderRadius: 2 }}
                         >
                             View All Reviews
                         </Button>
