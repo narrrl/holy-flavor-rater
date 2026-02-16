@@ -45,7 +45,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
       - "traefik.http.routers.holy-energy-frontend.priority=10"
-      - "traefik.http.routers.holy-energy-frontend.rule=Host(`holy.narl.io`)"
+      - "traefik.http.routers.holy-energy-frontend.rule=Host(`holy.narl.io`) && !(PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
       - "traefik.http.routers.holy-energy-frontend.entrypoints=websecure"
       - "traefik.http.routers.holy-energy-frontend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-energy-frontend.loadbalancer.server.port=80"
@@ -58,4 +58,3 @@ networks:
 
 volumes:
   db_data:
-

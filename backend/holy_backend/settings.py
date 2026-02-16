@@ -94,6 +94,18 @@ DATABASES = {
     }
 }
 
+# Cache configuration for Ratelimiting
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'django_cache'),
+    }
+}
+
+# Silence the ratelimit error for locmem if it appears, 
+# though we just switched to file-based which is supported.
+SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
