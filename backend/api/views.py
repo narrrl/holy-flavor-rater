@@ -17,6 +17,12 @@ class FlavorViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Flavor.objects.select_related('category').annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def top(self, request):
+        top_flavors = self.get_queryset().filter(ratings__isnull=False).distinct()[:10]
+        serializer = self.get_serializer(top_flavors, many=True)
+        return Response(serializer.data)
+
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
@@ -46,6 +52,12 @@ class RatingViewSet(viewsets.ModelViewSet):
         super().check_object_permissions(request, obj)
         if request.method in ['PUT', 'PATCH', 'DELETE'] and obj.user != request.user:
             self.permission_denied(request, message='You cannot edit/delete this rating.')
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def recent(self, request):
+        recent_ratings = Rating.objects.filter(comment__isnull=False).exclude(comment='').select_related('user', 'flavor').order_by('-created_at')[:10]
+        serializer = self.get_serializer(recent_ratings, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def reply(self, request, pk=None):
