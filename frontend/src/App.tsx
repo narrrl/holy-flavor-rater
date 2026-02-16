@@ -248,60 +248,69 @@ const App: React.FC = () => {
                 
                 <GlobalSearch />
 
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {!isMobile && !loadingUser && (
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      {navItems.map((item) => (
-                        <Button key={item.label} color="inherit" component={Link} to={item.path}>{item.label}</Button>
-                      ))}
-                      {user && (
-                        <Button color="inherit" onClick={handleLogout} sx={{ ml: 1 }}>Logout</Button>
-                      )}
-                    </Box>
-                  )}
-                  
-                                  <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-                  
-                                    {user?.avatar ? (
-                  
-                                        <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
-                  
-                                    ) : (
-                  
-                                        <PaletteIcon />
-                  
-                                    )}
-                  
-                                  </IconButton>
-                  
-                  
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={() => setAnchorEl(null)}
-                    sx={{ maxHeight: 500 }}
-                  >
-                    <ListSubheader>Light Themes</ListSubheader>
-                    <MenuItem onClick={() => handleThemeChange('latte')}>Latte</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('solarized_light')}>Solarized Light</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('one_light')}>One Light</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('paper')}>Paper White</MenuItem>
-                    
-                    <Divider />
-                    
-                    <ListSubheader>Dark Themes</ListSubheader>
-                    <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha (Default)</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('atom')}>Atom One Dark</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('dracula')}>Dracula</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('gruvbox')}>Gruvbox Dark</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('nord')}>Nord</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('cyberpunk')}>Cyberpunk</MenuItem>
-                    <MenuItem onClick={() => handleThemeChange('forest')}>Forest Dark</MenuItem>
-                  </Menu>
-                </Box>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+
+                                {!isMobile && !loadingUser && (
+
+                                  <Box sx={{ display: 'flex', gap: 1 }}>
+
+                                    <Button color="inherit" component={Link} to="/">Catalog</Button>
+
+                                  </Box>
+
+                                )}
+
+                                
+
+                                {!loadingUser && (
+
+                                  user ? (
+
+                                    <>
+
+                                      <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
+
+                                        <Avatar src={user.avatar || undefined} sx={{ width: 32, height: 32 }}>
+
+                                            {!user.avatar && user.username.charAt(0).toUpperCase()}
+
+                                        </Avatar>
+
+                                      </IconButton>
+
+                                      <Menu
+
+                                        anchorEl={anchorEl}
+
+                                        open={Boolean(anchorEl)}
+
+                                        onClose={() => setAnchorEl(null)}
+
+                                      >
+
+                                        <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>Dashboard</MenuItem>
+
+                                        <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>Settings</MenuItem>
+
+                                        <Divider />
+
+                                        <MenuItem onClick={handleLogout}>Logout</MenuItem>
+
+                                      </Menu>
+
+                                    </>
+
+                                  ) : (
+
+                                    <Button color="inherit" component={Link} to="/login">Login</Button>
+
+                                  )
+
+                                )}
+
+                              </Box>
+
+                
             </Toolbar>
           </AppBar>
           <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
@@ -312,9 +321,10 @@ const App: React.FC = () => {
               <Route path="/category/:slug" element={<CategoryFlavors />} />
               <Route path="/flavor/:id" element={<FlavorDetail />} />
               <Route path="/profile/:username" element={<PublicProfile />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/login" element={<Login />} />
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
+                          <Route path="/login" element={<Login />} />
+              
             </Routes>
           </Box>
 

@@ -153,7 +153,8 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({
             'username': user.username,
             'theme': user.theme,
-            'ratings': RatingSerializer(ratings, many=True).data
+            'avatar': request.build_absolute_uri(user.avatar.url) if user.avatar else None,
+            'ratings': RatingSerializer(ratings, many=True, context={'request': request}).data
         })
 
     @action(detail=False, methods=['get'])
