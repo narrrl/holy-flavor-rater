@@ -8,20 +8,25 @@ services:
       - narl
       - internal
     env_file:
-      - ./.env
+      - .env
     volumes:
       - ./backend:/app
       - ./legacy:/app/legacy
     environment:
       - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      - "traefik.http.routers.holy-backend.priority=20"
-      - "traefik.http.routers.holy-backend.rule=Host(`holy.narl.io`) && PathPrefix(`/api`, `/admin`, `/static`, `/media`)"
-      - "traefik.http.routers.holy-backend.entrypoints=websecure"
-      - "traefik.http.routers.holy-backend.tls.certresolver=https_resolver"
-      - "traefik.http.services.holy-backend.loadbalancer.server.port=8000"
+      - "traefik.http.routers.holy-energy-backend.priority=100"
+      - "traefik.http.routers.holy-energy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
+      - "traefik.http.routers.holy-energy-backend.entrypoints=websecure"
+      - "traefik.http.routers.holy-energy-backend.tls.certresolver=https_resolver"
+      - "traefik.http.services.holy-energy-backend.loadbalancer.server.port=8000"
 
   frontend:
     build:
@@ -32,16 +37,18 @@ services:
     restart: unless-stopped
     networks:
       - narl
+    env_file:
+      - .env
     depends_on:
       - backend
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      - "traefik.http.routers.holy-frontend.priority=10"
-      - "traefik.http.routers.holy-frontend.rule=Host(`holy.narl.io`)"
-      - "traefik.http.routers.holy-frontend.entrypoints=websecure"
-      - "traefik.http.routers.holy-frontend.tls.certresolver=https_resolver"
-      - "traefik.http.services.holy-frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.holy-energy-frontend.priority=10"
+      - "traefik.http.routers.holy-energy-frontend.rule=Host(`holy.narl.io`)"
+      - "traefik.http.routers.holy-energy-frontend.entrypoints=websecure"
+      - "traefik.http.routers.holy-energy-frontend.tls.certresolver=https_resolver"
+      - "traefik.http.services.holy-energy-frontend.loadbalancer.server.port=80"
 
 networks:
   narl:
@@ -51,3 +58,4 @@ networks:
 
 volumes:
   db_data:
+
