@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Typography, TextField, Button, Box, Paper, Tab, Tabs, Alert } from '@mui/material';
+import { Typography, TextField, Button, Box, Paper, Tab, Tabs, Alert, Container } from '@mui/material';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
@@ -217,7 +217,7 @@ const Login: React.FC<LoginProps> = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
+    <Container maxWidth="xs" sx={{ mt: 8 }}>
       <Paper sx={{ p: 3 }}>
         {message && <Alert severity={message.type} sx={{ mb: 2 }}>{message.text}</Alert>}
         {renderContent()}
@@ -227,7 +227,7 @@ const Login: React.FC<LoginProps> = () => {
               Admin? Use <a href="http://localhost:8000/admin/" target="_blank" rel="noreferrer">Django Admin</a>
           </Typography>
       </Box>
-    </Box>
+    </Container>
   );
 };
 

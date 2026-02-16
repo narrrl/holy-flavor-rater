@@ -7,7 +7,9 @@ import {
   CardContent, 
   Rating as MuiRating, 
   Avatar,
-  Chip
+  Chip,
+  Container,
+  CircularProgress
 } from '@mui/material';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -48,14 +50,14 @@ const PublicProfile: React.FC = () => {
 
   useTitle(data ? `${data.username}'s Ratings` : 'Profile');
 
-  if (loading) return <Typography>Loading Profile...</Typography>;
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!data) return <Typography>Profile not found.</Typography>;
 
   const favorites = data.ratings.filter(r => r.score >= 8);
   const others = data.ratings.filter(r => r.score < 8);
 
   return (
-    <Box>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, gap: 3 }}>
         <Avatar sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'primary.main' }}>
             {data.username.charAt(0).toUpperCase()}
@@ -75,7 +77,7 @@ const PublicProfile: React.FC = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   {favorites.map(rating => (
-                      <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%' }, minWidth: 280 }}>
+                      <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%', xl: '1 1 18%' }, minWidth: 280 }}>
                           <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                               {rating.flavor_image && (
                                   <Box component="img" src={rating.flavor_image} sx={{ width: 80, height: 80, objectFit: 'contain' }} />
@@ -102,7 +104,7 @@ const PublicProfile: React.FC = () => {
               <Typography variant="h4" gutterBottom>Other Ratings</Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                   {others.map(rating => (
-                      <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%' }, minWidth: 200 }} variant="outlined">
+                      <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%', lg: '1 1 18%' }, minWidth: 200 }} variant="outlined">
                           <CardContent>
                               <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.flavor_name}</Typography>
                               <Box sx={{ display: 'flex', alignItems: 'center', my: 1 }}>
@@ -120,7 +122,7 @@ const PublicProfile: React.FC = () => {
               </Box>
           </Box>
       )}
-    </Box>
+    </Container>
   );
 };
 

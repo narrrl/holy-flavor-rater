@@ -9,7 +9,8 @@ import {
   Avatar,
   Rating as MuiRating,
   Paper,
-  Chip
+  Chip,
+  Container
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import StarIcon from '@mui/icons-material/Star';
@@ -93,7 +94,7 @@ const CategoryList: React.FC = () => {
       );
 
       return (
-          <Box>
+          <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
               <Typography variant="h4" gutterBottom>Search Results for "{query}"</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
                   Found {filteredFlavors.length} items
@@ -129,29 +130,30 @@ const CategoryList: React.FC = () => {
                       </Box>
                   ))}
               </Box>
-          </Box>
+          </Container>
       );
   }
 
   // --- HOME VIEW ---
   return (
-    <Box sx={{ mx: { xs: -2, sm: -4, md: -6 } }}>
-      {/* Hero Section */}
+    <Box>
+      {/* Hero Section - True Full Width */}
       <Paper 
         elevation={0}
         sx={{ 
-            p: { xs: 4, md: 8 }, 
+            p: { xs: 4, md: 10 }, 
             mb: 8, 
             borderRadius: 0, 
             background: (theme) => theme.palette.mode === 'dark' 
-                ? 'linear-gradient(45deg, #1a1a2e 30%, #16213e 90%)' 
-                : 'linear-gradient(45deg, #fdf6f7 30%, #f8e1e5 90%)',
+                ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
+                : 'linear-gradient(135deg, #fdf6f7 0%, #f8e1e5 100%)',
             textAlign: 'center',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
             width: '100%',
+            mt: -4 // Counter the parent Box mt
         }}
       >
-        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '4rem' } }}>
+        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '4.5rem' } }}>
             The Ultimate Holy Archive
         </Typography>
         <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto' }}>
@@ -163,17 +165,18 @@ const CategoryList: React.FC = () => {
             </Button>
             <Button variant="outlined" size="large" onClick={() => {
                 const element = document.getElementById('categories');
-                element?.scrollIntoView({ behavior: 'smooth' });
+                element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }} sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
                 Explore Categories
             </Button>
         </Box>
       </Paper>
 
-      <Box sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+      {/* Main Content inside Container */}
+      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
         {/* Top Rated Flavors */}
         {topFlavors.length > 0 && (
-          <Box sx={{ mb: 8 }}>
+          <Box sx={{ mb: 10 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
                   <StarIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
                   <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Hall of Fame</Typography>
@@ -205,11 +208,11 @@ const CategoryList: React.FC = () => {
       )}
 
       {/* Categories Grid */}
-      <Box id="categories" sx={{ mb: 8 }}>
+      <Box id="categories" sx={{ mb: 10 }}>
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Browse by Category</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {categories.map(category => (
-            <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 30%' }, minWidth: 280 }}>
+            <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 23%' }, minWidth: 280 }}>
                 <Link to={`/category/${category.slug}`} style={{ textDecoration: 'none' }}>
                 <Card sx={{ 
                     height: 120, 
@@ -274,9 +277,9 @@ const CategoryList: React.FC = () => {
               </Box>
           </Box>
       )}
+      </Container>
     </Box>
-  </Box>
-);
+  );
 };
 
 export default CategoryList;

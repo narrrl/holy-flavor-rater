@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, CardContent, Box, Rating as MuiRating, Button, TextField } from '@mui/material';
+import { Typography, Card, CardContent, Box, Rating as MuiRating, Button, TextField, Container, CircularProgress } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -38,11 +38,11 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, []);
 
-  if (loading) return <Typography>Loading...</Typography>;
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!data) return <Typography>Please login to view dashboard.</Typography>;
 
   return (
-    <Box>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Typography variant="h4">Personal Dashboard</Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -125,7 +125,7 @@ const Dashboard: React.FC = () => {
             </Box>
         </Box>
       </Box>
-    </Box>
+    </Container>
   );
 };
 

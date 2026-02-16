@@ -6,7 +6,8 @@ import {
   Card, 
   CardContent, 
   Rating as MuiRating,
-  CircularProgress
+  CircularProgress,
+  Container
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
@@ -62,7 +63,7 @@ const CategoryFlavors: React.FC = () => {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
 
   return (
-    <Box>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
       <Box sx={{ mb: 4 }}>
           <Typography variant="h4" gutterBottom>{categoryName || 'Flavors'}</Typography>
           <Link to="/" style={{ textDecoration: 'none' }}>
@@ -101,7 +102,7 @@ const CategoryFlavors: React.FC = () => {
           </Box>
         ))}
       </Box>
-    </Box>
+    </Container>
   );
 };
 

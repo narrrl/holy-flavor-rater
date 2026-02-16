@@ -5,7 +5,8 @@ import {
   TextField, 
   Button, 
   Paper, 
-  Alert
+  Alert,
+  Container
 } from '@mui/material';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -77,8 +78,8 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom>Account Settings</Typography>
+    <Container maxWidth="sm">
+      <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>Account Settings</Typography>
       
       {message && (
         <Alert severity={message.type} sx={{ mb: 3 }} onClose={() => setMessage(null)}>
@@ -153,7 +154,7 @@ const Settings: React.FC = () => {
           </Button>
         </form>
       </Paper>
-    </Box>
+    </Container>
   );
 };
 

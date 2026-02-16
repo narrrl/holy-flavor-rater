@@ -11,7 +11,8 @@ import {
   Avatar,
   Alert,
   Paper,
-  CircularProgress
+  CircularProgress,
+  Container
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
@@ -145,7 +146,7 @@ const FlavorDetail: React.FC = () => {
   if (!flavor) return <Typography>Flavor not found</Typography>;
 
   return (
-    <Box>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
       <Button component={Link} to={`/category/${flavor.category_slug}`} sx={{ mb: 2 }}>
         &larr; Back to {flavor.category_name}
       </Button>
@@ -262,7 +263,7 @@ const FlavorDetail: React.FC = () => {
             ))
         )}
       </Box>
-    </Box>
+    </Container>
   );
 };
 

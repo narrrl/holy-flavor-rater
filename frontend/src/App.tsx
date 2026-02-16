@@ -7,7 +7,6 @@ import {
   Toolbar, 
   Typography, 
   Button, 
-  Container, 
   Box,
   IconButton,
   Menu,
@@ -300,7 +299,7 @@ const App: React.FC = () => {
           {drawer}
         </Drawer>
 
-        <Container maxWidth={false} sx={{ mt: 4, pb: 4, px: { xs: 2, sm: 4, md: 6 } }}>
+        <Box sx={{ mt: 4, pb: 4 }}>
           <Routes>
             <Route path="/" element={<CategoryList />} />
             <Route path="/category/:slug" element={<CategoryFlavors />} />
@@ -310,7 +309,7 @@ const App: React.FC = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />
           </Routes>
-        </Container>
+        </Box>
       </Router>
     </ThemeProvider>
   );
