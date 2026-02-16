@@ -57,11 +57,13 @@ const CategoryList: React.FC = () => {
   const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
   const [allFlavors, setAllFlavors] = useState<Flavor[]>([]);
+  const [feedRatings, setFeedRatings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
   
   const query = new URLSearchParams(location.search).get('q') || '';
+  const isLoggedIn = !!localStorage.getItem('token');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -72,14 +74,26 @@ const CategoryList: React.FC = () => {
             const res = await api.get(`flavors/?search=${encodeURIComponent(query)}`);
             setAllFlavors(Array.isArray(res.data) ? res.data : (res.data.results || []));
         } else {
-            const [catRes, topRes, recentRes] = await Promise.all([
+            const requests: any[] = [
                 api.get('categories/'),
                 api.get('flavors/top/'),
                 api.get('ratings/recent/')
-            ]);
-            setCategories(Array.isArray(catRes.data) ? catRes.data : (catRes.data.results || []));
-            setTopFlavors(Array.isArray(topRes.data) ? topRes.data : (topRes.data.results || []));
-            setRecentReviews(Array.isArray(recentRes.data) ? recentRes.data : (recentRes.data.results || []));
+            ];
+            
+            if (isLoggedIn) {
+                requests.push(api.get('ratings/feed/'));
+            }
+
+            const results = await Promise.all(requests);
+            
+            setCategories(Array.isArray(results[0].data) ? results[0].data : (results[0].data.results || []));
+            setTopFlavors(Array.isArray(results[1].data) ? results[1].data : (results[1].data.results || []));
+            setRecentReviews(Array.isArray(results[2].data) ? results[2].data : (results[2].data.results || []));
+            
+            if (isLoggedIn && results[3]) {
+                const feedData = Array.isArray(results[3].data) ? results[3].data : (results[3].data.results || []);
+                setFeedRatings(feedData.slice(0, 6)); // Show top 6 on home
+            }
         }
       } catch (err) {
         console.error(err);
@@ -88,7 +102,7 @@ const CategoryList: React.FC = () => {
       }
     };
     fetchData();
-  }, [query]);
+  }, [query, isLoggedIn]);
 
   // Auto-rotate
   useEffect(() => {
@@ -187,38 +201,109 @@ const CategoryList: React.FC = () => {
 
   return (
     <Box sx={{ width: '100%' }}>
-      {/* Hero Section */}
-      <Paper 
-        elevation={0}
-        sx={{ 
-            p: { xs: 4, md: 10 }, 
-            mb: 8, 
-            borderRadius: 0, 
+      {/* Hero Section / Activity Feed */}
+      {isLoggedIn ? (
+        <Box sx={{ 
+            py: { xs: 4, md: 8 }, 
+            px: { xs: 2, sm: 4, md: 6 },
             background: (theme) => theme.palette.mode === 'dark' 
-                ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
-                : 'linear-gradient(135deg, #fdf6f7 0%, #f8e1e5 100%)',
-            textAlign: 'center',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            width: '100%',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-        }}
-      >
-        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' }, overflowWrap: 'break-word', px: 2 }}>
-            The Ultimate Holy Archive
-        </Typography>
-        <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto', px: 2 }}>
-            Browse every flavor ever released, discover new favorites, and share your ratings with the community.
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap', px: 2 }}>
-            <Button variant="contained" size="large" component={Link} to="/login" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
-                Join Community
-            </Button>
-            <Button variant="outlined" size="large" onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })} sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
-                Explore Categories
-            </Button>
+                ? 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%)' 
+                : 'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 100%)',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            mb: 8
+        }}>
+            <Container maxWidth="lg">
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+                    <Box>
+                        <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '2rem', md: '3rem' } }}>Community Activity</Typography>
+                        <Typography variant="body1" color="text.secondary">Latest reviews from people you follow</Typography>
+                    </Box>
+                    <Button component={Link} to="/community" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none' }}>
+                        View Full Feed
+                    </Button>
+                </Box>
+
+                {feedRatings.length === 0 ? (
+                    <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4, bgcolor: 'action.hover', border: '2px dashed', borderColor: 'divider', elevation: 0 }}>
+                        <Typography variant="h6">Your feed is a bit quiet</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Follow more users to see their activity here!</Typography>
+                        <Button variant="contained" component={Link} to="/" onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })} size="small" sx={{ borderRadius: 2 }}>
+                            Discover Reviewers
+                        </Button>
+                    </Paper>
+                ) : (
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
+                        {feedRatings.map(rating => (
+                            <Card key={rating.id} sx={{ borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                        <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1 }}>
+                                                {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                                            </Avatar>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>{rating.user}</Typography>
+                                        </Link>
+                                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>rated</Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                        <Box 
+                                            component="img" 
+                                            src={rating.flavor_image || undefined} 
+                                            sx={{ width: 60, height: 60, borderRadius: 1, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} 
+                                        />
+                                        <Box sx={{ minWidth: 0 }}>
+                                            <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                <Typography variant="body1" sx={{ fontWeight: 'bold', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: '0.95rem' }}>
+                                                    {rating.flavor_name}
+                                                </Typography>
+                                            </Link>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <MuiRating value={rating.score} readOnly size="small" max={10} />
+                                                <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Box>
+                )}
+            </Container>
         </Box>
-      </Paper>
+      ) : (
+        <Paper 
+            elevation={0}
+            sx={{ 
+                p: { xs: 4, md: 10 }, 
+                mb: 8, 
+                borderRadius: 0, 
+                background: (theme) => theme.palette.mode === 'dark' 
+                    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
+                    : 'linear-gradient(135deg, #fdf6f7 0%, #f8e1e5 100%)',
+                textAlign: 'center',
+                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                width: '100%',
+                boxSizing: 'border-box',
+                overflow: 'hidden'
+            }}
+        >
+            <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' }, overflowWrap: 'break-word', px: 2 }}>
+                The Ultimate Holy Archive
+            </Typography>
+            <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto', px: 2 }}>
+                Browse every flavor ever released, discover new favorites, and share your ratings with the community.
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap', px: 2 }}>
+                <Button variant="contained" size="large" component={Link} to="/login" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
+                    Join Community
+                </Button>
+                <Button variant="outlined" size="large" onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })} sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
+                    Explore Categories
+                </Button>
+            </Box>
+        </Paper>
+      )}
 
       <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, pb: 8 }}>
         
