@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 interface Reply {
     id: number;
@@ -148,8 +149,14 @@ const FlavorDetail: React.FC = () => {
 
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
-      <Button component={Link} to={`/category/${flavor.category_slug}`} sx={{ mb: 2, textTransform: 'none' }}>
-        &larr; Back to {flavor.category_name}
+      <Button 
+        variant="outlined" 
+        component={Link} 
+        to={`/category/${flavor.category_slug}`} 
+        startIcon={<ArrowBackIcon />}
+        sx={{ mb: 2, textTransform: 'none', borderRadius: 2 }}
+      >
+        Back to {flavor.category_name}
       </Button>
 
       <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, mb: 4, overflow: 'hidden', borderRadius: { xs: 2, md: 4 } }}>

@@ -15,6 +15,7 @@ import {
   Tooltip
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -70,6 +71,16 @@ const Dashboard: React.FC = () => {
 
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
+      <Button 
+        variant="outlined" 
+        component={Link} 
+        to="/" 
+        startIcon={<ArrowBackIcon />}
+        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+      >
+        Back to Home
+      </Button>
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6, flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Avatar src={data.user.avatar || undefined} sx={{ width: 64, height: 64, border: '3px solid', borderColor: 'primary.main' }}>
