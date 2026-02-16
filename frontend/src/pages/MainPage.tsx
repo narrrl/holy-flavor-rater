@@ -51,10 +51,11 @@ interface Review {
     flavor: number;
 }
 
-const CategoryList: React.FC = () => {
+const MainPage: React.FC = () => {
   const isMobileSize = useMediaQuery('(max-width:600px)');
   const [categories, setCategories] = useState<Category[]>([]);
   const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
+  const [newestFlavors, setNewestFlavors] = useState<Flavor[]>([]);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
   const [allFlavors, setAllFlavors] = useState<Flavor[]>([]);
   const [feedRatings, setFeedRatings] = useState<any[]>([]);
@@ -77,7 +78,8 @@ const CategoryList: React.FC = () => {
             const requests: any[] = [
                 api.get('categories/'),
                 api.get('flavors/top/'),
-                api.get('ratings/recent/')
+                api.get('ratings/recent/'),
+                api.get('flavors/newest/')
             ];
             
             if (isLoggedIn) {
@@ -89,9 +91,10 @@ const CategoryList: React.FC = () => {
             setCategories(Array.isArray(results[0].data) ? results[0].data : (results[0].data.results || []));
             setTopFlavors(Array.isArray(results[1].data) ? results[1].data : (results[1].data.results || []));
             setRecentReviews(Array.isArray(results[2].data) ? results[2].data : (results[2].data.results || []));
+            setNewestFlavors(Array.isArray(results[3].data) ? results[3].data : (results[3].data.results || []));
             
-            if (isLoggedIn && results[3]) {
-                const feedData = Array.isArray(results[3].data) ? results[3].data : (results[3].data.results || []);
+            if (isLoggedIn && results[4]) {
+                const feedData = Array.isArray(results[4].data) ? results[4].data : (results[4].data.results || []);
                 setFeedRatings(feedData.slice(0, 6)); // Show top 6 on home
             }
         }
@@ -432,6 +435,45 @@ const CategoryList: React.FC = () => {
                 ))}
             </Box>
         </Box>
+
+        {/* Newest Arrivals */}
+        {newestFlavors.length > 0 && (
+            <Box sx={{ mb: 10 }}>
+                <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>New Arrivals</Typography>
+                <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: {
+                        xs: 'repeat(2, 1fr)',
+                        sm: 'repeat(3, 1fr)',
+                        md: 'repeat(4, 1fr)',
+                        lg: 'repeat(5, 1fr)',
+                        xl: 'repeat(6, 1fr)'
+                    }, 
+                    gap: 2 
+                }}>
+                    {newestFlavors.map(flavor => (
+                        <Card key={flavor.id} sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                            <Link to={`/flavor/${flavor.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <Box sx={{ aspectRatio: '1/1', overflow: 'hidden', bgcolor: 'action.hover' }}>
+                                    <Box 
+                                        component="img" 
+                                        src={flavor.image_url || undefined} 
+                                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                        loading="lazy"
+                                    />
+                                </Box>
+                                <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                        {flavor.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">{flavor.category_name}</Typography>
+                                </CardContent>
+                            </Link>
+                        </Card>
+                    ))}
+                </Box>
+            </Box>
+        )}
 
         {/* Recent Reviews */}
         {recentReviews.length > 0 && (

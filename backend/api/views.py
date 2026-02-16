@@ -41,6 +41,13 @@ class FlavorViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(top_flavors, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def newest(self, request):
+        # Get the 10 newest flavors
+        newest_flavors = Flavor.objects.select_related('category').order_by('-created_at')[:10]
+        serializer = self.get_serializer(newest_flavors, many=True)
+        return Response(serializer.data)
+
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
