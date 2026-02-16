@@ -32,9 +32,13 @@ interface Rating {
 }
 
 interface ProfileData {
+    id: number;
     username: string;
     theme: string;
     avatar: string | null;
+    following_count: number;
+    followers_count: number;
+    is_following: boolean;
     ratings: Rating[];
 }
 
@@ -43,12 +47,17 @@ const PublicProfile: React.FC = () => {
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await api.get(`users/profile/${username}/`);
-        setData(res.data);
+        const [profileRes, meRes] = await Promise.all([
+            api.get(`users/profile/${username}/`),
+            localStorage.getItem('token') ? api.get('users/me/') : Promise.resolve({ data: null })
+        ]);
+        setData(profileRes.data);
+        if (meRes.data) setCurrentUser(meRes.data.username);
       } catch (err) {
         console.error(err);
       } finally {
@@ -57,6 +66,21 @@ const PublicProfile: React.FC = () => {
     };
     fetchProfile();
   }, [username]);
+
+  const handleFollowToggle = async () => {
+      if (!data) return;
+      try {
+          if (data.is_following) {
+              await api.post(`users/${data.id}/unfollow/`);
+              setData({ ...data, is_following: false, followers_count: data.followers_count - 1 });
+          } else {
+              await api.post(`users/${data.id}/follow/`);
+              setData({ ...data, is_following: true, followers_count: data.followers_count + 1 });
+          }
+      } catch (err) {
+          alert('Failed to update follow status. Please login.');
+      }
+  };
 
   useTitle(data ? `${data.username}'s Ratings` : 'Profile');
 
@@ -104,14 +128,25 @@ const PublicProfile: React.FC = () => {
       </Button>
 
       {/* Profile Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, gap: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, gap: 3, flexWrap: 'wrap' }}>
         <Avatar src={data.avatar || undefined} sx={{ width: 100, height: 100, border: '4px solid', borderColor: 'primary.main', fontSize: '2.5rem' }}>
             {!data.avatar && data.username.charAt(0).toUpperCase()}
         </Avatar>
-        <Box>
-            <Typography variant="h2" sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '3.75rem' } }}>{data.username}</Typography>
+        <Box sx={{ flex: 1, minWidth: 200 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
+                <Typography variant="h2" sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '3.75rem' } }}>{data.username}</Typography>
+                {currentUser !== data.username && (
+                    <Button 
+                        variant={data.is_following ? "outlined" : "contained"} 
+                        onClick={handleFollowToggle}
+                        sx={{ borderRadius: 4, px: 4 }}
+                    >
+                        {data.is_following ? "Following" : "Follow"}
+                    </Button>
+                )}
+            </Box>
             <Typography variant="h6" color="text.secondary">
-                Taste Profile • {data.ratings.length} Flavors Rated
+                Taste Profile • {data.ratings.length} Rated • {data.followers_count} Followers • {data.following_count} Following
             </Typography>
         </Box>
       </Box>

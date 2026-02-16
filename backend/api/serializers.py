@@ -3,10 +3,13 @@ from .models import User, Flavor, Category, Rating, Reply
 
 class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
+    following_count = serializers.IntegerField(source='following.count', read_only=True)
+    followers_count = serializers.IntegerField(source='followers.count', read_only=True)
+    is_following = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'theme', 'avatar']
+        fields = ['id', 'username', 'email', 'theme', 'avatar', 'following_count', 'followers_count', 'is_following']
 
     def get_avatar(self, obj):
         if obj.avatar:
@@ -15,6 +18,12 @@ class UserSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
         return None
+
+    def get_is_following(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.following.filter(pk=obj.pk).exists()
+        return False
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,6 +40,7 @@ class ReplySerializer(serializers.ModelSerializer):
 
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
     user_avatar = serializers.SerializerMethodField()
     flavor_name = serializers.CharField(source='flavor.name', read_only=True)
     flavor_image = serializers.SerializerMethodField()
@@ -40,7 +50,7 @@ class RatingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Rating
-        fields = ['id', 'user', 'user_avatar', 'flavor', 'flavor_name', 'flavor_image', 'category_name', 'category_slug', 'score', 'comment', 'created_at', 'replies']
+        fields = ['id', 'user', 'user_id', 'user_avatar', 'flavor', 'flavor_name', 'flavor_image', 'category_name', 'category_slug', 'score', 'comment', 'created_at', 'replies']
 
     def get_user_avatar(self, obj):
         if obj.user.avatar:

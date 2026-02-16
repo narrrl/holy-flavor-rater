@@ -38,6 +38,7 @@ const CategoryFlavors = lazy(() => import('./pages/categories/CategoryFlavors'))
 const FlavorDetail = lazy(() => import('./pages/flavors/FlavorDetail'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
+const CommunityFeed = lazy(() => import('./pages/CommunityFeed'));
 const Login = lazy(() => import('./pages/Login'));
 const Settings = lazy(() => import('./pages/Settings'));
 
@@ -221,6 +222,12 @@ const App: React.FC = () => {
                 <ListItemText primary="Home" />
             </ListItemButton>
         </ListItem>
+
+        <ListItem disablePadding>
+            <ListItemButton component={Link} to="/community" onClick={() => setDrawerOpen(false)}>
+                <ListItemText primary="Community" />
+            </ListItemButton>
+        </ListItem>
         
         <ListItemButton onClick={() => setCatOpen(!catOpen)}>
             <ListItemText primary="Categories" />
@@ -294,6 +301,14 @@ const App: React.FC = () => {
                 </Typography>
 
                 <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4 }}>
+                    <Button 
+                        color="inherit" 
+                        component={Link}
+                        to="/community"
+                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
+                    >
+                        Community
+                    </Button>
                     <Button 
                         color="inherit" 
                         endIcon={<ArrowDropDownIcon />}
@@ -383,6 +398,7 @@ const App: React.FC = () => {
                     <Route path="/category/:slug" element={<CategoryFlavors />} />
                     <Route path="/flavor/:id" element={<FlavorDetail />} />
                     <Route path="/profile/:username" element={<PublicProfile />} />
+                    <Route path="/community" element={<CommunityFeed />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
                     <Route path="/login" element={<Login />} />
