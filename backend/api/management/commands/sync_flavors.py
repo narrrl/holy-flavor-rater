@@ -40,14 +40,9 @@ class Command(BaseCommand):
 
         created_count = 0
         updated_count = 0
-        synced_ids = []
+        synced_external_ids = []
 
         for p in products:
-            # ... (previous logic for title, tags, category etc.)
-            title = p.get('title')
-            # ... (omitting for brevity in thought, but I will write full loop)
-            # Actually I need the full loop content to replace correctly.
-            # I will use a more targeted replacement.
             title = p.get('title')
             tags = p.get('tags', [])
             product_type = p.get('product_type', '').lower()
@@ -60,17 +55,10 @@ class Command(BaseCommand):
             title_lower = title.lower()
 
             # Check for Packs/Bundles/Samples
-            # We prioritize explicit "Pack" keywords in the title.
-            # We DO NOT rely solely on product_type 'Energy Bundle' because some single tubs might be mislabeled or the API uses that for all energy products.
-            
             is_pack = False
             pack_keywords = ['bundle', 'set', 'box', 'probe', 'sample', 'taster', 'starter', 'collection', 'probier']
-            
-            # Check title keywords (strong indicator)
             if any(k in title_lower for k in pack_keywords):
                 is_pack = True
-            
-            # Check for "Shaker" or "Merch" specifically
             if 'shaker' in title_lower or 'merch' in tags_lower:
                 is_pack = True
 
@@ -86,15 +74,10 @@ class Command(BaseCommand):
             elif 'milkshake' in tags_lower:
                 category = cat_map['milkshake']
             
-            # If still no category (and not explicitly a pack yet), check loosely
             if not category:
                 if 'shaker' in tags_lower:
                      category = cat_map['packs']
                 else:
-                    # Fallback: if we can't classify it, maybe it's just a general item/pack
-                    # But let's be careful not to hide real flavors.
-                    # If it has no known tag, skip it or put in Packs?
-                    # Let's skip unknown stuff to keep the list clean.
                     continue
 
             # Check availability
@@ -113,7 +96,6 @@ class Command(BaseCommand):
             shop_url = f"https://weareholy.com/products/{handle}" if handle else None
 
             # Create or update
-            # Try finding by external_id first, then by name
             flavor = Flavor.objects.filter(external_id=p['id']).first()
             if not flavor:
                 flavor = Flavor.objects.filter(name=title).first()
@@ -139,5 +121,11 @@ class Command(BaseCommand):
                     is_available=is_available
                 )
                 created_count += 1
+            
+            synced_external_ids.append(p['id'])
 
-        self.stdout.write(self.style.SUCCESS(f"Finished! Created: {created_count}, Updated: {updated_count}"))
+        # Mark flavors NOT in the sync as unavailable (only for those that have an external_id)
+        # This keeps manually added flavors (with external_id=None) as they are.
+        discontinued_count = Flavor.objects.filter(external_id__isnull=False).exclude(external_id__in=synced_external_ids).update(is_available=False)
+
+        self.stdout.write(self.style.SUCCESS(f"Finished! Created: {created_count}, Updated: {updated_count}, Marked Unavailable: {discontinued_count}"))
