@@ -275,7 +275,8 @@ const CategoryList: React.FC = () => {
           </Box>
       )}
     </Box>
-  );
+  </Box>
+);
 };
 
 export default CategoryList;
