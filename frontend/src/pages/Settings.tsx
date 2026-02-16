@@ -15,6 +15,8 @@ import {
   ListSubheader,
   Divider
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import type { CatppuccinTheme } from '../theme';
@@ -117,6 +119,16 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Button 
+        variant="outlined" 
+        component={Link} 
+        to="/" 
+        startIcon={<ArrowBackIcon />}
+        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+      >
+        Back to Home
+      </Button>
+
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4, mt: 4 }}>
           <Avatar src={avatar || undefined} sx={{ width: 80, height: 80, border: '3px solid', borderColor: 'primary.main' }}>
               {!avatar && username.charAt(0).toUpperCase()}
@@ -133,7 +145,10 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 3, mb: 4 }}>
+      <Paper sx={{ 
+          p: 3, mb: 4,
+          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+      }}>
         <Typography variant="h6" gutterBottom>Appearance</Typography>
         <FormControl fullWidth margin="normal">
             <InputLabel>Theme</InputLabel>
@@ -165,7 +180,10 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
         </FormControl>
       </Paper>
 
-      <Paper sx={{ p: 3, mb: 4 }}>
+      <Paper sx={{ 
+          p: 3, mb: 4,
+          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+      }}>
         <Typography variant="h6" gutterBottom>Profile Picture</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
             <Avatar src={avatar || undefined} sx={{ width: 100, height: 100 }}>
@@ -183,7 +201,10 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
         </Box>
       </Paper>
 
-      <Paper sx={{ p: 3, mb: 4 }}>
+      <Paper sx={{ 
+          p: 3, mb: 4,
+          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+      }}>
         <Typography variant="h6" gutterBottom>Profile Information</Typography>
         <form onSubmit={handleUpdateProfile}>
           <TextField
@@ -226,7 +247,10 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
         )}
       </Paper>
 
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ 
+          p: 3,
+          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+      }}>
         <Typography variant="h6" gutterBottom>Change Password</Typography>
         <form onSubmit={handleChangePassword}>
           <TextField

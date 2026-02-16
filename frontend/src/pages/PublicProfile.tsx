@@ -12,8 +12,10 @@ import {
   Tabs,
   Tab,
   Paper,
-  Divider
+  Divider,
+  Button
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -91,6 +93,16 @@ const PublicProfile: React.FC = () => {
 
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
+      <Button 
+        variant="outlined" 
+        component={Link} 
+        to="/" 
+        startIcon={<ArrowBackIcon />}
+        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+      >
+        Back to Home
+      </Button>
+
       {/* Profile Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, gap: 3 }}>
         <Avatar src={data.avatar || undefined} sx={{ width: 100, height: 100, border: '4px solid', borderColor: 'primary.main', fontSize: '2.5rem' }}>

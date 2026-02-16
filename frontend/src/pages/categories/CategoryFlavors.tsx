@@ -7,8 +7,10 @@ import {
   CardContent, 
   Rating as MuiRating,
   CircularProgress,
-  Container
+  Container,
+  Button
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
 
@@ -67,9 +69,15 @@ const CategoryFlavors: React.FC = () => {
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Box sx={{ mb: 4 }}>
           <Typography variant="h4" gutterBottom>{categoryName || 'Flavors'}</Typography>
-          <Link to="/" style={{ textDecoration: 'none' }}>
-              <Typography color="primary" sx={{ '&:hover': { textDecoration: 'underline' } }}>&larr; Back to all categories</Typography>
-          </Link>
+          <Button 
+            variant="outlined" 
+            component={Link} 
+            to="/" 
+            startIcon={<ArrowBackIcon />}
+            sx={{ textTransform: 'none', borderRadius: 2 }}
+          >
+            Back to all categories
+          </Button>
       </Box>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>

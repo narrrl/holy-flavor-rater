@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Typography, TextField, Button, Box, Paper, Tab, Tabs, Alert, Container } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
@@ -220,7 +222,20 @@ const Login: React.FC<LoginProps> = () => {
 
   return (
     <Container maxWidth="xs" sx={{ py: 8 }}>
-      <Paper sx={{ p: 3 }}>
+      <Button 
+        variant="outlined" 
+        component={Link} 
+        to="/" 
+        startIcon={<ArrowBackIcon />}
+        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+      >
+        Back to Home
+      </Button>
+
+      <Paper sx={{ 
+          p: 3,
+          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+      }}>
         {message && <Alert severity={message.type} sx={{ mb: 2 }}>{message.text}</Alert>}
         {renderContent()}
       </Paper>
