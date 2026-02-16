@@ -180,9 +180,13 @@ class UserViewSet(viewsets.ModelViewSet):
         ratings = user.ratings.select_related('flavor', 'flavor__category').exclude(flavor__category__slug='packs-and-other').order_by('-score')
         
         return Response({
+            'id': user.id,
             'username': user.username,
             'theme': user.theme,
             'avatar': request.build_absolute_uri(user.avatar.url) if user.avatar else None,
+            'following_count': user.following.count(),
+            'followers_count': user.followers.count(),
+            'is_following': request.user.following.filter(pk=user.pk).exists() if request.user.is_authenticated else False,
             'ratings': RatingSerializer(ratings, many=True, context={'request': request}).data
         })
 
