@@ -12,13 +12,22 @@ import {
   Avatar,
   Menu,
   MenuItem,
+  Drawer,
   Divider,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Collapse,
   TextField,
   InputAdornment,
   Autocomplete
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
 import { getTheme, type CatppuccinTheme } from './theme';
 import CategoryList from './pages/CategoryList';
 import CategoryFlavors from './pages/categories/CategoryFlavors';
@@ -69,7 +78,7 @@ const GlobalSearch = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', sm: 400 }, mx: { xs: 1, sm: 2 } }}>
+        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', md: 400 }, mx: { xs: 1, sm: 2, md: 4 } }}>
             <Autocomplete
                 freeSolo
                 size="small"
@@ -135,6 +144,8 @@ const App: React.FC = () => {
   const [categories, setCategories] = useState<{name: string, slug: string}[]>([]);
   const [user, setUser] = useState<{username: string, avatar: string | null} | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -179,6 +190,75 @@ const App: React.FC = () => {
     window.location.href = '/';
   };
 
+  const drawer = (
+    <Box sx={{ width: 280 }} role="presentation">
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar src={user?.avatar || undefined} sx={{ width: 40, height: 40, border: '2px solid', borderColor: 'primary.main' }}>
+              {user && !user.avatar && user.username.charAt(0).toUpperCase()}
+          </Avatar>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              <Link to="/" onClick={() => setDrawerOpen(false)} style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
+          </Typography>
+      </Box>
+      <Divider />
+      <List>
+        <ListItem disablePadding>
+            <ListItemButton component={Link} to="/" onClick={() => setDrawerOpen(false)}>
+                <ListItemText primary="Catalog Home" />
+            </ListItemButton>
+        </ListItem>
+        
+        <ListItemButton onClick={() => setCatOpen(!catOpen)}>
+            <ListItemText primary="Categories" />
+            {catOpen ? <ExpandLess /> : <ExpandMore />}
+        </ListItemButton>
+        <Collapse in={catOpen} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding>
+                {categories.map(cat => (
+                    <ListItemButton 
+                        key={cat.slug} 
+                        component={Link} 
+                        to={`/category/${cat.slug}`} 
+                        onClick={() => setDrawerOpen(false)}
+                        sx={{ pl: 4 }}
+                    >
+                        <ListItemText primary={cat.name} />
+                    </ListItemButton>
+                ))}
+            </List>
+        </Collapse>
+
+        <Divider sx={{ my: 1 }} />
+        
+        {user ? (
+            <>
+                <ListItem disablePadding>
+                    <ListItemButton component={Link} to="/dashboard" onClick={() => setDrawerOpen(false)}>
+                        <ListItemText primary="Personal Dashboard" />
+                    </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                    <ListItemButton component={Link} to="/settings" onClick={() => setDrawerOpen(false)}>
+                        <ListItemText primary="Account Settings" />
+                    </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                    <ListItemButton onClick={handleLogout}>
+                        <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
+                    </ListItemButton>
+                </ListItem>
+            </>
+        ) : (
+            <ListItem disablePadding>
+                <ListItemButton component={Link} to="/login" onClick={() => setDrawerOpen(false)}>
+                    <ListItemText primary="Login / Signup" />
+                </ListItemButton>
+            </ListItem>
+        )}
+      </List>
+    </Box>
+  );
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -193,29 +273,22 @@ const App: React.FC = () => {
           }}>
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
                 {/* Brand Logo - Responsive */}
-                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mr: { xs: 1, sm: 2 } }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
                   <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
                       <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Holy Flavors</Box>
                       <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Holy</Box>
                   </Link>
                 </Typography>
 
-                {/* Categories Dropdown - Works on both mobile and desktop */}
-                <Box sx={{ ml: { xs: 0, sm: 1 } }}>
+                {/* Categories Dropdown - Desktop Only */}
+                <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4 }}>
                     <Button 
                         color="inherit" 
                         endIcon={<ArrowDropDownIcon />}
                         onClick={(e) => setCatAnchorEl(e.currentTarget)}
-                        sx={{ 
-                            fontWeight: 'bold', 
-                            textTransform: 'none', 
-                            fontSize: { xs: '0.85rem', sm: '1rem' },
-                            minWidth: 'auto',
-                            px: 1
-                        }}
+                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem' }}
                     >
-                        <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>Categories</Box>
-                        <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>Cats</Box>
+                        Categories
                     </Button>
                     <Menu
                         anchorEl={catAnchorEl}
@@ -237,26 +310,19 @@ const App: React.FC = () => {
                     </Menu>
                 </Box>
                 
-                {/* Global Search */}
+                {/* Global Search - All Devices */}
                 <GlobalSearch />
 
                 <Box sx={{ flexGrow: 1 }} />
 
-                {/* User Menu - Aligned Right */}
+                {/* Right Side Icons */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {/* User Menu - Desktop Only */}
                   {!loadingUser && (
                     user ? (
-                      <>
-                        <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: { xs: 0, sm: 1 } }}>
-                          <Avatar 
-                            src={user.avatar || undefined} 
-                            sx={{ 
-                                width: { xs: 32, sm: 36 }, 
-                                height: { xs: 32, sm: 36 }, 
-                                border: '2px solid', 
-                                borderColor: 'primary.main' 
-                            }}
-                          >
+                      <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+                        <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
+                          <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
                               {!user.avatar && user.username.charAt(0).toUpperCase()}
                           </Avatar>
                         </IconButton>
@@ -267,26 +333,42 @@ const App: React.FC = () => {
                           elevation={3}
                           sx={{ mt: 1 }}
                         >
-                          <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 'bold' }}>
-                              Logged in as {user.username}
-                          </Typography>
-                          <Divider />
                           <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>Dashboard</MenuItem>
                           <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>Settings</MenuItem>
                           <Divider />
                           <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>Logout</MenuItem>
                         </Menu>
-                      </>
+                      </Box>
                     ) : (
-                      <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                          Login
-                      </Button>
+                      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                        <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2 }}>Login</Button>
+                      </Box>
                     )
                   )}
+
+                  {/* Hamburger Menu - Mobile Only */}
+                  <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+                      <IconButton
+                          color="inherit"
+                          aria-label="open drawer"
+                          onClick={() => setDrawerOpen(true)}
+                          sx={{ ml: 1 }}
+                      >
+                          <MenuIcon />
+                      </IconButton>
+                  </Box>
                 </Box>
             </Toolbar>
           </AppBar>
           <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+
+          <Drawer
+            anchor="left"
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+          >
+            {drawer}
+          </Drawer>
 
           <Box sx={{ flexGrow: 1, width: '100%' }}>
             <Routes>
