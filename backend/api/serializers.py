@@ -31,13 +31,14 @@ class RatingSerializer(serializers.ModelSerializer):
 
 class FlavorSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    category_slug = serializers.CharField(source='category.slug', read_only=True)
     average_rating = serializers.FloatField(read_only=True)
     user_rating = serializers.SerializerMethodField()
     ratings = RatingSerializer(many=True, read_only=True)
 
     class Meta:
         model = Flavor
-        fields = ['id', 'name', 'category', 'category_name', 'description', 'average_rating', 'user_rating', 'ratings', 'image_url', 'is_available', 'shop_url']
+        fields = ['id', 'name', 'category', 'category_name', 'category_slug', 'description', 'average_rating', 'user_rating', 'ratings', 'image_url', 'is_available', 'shop_url']
 
     def get_user_rating(self, obj):
         request = self.context.get('request')
