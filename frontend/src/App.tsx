@@ -27,6 +27,7 @@ import CategoryList from './pages/CategoryList';
 import CategoryFlavors from './pages/categories/CategoryFlavors';
 import FlavorDetail from './pages/flavors/FlavorDetail';
 import Dashboard from './pages/Dashboard';
+import PublicProfile from './pages/PublicProfile';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
 import api from './api';
@@ -185,6 +186,7 @@ const App: React.FC = () => {
             <Route path="/" element={<CategoryList />} />
             <Route path="/category/:slug" element={<CategoryFlavors />} />
             <Route path="/flavor/:id" element={<FlavorDetail />} />
+            <Route path="/profile/:username" element={<PublicProfile />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />

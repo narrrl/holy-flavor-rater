@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, CardContent, Box, Rating as MuiRating, Button } from '@mui/material';
+import { Typography, Card, CardContent, Box, Rating as MuiRating, Button, TextField } from '@mui/material';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
 interface DashboardData {
+    user: { username: string };
     rated_count: number;
     missing_count: number;
     missing_flavors: any[];
@@ -14,6 +16,13 @@ const Dashboard: React.FC = () => {
   useTitle('Dashboard');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const shareUrl = data ? `${window.location.origin}/profile/${data.user.username}` : '';
+
+  const copyToClipboard = () => {
+      navigator.clipboard.writeText(shareUrl);
+      alert('Link copied to clipboard!');
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,7 +43,21 @@ const Dashboard: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>Personal Dashboard</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
+          <Typography variant="h4">Personal Dashboard</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TextField 
+                size="small" 
+                value={shareUrl} 
+                slotProps={{ input: { readOnly: true } }}
+                sx={{ width: { xs: '100%', sm: 300 } }}
+              />
+              <Button variant="contained" startIcon={<ContentCopyIcon />} onClick={copyToClipboard}>
+                  Share Profile
+              </Button>
+          </Box>
+      </Box>
+
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
         <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' }, minWidth: 300 }}>
             <Typography variant="h5" color="secondary" gutterBottom>My Ratings ({data.rated_count})</Typography>

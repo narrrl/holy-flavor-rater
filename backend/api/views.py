@@ -127,6 +127,23 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             return Response({'error': 'Invalid verification code'}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny], url_path='profile/(?P<username>[^/.]+)')
+    def public_profile(self, request, username=None):
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+        ratings = user.ratings.select_related('flavor', 'flavor__category').all()
+        # Sort by score descending to highlight favorites
+        ratings = sorted(ratings, key=lambda x: x.score, reverse=True)
+        
+        return Response({
+            'username': user.username,
+            'theme': user.theme,
+            'ratings': RatingSerializer(ratings, many=True).data
+        })
+
     @action(detail=False, methods=['get'])
     def me(self, request):
         serializer = self.get_serializer(request.user)
