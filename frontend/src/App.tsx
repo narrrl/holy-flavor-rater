@@ -32,7 +32,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import { getTheme, type CatppuccinTheme } from './theme';
 import api from './api';
 
-// Code splitting for routes
+// Lazy load components for production performance
 const CategoryList = lazy(() => import('./pages/CategoryList'));
 const CategoryFlavors = lazy(() => import('./pages/categories/CategoryFlavors'));
 const FlavorDetail = lazy(() => import('./pages/flavors/FlavorDetail'));
@@ -58,7 +58,7 @@ const GlobalSearch = () => {
         const fetchFlavors = async () => {
             try {
                 const res = await api.get('flavors/');
-                setOptions(res.data);
+                setOptions(Array.isArray(res.data) ? res.data : (res.data.results || []));
             } catch (err) {
                 console.error('Failed to fetch search options');
             }
@@ -104,7 +104,7 @@ const GlobalSearch = () => {
                     <TextField
                         {...params}
                         fullWidth
-                        placeholder="Search..."
+                        placeholder="Search flavors..."
                         sx={{ 
                             bgcolor: 'action.hover', 
                             borderRadius: 2,
@@ -155,16 +155,21 @@ const App: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem('token');
         const [userRes, catRes] = await Promise.all([
-            localStorage.getItem('token') ? api.get('users/me/') : Promise.resolve({ data: null }),
+            token ? api.get('users/me/') : Promise.resolve({ data: null }),
             api.get('categories/')
         ]);
         
-        if (userRes.data) {
+        if (userRes.data && userRes.data.username) {
             setUser(userRes.data);
             if (userRes.data.theme) setThemeName(userRes.data.theme);
+        } else {
+            setUser(null);
         }
-        setCategories(catRes.data);
+        
+        const catData = Array.isArray(catRes.data) ? catRes.data : (catRes.data.results || []);
+        setCategories(catData);
       } catch (err) {
         setUser(null);
       } finally {
@@ -199,7 +204,7 @@ const App: React.FC = () => {
     <Box sx={{ width: 280 }} role="presentation">
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar src={user?.avatar || undefined} sx={{ width: 40, height: 40, border: '2px solid', borderColor: 'primary.main' }}>
-              {user && !user.avatar && user.username.charAt(0).toUpperCase()}
+              {user?.username && !user.avatar && user.username.charAt(0).toUpperCase()}
           </Avatar>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               <Link to="/" onClick={() => setDrawerOpen(false)} style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
@@ -277,7 +282,6 @@ const App: React.FC = () => {
               zIndex: (theme) => theme.zIndex.drawer + 1
           }}>
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
-                {/* Brand Logo - Responsive */}
                 <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
                   <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
                       <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Holy Flavors</Box>
@@ -285,7 +289,6 @@ const App: React.FC = () => {
                   </Link>
                 </Typography>
 
-                {/* Categories Dropdown - Desktop Only */}
                 <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4 }}>
                     <Button 
                         color="inherit" 
@@ -315,18 +318,15 @@ const App: React.FC = () => {
                     </Menu>
                 </Box>
                 
-                {/* Global Search - All Devices */}
                 <GlobalSearch />
 
-                {/* Right Side Icons */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  {/* User Menu - Desktop Only */}
                   {!loadingUser && (
                     user ? (
                       <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
                         <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
                           <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
-                              {!user.avatar && user.username.charAt(0).toUpperCase()}
+                              {user.username && !user.avatar && user.username.charAt(0).toUpperCase()}
                           </Avatar>
                         </IconButton>
                         <Menu
@@ -349,7 +349,6 @@ const App: React.FC = () => {
                     )
                   )}
 
-                  {/* Hamburger Menu - Mobile Only */}
                   <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
                       <IconButton
                           color="inherit"
@@ -375,15 +374,17 @@ const App: React.FC = () => {
 
           <Box sx={{ flexGrow: 1, width: '100%' }}>
             <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>}>
-              <Routes>
-                <Route path="/" element={<CategoryList />} />
-                <Route path="/category/:slug" element={<CategoryFlavors />} />
-                <Route path="/flavor/:id" element={<FlavorDetail />} />
-                <Route path="/profile/:username" element={<PublicProfile />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
-                <Route path="/login" element={<Login />} />
-              </Routes>
+                <Routes>
+                    <Route path="/" element={<CategoryList />} />
+                    <Route path="/category/:slug" element={<CategoryFlavors />} />
+                    <Route path="/flavor/:id" element={<FlavorDetail />} />
+                    <Route path="/profile/:username" element={<PublicProfile />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
+                    <Route path="/login" element={<Login />} />
+                    {/* Fallback route for unknown paths */}
+                    <Route path="*" element={<Box sx={{ p: 4, textAlign: 'center' }}><Typography variant="h5">404 - Page Not Found</Typography><Button component={Link} to="/" sx={{ mt: 2 }}>Back to Home</Button></Box>} />
+                </Routes>
             </Suspense>
           </Box>
         </Box>
