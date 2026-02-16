@@ -212,7 +212,10 @@ const App: React.FC = () => {
               {user?.username ? user.username.charAt(0).toUpperCase() : '?'}
           </Avatar>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              <Link to="/" onClick={() => setDrawerOpen(false)} style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
+              <Link to="/" onClick={() => setDrawerOpen(false)} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Box component="img" src="/favicon.svg" sx={{ width: 24, height: 24 }} />
+                  Holy Flavors Archive
+              </Link>
           </Typography>
       </Box>
       <Divider />
@@ -294,9 +297,9 @@ const App: React.FC = () => {
           }}>
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
                 <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-                  <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
-                      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Holy Flavors</Box>
-                      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Holy</Box>
+                  <Link to="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Box component="img" src="/favicon.svg" sx={{ width: { xs: 32, sm: 24 }, height: { xs: 32, sm: 24 } }} />
+                      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Holy Flavors Archive</Box>
                   </Link>
                 </Typography>
 
