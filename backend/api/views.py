@@ -146,7 +146,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
             
-        ratings = user.ratings.select_related('flavor', 'flavor__category').all()
+        ratings = user.ratings.select_related('flavor', 'flavor__category').exclude(flavor__category__slug='packs-and-other').all()
         # Sort by score descending to highlight favorites
         ratings = sorted(ratings, key=lambda x: x.score, reverse=True)
         
@@ -289,13 +289,13 @@ class UserViewSet(viewsets.ModelViewSet):
     def dashboard(self, request):
         user = request.user
         rated_ids = user.ratings.values_list('flavor_id', flat=True)
-        missing_flavors = Flavor.objects.exclude(id__in=rated_ids).select_related('category')
-        rated_flavors = user.ratings.select_related('flavor', 'flavor__category')
+        missing_flavors = Flavor.objects.exclude(id__in=rated_ids).exclude(category__slug='packs-and-other').select_related('category')
+        rated_flavors = user.ratings.select_related('flavor', 'flavor__category').exclude(flavor__category__slug='packs-and-other')
         
         return Response({
             'user': UserSerializer(user).data,
             'rated_count': rated_flavors.count(),
             'missing_count': missing_flavors.count(),
             'missing_flavors': FlavorSerializer(missing_flavors, many=True, context={'request': request}).data,
-            'my_ratings': RatingSerializer(rated_flavors, many=True).data
+            'my_ratings': RatingSerializer(rated_flavors, many=True, context={'request': request}).data
         })

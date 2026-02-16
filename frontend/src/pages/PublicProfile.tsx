@@ -5,17 +5,19 @@ import {
   Box, 
   Card, 
   CardContent, 
-  Rating as MuiRating, 
   Avatar,
   Chip,
   Container,
-  CircularProgress
+  CircularProgress,
+  Tooltip
 } from '@mui/material';
+import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
 interface Rating {
     id: number;
+    flavor: number;
     flavor_name: string;
     flavor_image: string | null;
     score: number;
@@ -57,96 +59,95 @@ const PublicProfile: React.FC = () => {
   const favorites = data.ratings.filter(r => r.score >= 8);
   const others = data.ratings.filter(r => r.score < 8);
 
+  const RatingGrid = ({ ratings, title, chip }: { ratings: Rating[], title: string, chip?: React.ReactNode }) => (
+    <Box sx={{ mb: 8 }}>
+        <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 2, fontWeight: 'bold' }}>
+            {title} {chip}
+        </Typography>
+        <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: {
+                xs: 'repeat(2, 1fr)',
+                sm: 'repeat(3, 1fr)',
+                md: 'repeat(4, 1fr)',
+                lg: 'repeat(6, 1fr)',
+                xl: 'repeat(8, 1fr)'
+            }, 
+            gap: 2 
+        }}>
+            {ratings.map(rating => (
+                <Tooltip key={rating.id} title={rating.comment ? `"${rating.comment}"` : rating.flavor_name} arrow>
+                    <Card sx={{ 
+                        transition: 'all 0.3s ease',
+                        '&:hover': { transform: 'scale(1.05)', boxShadow: 6, zIndex: 1 }
+                    }}>
+                        <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <Box sx={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden' }}>
+                                <Box 
+                                    component="img" 
+                                    src={rating.flavor_image || undefined} 
+                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                />
+                                <Box sx={{ 
+                                    position: 'absolute', 
+                                    bottom: 0, 
+                                    left: 0, 
+                                    right: 0, 
+                                    bgcolor: 'rgba(0,0,0,0.7)', 
+                                    color: 'white', 
+                                    p: 0.5, 
+                                    textAlign: 'center'
+                                }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                </Box>
+                            </Box>
+                            <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                                <Typography variant="caption" sx={{ 
+                                    fontWeight: 'bold', 
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 1,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    fontSize: '0.75rem'
+                                }}>
+                                    {rating.flavor_name}
+                                </Typography>
+                            </CardContent>
+                        </Link>
+                    </Card>
+                </Tooltip>
+            ))}
+        </Box>
+    </Box>
+  );
+
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, gap: 3 }}>
-        <Avatar src={data.avatar || undefined} sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'primary.main' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 8, gap: 3 }}>
+        <Avatar src={data.avatar || undefined} sx={{ width: 100, height: 100, border: '4px solid', borderColor: 'primary.main', fontSize: '2.5rem' }}>
             {!data.avatar && data.username.charAt(0).toUpperCase()}
         </Avatar>
         <Box>
-            <Typography variant="h3" sx={{ fontWeight: 'bold' }}>{data.username}</Typography>
+            <Typography variant="h2" sx={{ fontWeight: 'bold' }}>{data.username}</Typography>
             <Typography variant="h6" color="text.secondary">
-                Shared {data.ratings.length} flavor ratings
+                Taste Profile • {data.ratings.length} Flavors
             </Typography>
         </Box>
       </Box>
 
       {favorites.length > 0 && (
-          <Box sx={{ mb: 6 }}>
-              <Typography variant="h4" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  Top Favorites <Chip label="8-10 Score" color="secondary" />
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                  {favorites.map(rating => (
-                      <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%', xl: '1 1 18%' }, minWidth: 280 }}>
-                          <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                              {rating.flavor_image && (
-                                  <Box 
-                                    sx={{ 
-                                        width: 80, 
-                                        height: 80, 
-                                        minWidth: 80,
-                                        aspectRatio: '1/1', 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        justifyContent: 'center', 
-                                        bgcolor: 'background.default',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        borderRadius: 1,
-                                        overflow: 'hidden'
-                                    }}
-                                  >
-                                    <Box 
-                                        component="img" 
-                                        src={rating.flavor_image} 
-                                        sx={{ 
-                                            width: '100%', 
-                                            height: '100%', 
-                                            objectFit: 'cover'
-                                        }} 
-                                    />
-                                  </Box>
-                              )}
-                              <Box>
-                                  <Typography variant="h6">{rating.flavor_name}</Typography>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                                      <MuiRating value={rating.score} readOnly max={10} size="small" />
-                                      <Typography sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                                  </Box>
-                                  {rating.comment && (
-                                      <Typography variant="body2" color="text.secondary">"{rating.comment}"</Typography>
-                                  )}
-                              </Box>
-                          </CardContent>
-                      </Card>
-                  ))}
-              </Box>
-          </Box>
+          <RatingGrid 
+            ratings={favorites} 
+            title="Elite Selection" 
+            chip={<Chip label="S-Tier" color="secondary" sx={{ fontWeight: 'bold' }} />} 
+          />
       )}
 
       {others.length > 0 && (
-          <Box>
-              <Typography variant="h4" gutterBottom>Other Ratings</Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                  {others.map(rating => (
-                      <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 23%', lg: '1 1 18%' }, minWidth: 200 }} variant="outlined">
-                          <CardContent>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.flavor_name}</Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', my: 1 }}>
-                                  <MuiRating value={rating.score} readOnly max={10} size="small" />
-                                  <Typography variant="body2" sx={{ ml: 1 }}>{rating.score}/10</Typography>
-                              </Box>
-                              {rating.comment && (
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                      "{rating.comment}"
-                                  </Typography>
-                              )}
-                          </CardContent>
-                      </Card>
-                  ))}
-              </Box>
-          </Box>
+          <RatingGrid 
+            ratings={others} 
+            title="The Collection" 
+          />
       )}
     </Container>
   );
