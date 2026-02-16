@@ -7,10 +7,11 @@ from django.conf.urls.static import static
 from django.views.static import serve
 import os
 
-# Ensure the admin path is clean and always ends with a slash for Django
+# Clean the admin path
 admin_url = os.environ.get('ADMIN_URL', 'admin').strip('/')
 
 urlpatterns = [
+    # Ensure admin ends with a slash for Django's redirection logic
     path(f'{admin_url}/', admin.site.urls),
     path('api/', include('api.urls')),
     path('api/token/', obtain_auth_token, name='api_token'),
