@@ -11,6 +11,9 @@ python manage.py migrate
 echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
+# Ensure media directory exists
+mkdir -p media/flavors
+
 # Create superuser if it doesn't exist
 echo "Creating superuser..."
 python manage.py shell <<EOF

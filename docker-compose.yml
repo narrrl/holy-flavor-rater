@@ -4,8 +4,11 @@ services:
   backend:
     build:
       context: ./backend
-    ports:
-      - "8000:8000"
+    container_name: holy-backend
+    restart: unless-stopped
+    networks:
+      - narl
+      - internal
     env_file:
       - ./.env
     volumes:
@@ -13,19 +16,42 @@ services:
       - ./legacy:/app/legacy
     environment:
       - PYTHONUNBUFFERED=1
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=narl"
+      # Route /api, /admin and /media traffic to the backend
+      - "traefik.http.routers.holy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/media`))"
+      - "traefik.http.routers.holy-backend.entrypoints=websecure"
+      - "traefik.http.routers.holy-backend.tls.certresolver=https_resolver"
+      - "traefik.http.services.holy-backend.loadbalancer.server.port=8000"
 
   frontend:
     build:
       context: ./frontend
-    ports:
-      - "5173:5173"
+    container_name: holy-frontend
+    restart: unless-stopped
+    networks:
+      - narl
     env_file:
       - ./.env
     volumes:
       - ./frontend:/app
-      - /app/node_modules # Prevents host node_modules from overwriting container
+      - /app/node_modules
     depends_on:
       - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=narl"
+      - "traefik.http.routers.holy-frontend.rule=Host(`holy.narl.io`)"
+      - "traefik.http.routers.holy-frontend.entrypoints=websecure"
+      - "traefik.http.routers.holy-frontend.tls.certresolver=https_resolver"
+      - "traefik.http.services.holy-frontend.loadbalancer.server.port=5173"
+
+networks:
+  narl:
+    external: true
+  internal:
+    internal: true
 
 volumes:
-  db_data: # Persist the database
+  db_data:

@@ -21,17 +21,15 @@ class Command(BaseCommand):
         if not url:
             return None
         try:
-            # Simple caching: check if we already have a local image for this URL
-            # (In a real app, you might compare filenames or hashes)
             img_temp = NamedTemporaryFile(delete=True)
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req) as response:
                 img_temp.write(response.read())
             img_temp.flush()
+            img_temp.seek(0) # IMPORTANT: go back to start
             
-            # Use extension from URL or default to .png
             ext = url.split('.')[-1].split('?')[0]
-            if len(ext) > 4: ext = 'png'
+            if len(ext) > 4 or len(ext) < 3: ext = 'png'
             filename = f"{flavor_name.replace(' ', '_').lower()}.{ext}"
             return File(img_temp, name=filename)
         except Exception as e:
