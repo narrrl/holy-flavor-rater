@@ -1,17 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, CardContent, Box, Rating as MuiRating, Button, TextField, Container, CircularProgress, Avatar } from '@mui/material';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import api from '../api';
-import { useTitle } from '../hooks/useTitle';
-
-interface DashboardData {
-    user: { username: string, avatar: string | null };
-    rated_count: number;
-    missing_count: number;
-    missing_flavors: any[];
-    my_ratings: any[];
-}
-
 import { 
   Typography, 
   Card, 
@@ -24,16 +11,21 @@ import {
   CircularProgress, 
   Avatar,
   Tabs,
-  Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Divider
+  Tab
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Link } from 'react-router-dom';
-// ...
+import api from '../api';
+import { useTitle } from '../hooks/useTitle';
+
+interface DashboardData {
+    user: { username: string, avatar: string | null };
+    rated_count: number;
+    missing_count: number;
+    missing_flavors: any[];
+    my_ratings: any[];
+}
+
 const Dashboard: React.FC = () => {
   useTitle('Dashboard');
   const [data, setData] = useState<DashboardData | null>(null);
@@ -65,7 +57,7 @@ const Dashboard: React.FC = () => {
   if (!data) return <Typography>Please login to view dashboard.</Typography>;
 
   // Helper to group by category
-  const groupBy = (array: any[], key: string) => {
+  const groupBy = (array: any[]) => {
     return array.reduce((result, currentValue) => {
       const groupKey = currentValue.flavor?.category_name || currentValue.category_name;
       (result[groupKey] = result[groupKey] || []).push(currentValue);
@@ -73,8 +65,8 @@ const Dashboard: React.FC = () => {
     }, {});
   };
 
-  const ratedGrouped = groupBy(data.my_ratings, 'category_name');
-  const missingGrouped = groupBy(data.missing_flavors, 'category_name');
+  const ratedGrouped = groupBy(data.my_ratings);
+  const missingGrouped = groupBy(data.missing_flavors);
 
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
