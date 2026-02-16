@@ -3,8 +3,8 @@ import os
 import urllib.request
 from django.core.management.base import BaseCommand
 from django.core.files import File
-from tempfile import NamedTemporaryFile
 from django.conf import settings
+from django.utils.text import slugify
 from api.models import Category, Flavor
 
 class Command(BaseCommand):
@@ -14,54 +14,53 @@ class Command(BaseCommand):
         if not url:
             return None
         try:
-            # Generate a clean, consistent filename
-            ext = url.split('.')[-1].split('?')[0]
-            if len(ext) > 4 or len(ext) < 3: ext = 'png'
-            filename = f"legacy_{flavor_name.replace(' ', '_').lower()}.{ext}"
+            safe_name = slugify(flavor_name)
+            ext = url.split('.')[-1].split('?')[0].lower()
+            if ext not in ['jpg', 'jpeg', 'png', 'webp', 'gif']:
+                ext = 'png'
             
-            # Use a fixed path to check for existing file
+            filename = f"legacy_{safe_name}.{ext}"
             filepath = os.path.join(settings.MEDIA_ROOT, 'flavors', filename)
+            
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
-                img_temp = NamedTemporaryFile(delete=True)
-                img_temp.write(response.read())
-                img_temp.flush()
-                img_temp.seek(0)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                content = response.read()
                 
-                # If file exists, delete it so Django doesn't add a suffix
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-                
-                return File(img_temp, name=filename)
+            if not content:
+                return None
+
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+            with open(filepath, 'wb') as f:
+                f.write(content)
+            
+            return f"flavors/{filename}"
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f"Could not download image for {flavor_name}: {e}"))
+            self.stdout.write(self.style.WARNING(f"Failed to download image for {flavor_name}: {e}"))
             return None
 
     def handle(self, *args, **options):
-        # 1. Remove old legacy flavors (ones without external_id or marked as legacy)
-        # To be safe, we only remove those marked as legacy or with no external_id
-        removed_count, _ = Flavor.objects.filter(is_legacy=True).delete()
+        # Remove old legacy entries
+        Flavor.objects.filter(is_legacy=True).delete()
         Flavor.objects.filter(external_id__isnull=True).delete()
-        self.stdout.write(self.style.SUCCESS(f"Removed {removed_count} old legacy flavors."))
 
-        # Ensure main categories exist
         energy = Category.objects.get_or_create(name='Energy', defaults={'slug': 'energy'})[0]
         hydration = Category.objects.get_or_create(name='Hydration', defaults={'slug': 'hydration'})[0]
         iced_tea = Category.objects.get_or_create(name='Iced Tea', defaults={'slug': 'iced-tea'})[0]
         packs = Category.objects.get_or_create(name='Packs and other', defaults={'slug': 'packs-and-other'})[0]
 
-        # Try both common locations for the legacy folder
         legacy_dir = os.path.join(settings.BASE_DIR, 'legacy')
         if not os.path.exists(legacy_dir):
             legacy_dir = os.path.join(settings.BASE_DIR, '..', 'legacy')
             
         if not os.path.exists(legacy_dir):
-            self.stdout.write(self.style.ERROR(f"Legacy directory not found. Checked: {os.path.join(settings.BASE_DIR, 'legacy')} and {os.path.join(settings.BASE_DIR, '..', 'legacy')}"))
+            self.stdout.write(self.style.ERROR(f"Legacy directory not found."))
             return
 
         json_files = [f for f in os.listdir(legacy_dir) if f.endswith('.json')]
-        
         created_count = 0
 
         for json_file in json_files:
@@ -78,7 +77,6 @@ class Command(BaseCommand):
 
                 full_desc = f"**Geschmack:** {taste}\n\n{desc}\n\n**Status:** {status_text}"
                 
-                # Determine category
                 cat = energy
                 if "hydration" in name.lower() or "hydration" in desc.lower():
                     cat = hydration
@@ -98,12 +96,20 @@ class Command(BaseCommand):
                 )
 
                 if image_url:
-                    img_file = self.download_image(image_url, name)
-                    if img_file:
-                        flavor.image.save(img_file.name, img_file, save=False)
+                    # Check if local file exists
+                    file_exists = False
+                    if flavor.image:
+                        abs_path = os.path.join(settings.MEDIA_ROOT, flavor.image.name)
+                        if os.path.exists(abs_path):
+                            file_exists = True
+
+                    if not file_exists:
+                        rel_path = self.download_image(image_url, name)
+                        if rel_path:
+                            flavor.image = rel_path
                 
                 flavor.save()
                 created_count += 1
                 self.stdout.write(f"Added legacy flavor: {name}")
 
-        self.stdout.write(self.style.SUCCESS(f"Finished! Created {created_count} legacy flavors from JSON."))
+        self.stdout.write(self.style.SUCCESS(f"Finished! Created {created_count} legacy flavors."))

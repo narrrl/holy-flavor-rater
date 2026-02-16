@@ -5,7 +5,7 @@ import os
 from django.core.management.base import BaseCommand
 from django.core.files import File
 from django.conf import settings
-from tempfile import NamedTemporaryFile
+from django.utils.text import slugify
 from api.models import Category, Flavor
 
 class Command(BaseCommand):
@@ -22,29 +22,32 @@ class Command(BaseCommand):
         if not url:
             return None
         try:
-            # Generate a clean, consistent filename
-            ext = url.split('.')[-1].split('?')[0]
-            if len(ext) > 4 or len(ext) < 3: ext = 'png'
-            filename = f"{flavor_name.replace(' ', '_').lower()}.{ext}"
+            safe_name = slugify(flavor_name)
+            ext = url.split('.')[-1].split('?')[0].lower()
+            if ext not in ['jpg', 'jpeg', 'png', 'webp', 'gif']:
+                ext = 'png'
             
-            # Use a fixed path to check for existing file
+            filename = f"{safe_name}.{ext}"
             filepath = os.path.join(settings.MEDIA_ROOT, 'flavors', filename)
             
-            # Download to a temporary file
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
-                img_temp = NamedTemporaryFile(delete=True)
-                img_temp.write(response.read())
-                img_temp.flush()
-                img_temp.seek(0)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                content = response.read()
                 
-                # If file exists, delete it so Django doesn't add a suffix
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-                
-                return File(img_temp, name=filename)
+            if not content:
+                return None
+
+            if os.path.exists(filepath):
+                os.remove(filepath)
+
+            with open(filepath, 'wb') as f:
+                f.write(content)
+            
+            return f"flavors/{filename}"
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f"Could not download image for {flavor_name}: {e}"))
+            self.stdout.write(self.style.WARNING(f"Failed to download image for {flavor_name}: {e}"))
             return None
 
     def handle(self, *args, **options):
@@ -62,7 +65,6 @@ class Command(BaseCommand):
         products = data.get('products', [])
         self.stdout.write(f"Found {len(products)} products.")
 
-        # Ensure categories exist
         cat_map = {
             'energy': Category.objects.get_or_create(name='Energy', defaults={'slug': 'energy'})[0],
             'hydration': Category.objects.get_or_create(name='Hydration', defaults={'slug': 'hydration'})[0],
@@ -78,12 +80,9 @@ class Command(BaseCommand):
         for p in products:
             title = p.get('title')
             tags = p.get('tags', [])
-            product_type = p.get('product_type', '').lower()
             if isinstance(tags, str):
                 tags = [t.strip() for t in tags.split(',')]
             
-            # Determine category
-            category = None
             tags_lower = [t.lower() for t in tags]
             title_lower = title.lower()
 
@@ -94,6 +93,7 @@ class Command(BaseCommand):
             if 'shaker' in title_lower or 'merch' in tags_lower:
                 is_pack = True
 
+            category = None
             if is_pack:
                 category = cat_map['packs']
             elif 'holy energy' in tags_lower or 'energy' in tags_lower:
@@ -119,51 +119,43 @@ class Command(BaseCommand):
             handle = p.get('handle')
             shop_url = f"https://weareholy.com/products/{handle}" if handle else None
 
-            # Create or update
+            # Find or create
             flavor = Flavor.objects.filter(external_id=p['id']).first()
             if not flavor:
                 flavor = Flavor.objects.filter(name=title, is_legacy=False).first()
             
-            if flavor:
-                flavor.external_id = p['id']
-                flavor.name = title
-                flavor.category = category
-                flavor.description = description
-                flavor.shop_url = shop_url
-                flavor.is_available = is_available
-                flavor.is_legacy = False # API flavors are not legacy
-                
-                # Cache image if URL changed or local image missing
-                if image_url and (flavor.image_url != image_url or not flavor.image):
-                    img_file = self.download_image(image_url, title)
-                    if img_file:
-                        flavor.image.save(img_file.name, img_file, save=False)
-                
-                flavor.image_url = image_url
-                flavor.save()
-                updated_count += 1
-            else:
-                new_flavor = Flavor(
-                    external_id=p['id'],
-                    name=title,
-                    category=category,
-                    description=description,
-                    image_url=image_url,
-                    shop_url=shop_url,
-                    is_available=is_available,
-                    is_legacy=False
-                )
-                if image_url:
-                    img_file = self.download_image(image_url, title)
-                    if img_file:
-                        new_flavor.image.save(img_file.name, img_file, save=False)
-                new_flavor.save()
+            if not flavor:
+                flavor = Flavor(external_id=p['id'], name=title, is_legacy=False)
                 created_count += 1
+            else:
+                updated_count += 1
+
+            flavor.category = category
+            flavor.description = description
+            flavor.shop_url = shop_url
+            flavor.is_available = is_available
+            flavor.external_id = p['id'] # Ensure ID is set
             
+            if image_url:
+                # Check if local file exists
+                file_exists = False
+                if flavor.image:
+                    abs_path = os.path.join(settings.MEDIA_ROOT, flavor.image.name)
+                    if os.path.exists(abs_path):
+                        file_exists = True
+
+                # Download if missing or URL changed
+                if not file_exists or flavor.image_url != image_url:
+                    rel_path = self.download_image(image_url, title)
+                    if rel_path:
+                        flavor.image = rel_path
+                        self.stdout.write(f"Downloaded image for: {title}")
+                    else:
+                        self.stdout.write(self.style.WARNING(f"Failed to ensure image for: {title}"))
+            
+            flavor.image_url = image_url
+            flavor.save()
             synced_external_ids.append(p['id'])
 
-        # Mark flavors NOT in the sync as unavailable (only for those that have an external_id)
-        # These are discontinued API flavors.
         discontinued_count = Flavor.objects.filter(external_id__isnull=False).exclude(external_id__in=synced_external_ids).update(is_available=False)
-
         self.stdout.write(self.style.SUCCESS(f"Finished! Created: {created_count}, Updated: {updated_count}, Marked Unavailable: {discontinued_count}"))
