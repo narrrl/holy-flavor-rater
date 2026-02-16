@@ -518,4 +518,4 @@ const MainPage: React.FC = () => {
   );
 };
 
-export default CategoryList;
+export default MainPage;
