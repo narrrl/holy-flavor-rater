@@ -324,8 +324,7 @@ const App: React.FC = () => {
               borderBottom: '1px solid', 
               borderColor: 'divider',
               bgcolor: 'background.paper',
-              color: 'text.primary',
-              zIndex: (theme) => theme.zIndex.drawer + 1
+              color: 'text.primary'
           }}>
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
                 <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
