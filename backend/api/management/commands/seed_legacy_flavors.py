@@ -14,15 +14,25 @@ class Command(BaseCommand):
         if not url:
             return None
         try:
+            # Generate a clean, consistent filename
+            ext = url.split('.')[-1].split('?')[0]
+            if len(ext) > 4 or len(ext) < 3: ext = 'png'
+            filename = f"legacy_{flavor_name.replace(' ', '_').lower()}.{ext}"
+            
+            # Use a fixed path to check for existing file
+            filepath = os.path.join(settings.MEDIA_ROOT, 'flavors', filename)
+
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             with urllib.request.urlopen(req) as response:
                 img_temp = NamedTemporaryFile(delete=True)
                 img_temp.write(response.read())
                 img_temp.flush()
+                img_temp.seek(0)
                 
-                ext = url.split('.')[-1].split('?')[0]
-                if len(ext) > 4: ext = 'png'
-                filename = f"legacy_{flavor_name.replace(' ', '_').lower()}.{ext}"
+                # If file exists, delete it so Django doesn't add a suffix
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                
                 return File(img_temp, name=filename)
         except Exception as e:
             self.stdout.write(self.style.WARNING(f"Could not download image for {flavor_name}: {e}"))
