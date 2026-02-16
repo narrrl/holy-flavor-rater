@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { getTheme, type CatppuccinTheme } from './theme';
 import CategoryList from './pages/CategoryList';
 import CategoryFlavors from './pages/categories/CategoryFlavors';
