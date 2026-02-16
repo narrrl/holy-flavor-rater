@@ -68,7 +68,8 @@ const CategoryList: React.FC = () => {
       setLoading(true);
       try {
         if (query) {
-            const res = await api.get(`flavors/`);
+            // Perform server-side search to get all matching flavors across pages
+            const res = await api.get(`flavors/?search=${encodeURIComponent(query)}`);
             setAllFlavors(Array.isArray(res.data) ? res.data : (res.data.results || []));
         } else {
             const [catRes, topRes, recentRes] = await Promise.all([

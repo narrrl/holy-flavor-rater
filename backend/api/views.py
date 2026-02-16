@@ -1,5 +1,5 @@
 from django.core.mail import send_mail
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Avg
@@ -12,12 +12,28 @@ from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, R
 class FlavorViewSet(viewsets.ModelViewSet):
     queryset = Flavor.objects.annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
     serializer_class = FlavorSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['category', 'category__slug']
+    search_fields = ['name', 'description']
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         return Flavor.objects.select_related('category').annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
+    def search(self, request):
+        # Unpaginated list of all flavors for the search autocomplete
+        flavors = Flavor.objects.select_related('category').order_by('name')
+        data = [
+            {
+                'id': f.id,
+                'name': f.name,
+                'image_url': request.build_absolute_uri(f.image.url) if f.image else f.image_url,
+                'category_name': f.category.name
+            }
+            for f in flavors
+        ]
+        return Response(data)
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def top(self, request):
