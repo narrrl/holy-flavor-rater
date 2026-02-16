@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # --- Backend Service (Gunicorn + WhiteNoise) ---
   backend:
     build:
       context: ./backend
@@ -27,7 +24,6 @@ services:
       - "traefik.http.routers.holy-energy-backend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-energy-backend.loadbalancer.server.port=8000"
 
-  # --- Frontend Service (Nginx serving built React app) ---
   frontend:
     build:
       context: ./frontend
