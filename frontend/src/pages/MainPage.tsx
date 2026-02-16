@@ -139,9 +139,17 @@ const MainPage: React.FC = () => {
                   Found {filteredFlavors.length} items
               </Typography>
 
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+              <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(auto-fill, minmax(280px, 1fr))',
+                      lg: 'repeat(auto-fill, minmax(240px, 1fr))'
+                  },
+                  gap: 3 
+              }}>
                   {filteredFlavors.map(flavor => (
-                      <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%', xl: '1 1 18%' }, minWidth: 280 }} key={flavor.id}>
+                      <Box key={flavor.id}>
                           <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
                               <Box component={Link} to={`/flavor/${flavor.id}`} sx={{ textDecoration: 'none', color: 'inherit', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                                   {!flavor.is_available && (
