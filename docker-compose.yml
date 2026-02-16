@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # --- Backend Service (Gunicorn + WhiteNoise) ---
   backend:
@@ -11,7 +9,7 @@ services:
       - narl
       - internal
     env_file:
-      - .env.narl.io
+      - .env
     volumes:
       - ./backend:/app
       - ./legacy:/app/legacy
@@ -43,7 +41,7 @@ services:
     networks:
       - narl
     env_file:
-      - .env.narl.io
+      - .env
     depends_on:
       - backend
     labels:
@@ -64,3 +62,4 @@ networks:
 
 volumes:
   db_data:
+
