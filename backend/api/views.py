@@ -18,12 +18,12 @@ class FlavorViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Flavor.objects.select_related('category').annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
+        return Flavor.objects.select_related('category').annotate(average_rating=Avg('ratings__score')).order_by('-average_rating').distinct()
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def search(self, request):
         # Unpaginated list of all flavors for the search autocomplete
-        flavors = Flavor.objects.select_related('category').order_by('name')
+        flavors = Flavor.objects.select_related('category').order_by('name').distinct()
         data = [
             {
                 'id': f.id,
