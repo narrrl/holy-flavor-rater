@@ -12,17 +12,11 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Drawer,
   Divider,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
   TextField,
   InputAdornment,
   Autocomplete
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { getTheme, type CatppuccinTheme } from './theme';
@@ -75,7 +69,7 @@ const GlobalSearch = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', sm: 400 }, mx: { xs: 1, sm: 4 } }}>
+        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', sm: 400 }, mx: { xs: 1, sm: 2 } }}>
             <Autocomplete
                 freeSolo
                 size="small"
@@ -96,7 +90,7 @@ const GlobalSearch = () => {
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search flavors..."
+                        placeholder="Search..."
                         sx={{ 
                             bgcolor: 'action.hover', 
                             borderRadius: 2,
@@ -141,7 +135,6 @@ const App: React.FC = () => {
   const [categories, setCategories] = useState<{name: string, slug: string}[]>([]);
   const [user, setUser] = useState<{username: string, avatar: string | null} | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -186,47 +179,6 @@ const App: React.FC = () => {
     window.location.href = '/';
   };
 
-  const drawer = (
-    <Box onClick={() => setDrawerOpen(false)} sx={{ textAlign: 'center' }}>
-      <Typography variant="h6" sx={{ my: 2 }}>Holy Flavors</Typography>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-            <ListItemButton component={Link} to="/" sx={{ textAlign: 'center' }}>
-                <ListItemText primary="Catalog" />
-            </ListItemButton>
-        </ListItem>
-        {user && (
-            <>
-                <ListItem disablePadding>
-                    <ListItemButton component={Link} to="/dashboard" sx={{ textAlign: 'center' }}>
-                        <ListItemText primary="Dashboard" />
-                    </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
-                    <ListItemButton component={Link} to="/settings" sx={{ textAlign: 'center' }}>
-                        <ListItemText primary="Settings" />
-                    </ListItemButton>
-                </ListItem>
-                <Divider />
-                <ListItem disablePadding>
-                    <ListItemButton onClick={handleLogout} sx={{ textAlign: 'center' }}>
-                        <ListItemText primary="Logout" />
-                    </ListItemButton>
-                </ListItem>
-            </>
-        )}
-        {!user && !loadingUser && (
-            <ListItem disablePadding>
-                <ListItemButton component={Link} to="/login" sx={{ textAlign: 'center' }}>
-                    <ListItemText primary="Login" />
-                </ListItemButton>
-            </ListItem>
-        )}
-      </List>
-    </Box>
-  );
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -236,30 +188,34 @@ const App: React.FC = () => {
               borderBottom: '1px solid', 
               borderColor: 'divider',
               bgcolor: 'background.paper',
-              color: 'text.primary'
+              color: 'text.primary',
+              zIndex: (theme) => theme.zIndex.drawer + 1
           }}>
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
-                <IconButton
-                  color="inherit"
-                  edge="start"
-                  onClick={() => setDrawerOpen(true)}
-                  sx={{ mr: { xs: 0, sm: 2 }, display: { md: 'none' } }}
-                >
-                  <MenuIcon />
-                </IconButton>
-                
-                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
-                  <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
+                {/* Brand Logo - Responsive */}
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mr: { xs: 1, sm: 2 } }}>
+                  <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+                      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Holy Flavors</Box>
+                      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Holy</Box>
+                  </Link>
                 </Typography>
 
-                <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4 }}>
+                {/* Categories Dropdown - Works on both mobile and desktop */}
+                <Box sx={{ ml: { xs: 0, sm: 1 } }}>
                     <Button 
                         color="inherit" 
                         endIcon={<ArrowDropDownIcon />}
                         onClick={(e) => setCatAnchorEl(e.currentTarget)}
-                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem' }}
+                        sx={{ 
+                            fontWeight: 'bold', 
+                            textTransform: 'none', 
+                            fontSize: { xs: '0.85rem', sm: '1rem' },
+                            minWidth: 'auto',
+                            px: 1
+                        }}
                     >
-                        Categories
+                        <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>Categories</Box>
+                        <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>Cats</Box>
                     </Button>
                     <Menu
                         anchorEl={catAnchorEl}
@@ -281,16 +237,26 @@ const App: React.FC = () => {
                     </Menu>
                 </Box>
                 
+                {/* Global Search */}
                 <GlobalSearch />
 
                 <Box sx={{ flexGrow: 1 }} />
 
+                {/* User Menu - Aligned Right */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   {!loadingUser && (
                     user ? (
                       <>
-                        <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)}>
-                          <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
+                        <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: { xs: 0, sm: 1 } }}>
+                          <Avatar 
+                            src={user.avatar || undefined} 
+                            sx={{ 
+                                width: { xs: 32, sm: 36 }, 
+                                height: { xs: 32, sm: 36 }, 
+                                border: '2px solid', 
+                                borderColor: 'primary.main' 
+                            }}
+                          >
                               {!user.avatar && user.username.charAt(0).toUpperCase()}
                           </Avatar>
                         </IconButton>
@@ -301,6 +267,10 @@ const App: React.FC = () => {
                           elevation={3}
                           sx={{ mt: 1 }}
                         >
+                          <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 'bold' }}>
+                              Logged in as {user.username}
+                          </Typography>
+                          <Divider />
                           <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>Dashboard</MenuItem>
                           <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>Settings</MenuItem>
                           <Divider />
@@ -308,7 +278,9 @@ const App: React.FC = () => {
                         </Menu>
                       </>
                     ) : (
-                      <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2 }}>Login</Button>
+                      <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
+                          Login
+                      </Button>
                     )
                   )}
                 </Box>
@@ -327,19 +299,6 @@ const App: React.FC = () => {
               <Route path="/login" element={<Login />} />
             </Routes>
           </Box>
-
-          <Drawer
-            variant="temporary"
-            open={drawerOpen}
-            onClose={() => setDrawerOpen(false)}
-            ModalProps={{ keepMounted: true }}
-            sx={{
-              display: { xs: 'block', md: 'none' },
-              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
-            }}
-          >
-            {drawer}
-          </Drawer>
         </Box>
       </Router>
     </ThemeProvider>
