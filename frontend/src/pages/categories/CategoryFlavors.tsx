@@ -63,7 +63,7 @@ const CategoryFlavors: React.FC = () => {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Box sx={{ mb: 4 }}>
           <Typography variant="h4" gutterBottom>{categoryName || 'Flavors'}</Typography>
           <Link to="/" style={{ textDecoration: 'none' }}>

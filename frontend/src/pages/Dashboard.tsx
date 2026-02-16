@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
   if (!data) return <Typography>Please login to view dashboard.</Typography>;
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Typography variant="h4">Personal Dashboard</Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

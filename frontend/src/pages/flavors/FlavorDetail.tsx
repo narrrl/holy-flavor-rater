@@ -146,7 +146,7 @@ const FlavorDetail: React.FC = () => {
   if (!flavor) return <Typography>Flavor not found</Typography>;
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Button component={Link} to={`/category/${flavor.category_slug}`} sx={{ mb: 2 }}>
         &larr; Back to {flavor.category_name}
       </Button>

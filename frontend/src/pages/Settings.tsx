@@ -78,7 +78,7 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>Account Settings</Typography>
       
       {message && (

@@ -219,7 +219,7 @@ const Login: React.FC<LoginProps> = () => {
   const adminUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/').replace('/api/', '/admin/');
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 8 }}>
+    <Container maxWidth="xs" sx={{ py: 8 }}>
       <Paper sx={{ p: 3 }}>
         {message && <Alert severity={message.type} sx={{ mb: 2 }}>{message.text}</Alert>}
         {renderContent()}

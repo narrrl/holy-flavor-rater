@@ -57,7 +57,7 @@ const PublicProfile: React.FC = () => {
   const others = data.ratings.filter(r => r.score < 8);
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, gap: 3 }}>
         <Avatar sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'primary.main' }}>
             {data.username.charAt(0).toUpperCase()}

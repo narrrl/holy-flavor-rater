@@ -94,7 +94,7 @@ const CategoryList: React.FC = () => {
       );
 
       return (
-          <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+          <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
               <Typography variant="h4" gutterBottom sx={{ overflowWrap: 'break-word' }}>Search Results for "{query}"</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
                   Found {filteredFlavors.length} items
@@ -150,7 +150,6 @@ const CategoryList: React.FC = () => {
             textAlign: 'center',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
             width: '100%',
-            mt: -4, // Counter the parent Box py: 4
             boxSizing: 'border-box',
             overflow: 'hidden'
         }}
@@ -185,7 +184,7 @@ const CategoryList: React.FC = () => {
       </Paper>
 
       {/* Main Content inside Container */}
-      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, pb: 8 }}>
         {/* Top Rated Flavors */}
         {topFlavors.length > 0 && (
           <Box sx={{ mb: 10 }}>
@@ -224,7 +223,7 @@ const CategoryList: React.FC = () => {
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Browse by Category</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {categories.map(category => (
-            <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 30%' }, minWidth: 280 }}>
+            <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 23%' }, minWidth: 280 }}>
                 <Link to={`/category/${category.slug}`} style={{ textDecoration: 'none' }}>
                 <Card sx={{ 
                     height: 120, 

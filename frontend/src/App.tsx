@@ -221,7 +221,14 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
+        <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            minHeight: '100vh', 
+            width: '100vw', 
+            maxWidth: '100%', 
+            overflowX: 'hidden' 
+        }}>
           <AppBar position="fixed" elevation={1}>
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
                 <IconButton
@@ -286,7 +293,7 @@ const App: React.FC = () => {
           </AppBar>
           <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
 
-          <Box sx={{ flexGrow: 1, py: 4, width: '100%' }}>
+          <Box sx={{ flexGrow: 1, width: '100%' }}>
             <Routes>
               <Route path="/" element={<CategoryList />} />
               <Route path="/category/:slug" element={<CategoryFlavors />} />
