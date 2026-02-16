@@ -20,7 +20,8 @@ import {
   ListItemText,
   useMediaQuery,
   TextField,
-  InputAdornment
+  InputAdornment,
+  Autocomplete
 } from '@mui/material';
 import PaletteIcon from '@mui/icons-material/Palette';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -35,10 +36,30 @@ import Login from './pages/Login';
 import Settings from './pages/Settings';
 import api from './api';
 
+interface SearchFlavor {
+    id: number;
+    name: string;
+    image_url: string | null;
+    category_name: string;
+}
+
 const GlobalSearch = () => {
     const [query, setQuery] = useState('');
+    const [options, setOptions] = useState<SearchFlavor[]>([]);
     const navigate = useNavigate();
     const location = useLocation();
+
+    useEffect(() => {
+        const fetchFlavors = async () => {
+            try {
+                const res = await api.get('flavors/');
+                setOptions(res.data);
+            } catch (err) {
+                console.error('Failed to fetch search options');
+            }
+        };
+        fetchFlavors();
+    }, []);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -56,30 +77,62 @@ const GlobalSearch = () => {
     };
 
     return (
-        <form onSubmit={handleSearch} style={{ flexGrow: 1, maxWidth: 400, marginLeft: 16, marginRight: 16 }}>
-            <TextField
+        <Box sx={{ flexGrow: 1, maxWidth: 400, mx: 2 }}>
+            <Autocomplete
+                freeSolo
                 size="small"
-                fullWidth
-                placeholder="Search catalog..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                sx={{ 
-                    bgcolor: 'rgba(255,255,255,0.1)', 
-                    borderRadius: 1,
-                    '& .MuiOutlinedInput-root': {
-                        color: 'white',
-                        '& fieldset': { border: 'none' },
+                options={options}
+                getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
+                inputValue={query}
+                onInputChange={(_, newValue) => setQuery(typeof newValue === 'string' ? newValue : '')}
+                onChange={(_, newValue) => {
+                    if (newValue && typeof newValue !== 'string') {
+                        navigate(`/flavor/${newValue.id}`);
                     }
                 }}
-                InputProps={{
-                    startAdornment: (
-                        <InputAdornment position="start">
-                            <SearchIcon sx={{ color: 'white', opacity: 0.7 }} />
-                        </InputAdornment>
-                    ),
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                        handleSearch(e as any);
+                    }
+                }}
+                renderInput={(params) => (
+                    <TextField
+                        {...params}
+                        placeholder="Search catalog..."
+                        sx={{ 
+                            bgcolor: 'rgba(255,255,255,0.1)', 
+                            borderRadius: 1,
+                            '& .MuiOutlinedInput-root': {
+                                color: 'white',
+                                '& fieldset': { border: 'none' },
+                            }
+                        }}
+                        InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: 'white', opacity: 0.7 }} />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                )}
+                renderOption={(props, option) => {
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <Box component="li" key={key} {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {option.image_url && (
+                                <Box component="img" src={option.image_url} sx={{ width: 32, height: 32, objectFit: 'contain' }} />
+                            )}
+                            <Box>
+                                <Typography variant="body2">{option.name}</Typography>
+                                <Typography variant="caption" color="text.secondary">{option.category_name}</Typography>
+                            </Box>
+                        </Box>
+                    );
                 }}
             />
-        </form>
+        </Box>
     );
 };
 
