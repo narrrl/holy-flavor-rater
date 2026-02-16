@@ -152,10 +152,29 @@ const FlavorDetail: React.FC = () => {
         &larr; Back to {flavor.category_name}
       </Button>
 
-      <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, mb: 4 }}>
+      <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, mb: 4, overflow: 'hidden' }}>
         {flavor.image_url && (
-            <Box sx={{ width: { xs: '100%', md: 400 }, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.05)', p: 4 }}>
-                <Box component="img" src={flavor.image_url} sx={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            <Box 
+                sx={{ 
+                    width: { xs: '100%', md: 400 }, 
+                    aspectRatio: '1/1', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    bgcolor: 'action.hover', 
+                    p: { xs: 4, md: 6 } 
+                }}
+            >
+                <Box 
+                    component="img" 
+                    src={flavor.image_url} 
+                    sx={{ 
+                        maxWidth: '100%', 
+                        maxHeight: '100%', 
+                        objectFit: 'contain',
+                        filter: 'drop-shadow(0px 12px 24px rgba(0,0,0,0.15))'
+                    }} 
+                />
             </Box>
         )}
         <CardContent sx={{ flex: 1, p: 4 }}>

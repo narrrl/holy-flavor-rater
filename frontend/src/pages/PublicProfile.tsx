@@ -81,7 +81,31 @@ const PublicProfile: React.FC = () => {
                       <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%', xl: '1 1 18%' }, minWidth: 280 }}>
                           <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                               {rating.flavor_image && (
-                                  <Box component="img" src={rating.flavor_image} sx={{ width: 80, height: 80, objectFit: 'contain' }} />
+                                  <Box 
+                                    sx={{ 
+                                        width: 80, 
+                                        height: 80, 
+                                        minWidth: 80,
+                                        aspectRatio: '1/1', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        bgcolor: 'action.hover',
+                                        p: 1,
+                                        borderRadius: 1,
+                                        overflow: 'hidden'
+                                    }}
+                                  >
+                                    <Box 
+                                        component="img" 
+                                        src={rating.flavor_image} 
+                                        sx={{ 
+                                            maxWidth: '100%', 
+                                            maxHeight: '100%', 
+                                            objectFit: 'contain'
+                                        }} 
+                                    />
+                                  </Box>
                               )}
                               <Box>
                                   <Typography variant="h6">{rating.flavor_name}</Typography>

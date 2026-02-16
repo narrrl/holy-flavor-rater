@@ -116,7 +116,29 @@ const CategoryList: React.FC = () => {
                                       </Box>
                                   )}
                                   {flavor.image_url && (
-                                      <Box component="img" src={flavor.image_url} sx={{ width: '100%', height: 200, objectFit: 'contain', p: 2, bgcolor: 'rgba(255,255,255,0.05)' }} />
+                                      <Box 
+                                          sx={{ 
+                                              width: '100%', 
+                                              aspectRatio: '1/1', 
+                                              display: 'flex', 
+                                              alignItems: 'center', 
+                                              justifyContent: 'center', 
+                                              bgcolor: 'action.hover',
+                                              p: 2,
+                                              overflow: 'hidden'
+                                          }}
+                                      >
+                                          <Box 
+                                              component="img" 
+                                              src={flavor.image_url} 
+                                              sx={{ 
+                                                  maxWidth: '100%', 
+                                                  maxHeight: '100%', 
+                                                  objectFit: 'contain',
+                                                  filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.1))'
+                                              }} 
+                                          />
+                                      </Box>
                                   )}
                                   <CardContent sx={{ flexGrow: 1 }}>
                                       <Typography variant="h6" sx={{ fontSize: '1rem' }}>{flavor.name}</Typography>
@@ -201,7 +223,29 @@ const CategoryList: React.FC = () => {
                           <Card sx={{ height: '100%', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-8px)' } }}>
                               <Box component={Link} to={`/flavor/${flavor.id}`} sx={{ textDecoration: 'none', color: 'inherit' }}>
                                   {flavor.image_url && (
-                                      <Box component="img" src={flavor.image_url} sx={{ width: '100%', height: 180, objectFit: 'contain', p: 2, bgcolor: 'rgba(255,255,255,0.03)' }} />
+                                      <Box 
+                                          sx={{ 
+                                              width: '100%', 
+                                              aspectRatio: '1/1', 
+                                              display: 'flex', 
+                                              alignItems: 'center', 
+                                              justifyContent: 'center', 
+                                              bgcolor: 'action.hover',
+                                              p: 2,
+                                              overflow: 'hidden'
+                                          }}
+                                      >
+                                          <Box 
+                                              component="img" 
+                                              src={flavor.image_url} 
+                                              sx={{ 
+                                                  maxWidth: '100%', 
+                                                  maxHeight: '100%', 
+                                                  objectFit: 'contain',
+                                                  filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.1))'
+                                              }} 
+                                          />
+                                      </Box>
                                   )}
                                   <CardContent>
                                       <Typography variant="h6" noWrap>{flavor.name}</Typography>
