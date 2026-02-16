@@ -17,7 +17,14 @@ export const getTheme = (mode: CatppuccinTheme) => {
           pink: { hex: '#db7093' }, // Pale Violet Red (Secondary)
       };
   } else {
-      palette = flavors[mode].colors;
+      const flavor = flavors[mode];
+      if (flavor) {
+          palette = flavor.colors;
+      } else {
+          // Fallback to mocha if theme name is invalid
+          palette = flavors['mocha'].colors;
+          mode = 'mocha';
+      }
   }
   
   const themeOptions: ThemeOptions = {
