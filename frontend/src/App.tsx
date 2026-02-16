@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { getTheme, type CatppuccinTheme } from './theme';
 import CategoryList from './pages/CategoryList';
 import CategoryFlavors from './pages/categories/CategoryFlavors';
@@ -136,29 +137,32 @@ const GlobalSearch = () => {
 const App: React.FC = () => {
   const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'mocha');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
+  const [categories, setCategories] = useState<{name: string, slug: string}[]>([]);
   const [user, setUser] = useState<{username: string, avatar: string | null} | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       try {
-        const response = await api.get('users/me/');
-        setUser(response.data);
-        if (response.data.theme) {
-            setThemeName(response.data.theme);
+        const [userRes, catRes] = await Promise.all([
+            localStorage.getItem('token') ? api.get('users/me/') : Promise.resolve({ data: null }),
+            api.get('categories/')
+        ]);
+        
+        if (userRes.data) {
+            setUser(userRes.data);
+            if (userRes.data.theme) setThemeName(userRes.data.theme);
         }
+        setCategories(catRes.data);
       } catch (err) {
         setUser(null);
       } finally {
         setLoadingUser(false);
       }
     };
-    if (localStorage.getItem('token')) {
-        fetchUser();
-    } else {
-        setLoadingUser(false);
-    }
+    fetchData();
   }, []);
 
   const theme = useMemo(() => getTheme(themeName), [themeName]);
@@ -247,6 +251,35 @@ const App: React.FC = () => {
                 <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
                   <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
                 </Typography>
+
+                <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4 }}>
+                    <Button 
+                        color="inherit" 
+                        endIcon={<ArrowDropDownIcon />}
+                        onClick={(e) => setCatAnchorEl(e.currentTarget)}
+                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem' }}
+                    >
+                        Categories
+                    </Button>
+                    <Menu
+                        anchorEl={catAnchorEl}
+                        open={Boolean(catAnchorEl)}
+                        onClose={() => setCatAnchorEl(null)}
+                        elevation={3}
+                        sx={{ mt: 1 }}
+                    >
+                        {categories.map(cat => (
+                            <MenuItem 
+                                key={cat.slug} 
+                                component={Link} 
+                                to={`/category/${cat.slug}`}
+                                onClick={() => setCatAnchorEl(null)}
+                            >
+                                {cat.name}
+                            </MenuItem>
+                        ))}
+                    </Menu>
+                </Box>
                 
                 <GlobalSearch />
 

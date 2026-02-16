@@ -151,6 +151,7 @@ const CategoryList: React.FC = () => {
             textAlign: 'center',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
             width: '100%',
+            maxWidth: '100%',
             boxSizing: 'border-box',
             overflow: 'hidden'
         }}
