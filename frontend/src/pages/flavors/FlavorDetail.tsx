@@ -227,7 +227,11 @@ const FlavorDetail: React.FC = () => {
                       label="Your Comment (Optional)"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      sx={{ mb: 3 }}
+                      sx={{ 
+                          mb: 3,
+                          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+                      }}
+                      InputLabelProps={{ shrink: true }}
                   />
                   <Button variant="contained" type="submit" disabled={!newScore} fullWidth sx={{ maxWidth: { md: 200 }, borderRadius: 2 }}>
                       Submit Rating
@@ -249,7 +253,18 @@ const FlavorDetail: React.FC = () => {
                         {editMode === rating.id ? (
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <MuiRating max={10} value={editScore} onChange={(_, val) => setEditScore(val || 0)} size="large" />
-                                <TextField multiline fullWidth rows={3} value={editComment} onChange={(e) => setEditComment(e.target.value)} />
+                                <TextField 
+                                    multiline 
+                                    fullWidth 
+                                    rows={3} 
+                                    value={editComment} 
+                                    onChange={(e) => setEditComment(e.target.value)}
+                                    label="Your Comment"
+                                    sx={{ 
+                                        '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+                                    }}
+                                    InputLabelProps={{ shrink: true }}
+                                />
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>Save</Button>
                                     <Button onClick={() => setEditMode(null)}>Cancel</Button>

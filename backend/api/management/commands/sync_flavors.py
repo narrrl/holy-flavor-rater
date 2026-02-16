@@ -122,9 +122,12 @@ class Command(BaseCommand):
             # Find or create
             flavor = Flavor.objects.filter(external_id=p['id']).first()
             if not flavor:
-                flavor = Flavor.objects.filter(name=title, is_legacy=False).first()
+                # Try to find by name AND category to avoid Milkshake/Iced Tea name collisions
+                flavor = Flavor.objects.filter(name=title, category=category, is_legacy=False).first()
             
             if not flavor:
+                # One last check: if name exists in DIFFERENT category, we still create a new one
+                # If name exists in SAME category, we would have found it above.
                 flavor = Flavor(external_id=p['id'], name=title, is_legacy=False)
                 created_count += 1
             else:
