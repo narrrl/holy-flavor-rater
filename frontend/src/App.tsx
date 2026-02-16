@@ -22,7 +22,9 @@ import {
   TextField,
   InputAdornment,
   Autocomplete,
-  CircularProgress
+  CircularProgress,
+  ListItemAvatar,
+  ListSubheader
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -153,6 +155,7 @@ const App: React.FC = () => {
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const [categories, setCategories] = useState<{name: string, slug: string}[]>([]);
   const [user, setUser] = useState<{username: string, avatar: string | null} | null>(null);
+  const [following, setFollowing] = useState<{id: number, username: string, avatar: string | null}[]>([]);
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
@@ -169,6 +172,14 @@ const App: React.FC = () => {
         if (userRes.data && userRes.data.username) {
             setUser(userRes.data);
             if (userRes.data.theme) setThemeName(userRes.data.theme);
+            
+            // Also fetch following list for the mobile sidebar
+            try {
+                const followRes = await api.get('users/following_list/');
+                setFollowing(followRes.data);
+            } catch (err) {
+                console.error('Failed to fetch following list');
+            }
         } else {
             setUser(null);
         }
@@ -202,6 +213,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    setFollowing([]);
     window.location.href = '/';
   };
 
@@ -266,6 +278,26 @@ const App: React.FC = () => {
                         <ListItemText primary="Account Settings" />
                     </ListItemButton>
                 </ListItem>
+
+                {following.length > 0 && (
+                    <>
+                        <Divider sx={{ my: 1 }} />
+                        <ListSubheader sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px' }}>Following</ListSubheader>
+                        {following.map(f => (
+                            <ListItem key={f.id} disablePadding>
+                                <ListItemButton component={Link} to={`/profile/${f.username}`} onClick={() => setDrawerOpen(false)}>
+                                    <ListItemAvatar>
+                                        <Avatar src={f.avatar || undefined} sx={{ width: 32, height: 32 }}>
+                                            {!f.avatar && f.username.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText primary={f.username} primaryTypographyProps={{ variant: 'body2' }} />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </>
+                )}
+
                 <ListItem disablePadding>
                     <ListItemButton onClick={handleLogout}>
                         <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
