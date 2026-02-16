@@ -198,8 +198,8 @@ const CommunityFeed: React.FC = () => {
             )}
           </Grid>
 
-          {/* Sidebar */}
-          <Grid size={{ xs: 12, md: 4 }}>
+          {/* Sidebar - Desktop Only */}
+          <Grid size={{ xs: 12, md: 4 }} sx={{ display: { xs: 'none', md: 'block' } }}>
               <Card sx={{ borderRadius: 3, position: { md: 'sticky' }, top: { md: 100 } }}>
                   <CardContent sx={{ p: 0 }}>
                       <Box sx={{ p: 2, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
