@@ -86,7 +86,31 @@ const CategoryFlavors: React.FC = () => {
                     </Box>
                 )}
                 {flavor.image_url && (
-                    <Box component="img" src={flavor.image_url} sx={{ width: '100%', height: 200, objectFit: 'contain', p: 2, bgcolor: 'rgba(255,255,255,0.05)' }} />
+                    <Box 
+                        sx={{ 
+                            width: '100%', 
+                            aspectRatio: '1/1', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            bgcolor: 'action.hover',
+                            p: 3,
+                            overflow: 'hidden'
+                        }}
+                    >
+                        <Box 
+                            component="img" 
+                            src={flavor.image_url} 
+                            sx={{ 
+                                maxWidth: '100%', 
+                                maxHeight: '100%', 
+                                objectFit: 'contain',
+                                transition: 'transform 0.3s ease-in-out',
+                                filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.1))'
+                            }} 
+                            className="product-image"
+                        />
+                    </Box>
                 )}
                 <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 1 }}>{flavor.name}</Typography>

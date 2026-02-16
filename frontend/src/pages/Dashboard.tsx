@@ -121,9 +121,33 @@ const Dashboard: React.FC = () => {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   {items.map((rating: any) => (
                     <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%' }, minWidth: 280, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
-                      <CardContent sx={{ display: 'flex', gap: 2 }}>
+                      <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         {rating.flavor_image && (
-                          <Box component="img" src={rating.flavor_image} sx={{ width: 60, height: 60, objectFit: 'contain' }} />
+                          <Box 
+                            sx={{ 
+                                width: 60, 
+                                height: 60, 
+                                minWidth: 60,
+                                aspectRatio: '1/1', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                bgcolor: 'action.hover',
+                                p: 0.5,
+                                borderRadius: 1,
+                                overflow: 'hidden'
+                            }}
+                          >
+                            <Box 
+                                component="img" 
+                                src={rating.flavor_image} 
+                                sx={{ 
+                                    maxWidth: '100%', 
+                                    maxHeight: '100%', 
+                                    objectFit: 'contain'
+                                }} 
+                            />
+                          </Box>
                         )}
                         <Box sx={{ flex: 1 }}>
                           <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -171,9 +195,33 @@ const Dashboard: React.FC = () => {
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
                   {flavors.map((flavor: any) => (
                     <Card key={flavor.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%' }, minWidth: 280, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
-                      <CardContent sx={{ display: 'flex', gap: 2 }}>
+                      <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         {flavor.image_url && (
-                          <Box component="img" src={flavor.image_url} sx={{ width: 60, height: 60, objectFit: 'contain' }} />
+                          <Box 
+                            sx={{ 
+                                width: 60, 
+                                height: 60, 
+                                minWidth: 60,
+                                aspectRatio: '1/1', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                bgcolor: 'action.hover',
+                                p: 0.5,
+                                borderRadius: 1,
+                                overflow: 'hidden'
+                            }}
+                          >
+                            <Box 
+                                component="img" 
+                                src={flavor.image_url} 
+                                sx={{ 
+                                    maxWidth: '100%', 
+                                    maxHeight: '100%', 
+                                    objectFit: 'contain'
+                                }} 
+                            />
+                          </Box>
                         )}
                         <Box sx={{ flex: 1 }}>
                           <Link to={`/flavor/${flavor.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
