@@ -35,6 +35,9 @@ class RatingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     @method_decorator(ratelimit(key='user', rate='10/m', method='POST', block=True))
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         # Ensure user can only have one rating per flavor
         flavor = serializer.validated_data['flavor']
