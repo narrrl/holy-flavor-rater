@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
+from django_ratelimit.decorators import ratelimit
+from django.utils.decorators import method_decorator
 from .models import User, Flavor, Category, Rating, Reply
 from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer
 
@@ -32,6 +34,7 @@ class RatingViewSet(viewsets.ModelViewSet):
     serializer_class = RatingSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    @method_decorator(ratelimit(key='user', rate='10/m', method='POST', block=True))
     def perform_create(self, serializer):
         # Ensure user can only have one rating per flavor
         flavor = serializer.validated_data['flavor']
@@ -80,6 +83,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    @method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True))
     def signup(self, request):
         username = request.data.get('username')
         email = request.data.get('email')
@@ -146,9 +150,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
             
-        ratings = user.ratings.select_related('flavor', 'flavor__category').exclude(flavor__category__slug='packs-and-other').all()
-        # Sort by score descending to highlight favorites
-        ratings = sorted(ratings, key=lambda x: x.score, reverse=True)
+        ratings = user.ratings.select_related('flavor', 'flavor__category').exclude(flavor__category__slug='packs-and-other').order_by('-score')
         
         return Response({
             'username': user.username,
@@ -247,6 +249,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'status': 'Email confirmed', 'email': user.email})
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    @method_decorator(ratelimit(key='ip', rate='3/h', method='POST', block=True))
     def request_password_reset(self, request):
         email = request.data.get('email')
         try:
@@ -270,6 +273,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'status': 'If an account exists with this email, a reset code has been sent.'})
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    @method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True))
     def complete_password_reset(self, request):
         email = request.data.get('email')
         code = request.data.get('code')

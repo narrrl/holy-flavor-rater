@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ThemeProvider, 
@@ -21,7 +21,8 @@ import {
   Collapse,
   TextField,
   InputAdornment,
-  Autocomplete
+  Autocomplete,
+  CircularProgress
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -29,14 +30,16 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { getTheme, type CatppuccinTheme } from './theme';
-import CategoryList from './pages/CategoryList';
-import CategoryFlavors from './pages/categories/CategoryFlavors';
-import FlavorDetail from './pages/flavors/FlavorDetail';
-import Dashboard from './pages/Dashboard';
-import PublicProfile from './pages/PublicProfile';
-import Login from './pages/Login';
-import Settings from './pages/Settings';
 import api from './api';
+
+// Code splitting for routes
+const CategoryList = lazy(() => import('./pages/CategoryList'));
+const CategoryFlavors = lazy(() => import('./pages/categories/CategoryFlavors'));
+const FlavorDetail = lazy(() => import('./pages/flavors/FlavorDetail'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const PublicProfile = lazy(() => import('./pages/PublicProfile'));
+const Login = lazy(() => import('./pages/Login'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 interface SearchFlavor {
     id: number;
@@ -371,15 +374,17 @@ const App: React.FC = () => {
           </Drawer>
 
           <Box sx={{ flexGrow: 1, width: '100%' }}>
-            <Routes>
-              <Route path="/" element={<CategoryList />} />
-              <Route path="/category/:slug" element={<CategoryFlavors />} />
-              <Route path="/flavor/:id" element={<FlavorDetail />} />
-              <Route path="/profile/:username" element={<PublicProfile />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
-              <Route path="/login" element={<Login />} />
-            </Routes>
+            <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>}>
+              <Routes>
+                <Route path="/" element={<CategoryList />} />
+                <Route path="/category/:slug" element={<CategoryFlavors />} />
+                <Route path="/flavor/:id" element={<FlavorDetail />} />
+                <Route path="/profile/:username" element={<PublicProfile />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
+                <Route path="/login" element={<Login />} />
+              </Routes>
+            </Suspense>
           </Box>
         </Box>
       </Router>

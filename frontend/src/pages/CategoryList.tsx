@@ -159,6 +159,7 @@ const CategoryList: React.FC = () => {
                                                   transition: 'transform 0.5s ease',
                                                   '&:hover': { transform: 'scale(1.1)' }
                                               }} 
+                                              loading="lazy"
                                           />
                                       </Box>
                                   )}
@@ -260,6 +261,7 @@ const CategoryList: React.FC = () => {
                             component="img"
                             src={currentTop.image_url || ''}
                             sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            loading="lazy"
                         />
                     </Box>
                     <CardContent sx={{ flex: 1, p: { xs: 3, sm: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
