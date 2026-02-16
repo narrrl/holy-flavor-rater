@@ -126,9 +126,7 @@ class Command(BaseCommand):
                 flavor = Flavor.objects.filter(name=title, category=category, is_legacy=False).first()
             
             if not flavor:
-                # One last check: if name exists in DIFFERENT category, we still create a new one
-                # If name exists in SAME category, we would have found it above.
-                flavor = Flavor(external_id=p['id'], name=title, is_legacy=False)
+                flavor = Flavor(external_id=p['id'], name=title, category=category, is_legacy=False)
                 created_count += 1
             else:
                 updated_count += 1
