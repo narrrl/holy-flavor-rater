@@ -57,14 +57,15 @@ const GlobalSearch = () => {
     useEffect(() => {
         const fetchFlavors = async () => {
             try {
-                const res = await api.get('flavors/');
-                setOptions(Array.isArray(res.data) ? res.data : (res.data.results || []));
+                // Fetch from unpaginated search endpoint for full catalog coverage
+                const res = await api.get('flavors/search/');
+                setOptions(res.data);
             } catch (err) {
                 console.error('Failed to fetch search options');
             }
         };
         fetchFlavors();
-    }, []);
+    }, []); // Only fetch once to avoid excessive API calls
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
