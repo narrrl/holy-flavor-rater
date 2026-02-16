@@ -14,14 +14,10 @@ services:
       - ./legacy:/app/legacy
     environment:
       - PYTHONUNBUFFERED=1
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
+      # Ultra-clean rule for maximum Traefik compatibility
       - "traefik.http.routers.holy-energy-backend.priority=100"
       - "traefik.http.routers.holy-energy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
       - "traefik.http.routers.holy-energy-backend.entrypoints=websecure"
@@ -45,7 +41,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
       - "traefik.http.routers.holy-energy-frontend.priority=10"
-      - "traefik.http.routers.holy-energy-frontend.rule=Host(`holy.narl.io`) && !(PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
+      - "traefik.http.routers.holy-energy-frontend.rule=Host(`holy.narl.io`)"
       - "traefik.http.routers.holy-energy-frontend.entrypoints=websecure"
       - "traefik.http.routers.holy-energy-frontend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-energy-frontend.loadbalancer.server.port=80"
