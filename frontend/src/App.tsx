@@ -88,7 +88,10 @@ const GlobalSearch = () => {
                 freeSolo
                 size="small"
                 options={options}
-                getOptionLabel={(option) => typeof option === 'string' ? option : (option.name || '')}
+                getOptionLabel={(option) => {
+                    if (typeof option === 'string') return option;
+                    return option.category_name ? `${option.name} (${option.category_name})` : (option.name || '');
+                }}
                 inputValue={query}
                 onInputChange={(_, newValue) => setQuery(typeof newValue === 'string' ? newValue : '')}
                 onChange={(_, newValue) => {
