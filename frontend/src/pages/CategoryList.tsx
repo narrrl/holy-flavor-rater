@@ -123,8 +123,9 @@ const CategoryList: React.FC = () => {
                                               display: 'flex', 
                                               alignItems: 'center', 
                                               justifyContent: 'center', 
-                                              bgcolor: 'action.hover',
-                                              p: 2,
+                                              bgcolor: 'background.default',
+                                              borderBottom: '1px solid',
+                                              borderColor: 'divider',
                                               overflow: 'hidden'
                                           }}
                                       >
@@ -132,10 +133,11 @@ const CategoryList: React.FC = () => {
                                               component="img" 
                                               src={flavor.image_url} 
                                               sx={{ 
-                                                  maxWidth: '100%', 
-                                                  maxHeight: '100%', 
-                                                  objectFit: 'contain',
-                                                  filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.1))'
+                                                  width: '100%', 
+                                                  height: '100%', 
+                                                  objectFit: 'cover',
+                                                  transition: 'transform 0.5s ease',
+                                                  '&:hover': { transform: 'scale(1.1)' }
                                               }} 
                                           />
                                       </Box>
@@ -230,8 +232,9 @@ const CategoryList: React.FC = () => {
                                               display: 'flex', 
                                               alignItems: 'center', 
                                               justifyContent: 'center', 
-                                              bgcolor: 'action.hover',
-                                              p: 2,
+                                              bgcolor: 'background.default',
+                                              borderBottom: '1px solid',
+                                              borderColor: 'divider',
                                               overflow: 'hidden'
                                           }}
                                       >
@@ -239,10 +242,11 @@ const CategoryList: React.FC = () => {
                                               component="img" 
                                               src={flavor.image_url} 
                                               sx={{ 
-                                                  maxWidth: '100%', 
-                                                  maxHeight: '100%', 
-                                                  objectFit: 'contain',
-                                                  filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.1))'
+                                                  width: '100%', 
+                                                  height: '100%', 
+                                                  objectFit: 'cover',
+                                                  transition: 'transform 0.5s ease',
+                                                  '&:hover': { transform: 'scale(1.1)' }
                                               }} 
                                           />
                                       </Box>
