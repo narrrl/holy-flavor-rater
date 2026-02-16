@@ -4,7 +4,6 @@ import {
   Card, 
   CardContent, 
   Box, 
-  Rating as MuiRating, 
   Button, 
   TextField, 
   Container, 
@@ -12,7 +11,8 @@ import {
   Avatar,
   Tabs,
   Tab,
-  IconButton
+  IconButton,
+  Tooltip
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Link } from 'react-router-dom';
@@ -57,10 +57,8 @@ const Dashboard: React.FC = () => {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!data) return <Typography>Please login to view dashboard.</Typography>;
 
-  // Robust grouping helper
   const groupBy = (array: any[]) => {
     return array.reduce((result, currentValue) => {
-      // Use category_name from either the rating or the flavor object
       const groupKey = currentValue.category_name || currentValue.flavor?.category_name || 'Other';
       (result[groupKey] = result[groupKey] || []).push(currentValue);
       return result;
@@ -114,66 +112,61 @@ const Dashboard: React.FC = () => {
           ) : (
             Object.entries(ratedGrouped).map(([category, items]: [string, any]) => (
               <Box key={category} sx={{ mb: 6 }}>
-                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                    {category}
-                    <Box sx={{ ml: 2, flexGrow: 1, height: '1px', bgcolor: 'divider' }} />
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>{category}</Typography>
+                <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: {
+                        xs: 'repeat(2, 1fr)',
+                        sm: 'repeat(3, 1fr)',
+                        md: 'repeat(4, 1fr)',
+                        lg: 'repeat(6, 1fr)',
+                        xl: 'repeat(8, 1fr)'
+                    }, 
+                    gap: 2 
+                }}>
                   {items.map((rating: any) => (
-                    <Card key={rating.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%' }, minWidth: 280, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
-                      <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        {rating.flavor_image && (
-                          <Box 
-                            sx={{ 
-                                width: 60, 
-                                height: 60, 
-                                minWidth: 60,
-                                aspectRatio: '1/1', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                bgcolor: 'background.default',
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                overflow: 'hidden'
-                            }}
-                          >
-                            <Box 
-                                component="img" 
-                                src={rating.flavor_image} 
-                                sx={{ 
-                                    width: '100%', 
-                                    height: '100%', 
-                                    objectFit: 'cover'
-                                }} 
-                            />
-                          </Box>
-                        )}
-                        <Box sx={{ flex: 1 }}>
-                          <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>
-                              {rating.flavor_name}
-                            </Typography>
-                          </Link>
-                          <Box sx={{ display: 'flex', alignItems: 'center', my: 0.5 }}>
-                            <MuiRating value={rating.score} readOnly max={10} size="small" />
-                            <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                          </Box>
-                          {rating.comment && (
-                            <Typography variant="caption" color="text.secondary" sx={{ 
-                                display: '-webkit-box',
-                                overflow: 'hidden',
-                                WebkitBoxOrient: 'vertical',
-                                WebkitLineClamp: 2,
-                                fontStyle: 'italic'
-                            }}>
-                              "{rating.comment}"
-                            </Typography>
-                          )}
-                        </Box>
-                      </CardContent>
-                    </Card>
+                    <Tooltip key={rating.id} title={`${rating.flavor_name} - ${rating.score}/10`} arrow>
+                        <Card sx={{ 
+                            position: 'relative', 
+                            transition: 'all 0.3s ease',
+                            '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
+                        }}>
+                            <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                <Box sx={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden' }}>
+                                    <Box 
+                                        component="img" 
+                                        src={rating.flavor_image || undefined} 
+                                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    />
+                                    <Box sx={{ 
+                                        position: 'absolute', 
+                                        bottom: 0, 
+                                        left: 0, 
+                                        right: 0, 
+                                        bgcolor: 'rgba(0,0,0,0.6)', 
+                                        color: 'white', 
+                                        p: 0.5, 
+                                        textAlign: 'center',
+                                        backdropFilter: 'blur(4px)'
+                                    }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                    </Box>
+                                </Box>
+                                <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                                    <Typography variant="caption" sx={{ 
+                                        fontWeight: 'bold', 
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 1,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                        fontSize: '0.75rem'
+                                    }}>
+                                        {rating.flavor_name}
+                                    </Typography>
+                                </CardContent>
+                            </Link>
+                        </Card>
+                    </Tooltip>
                   ))}
                 </Box>
               </Box>
@@ -189,64 +182,44 @@ const Dashboard: React.FC = () => {
           ) : (
             Object.entries(missingGrouped).map(([category, flavors]: [string, any]) => (
               <Box key={category} sx={{ mb: 6 }}>
-                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
-                    {category}
-                    <Box sx={{ ml: 2, flexGrow: 1, height: '1px', bgcolor: 'divider' }} />
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>{category}</Typography>
+                <Box sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: {
+                        xs: 'repeat(2, 1fr)',
+                        sm: 'repeat(3, 1fr)',
+                        md: 'repeat(4, 1fr)',
+                        lg: 'repeat(6, 1fr)',
+                        xl: 'repeat(8, 1fr)'
+                    }, 
+                    gap: 2 
+                }}>
                   {flavors.map((flavor: any) => (
-                    <Card key={flavor.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', md: '1 1 30%', lg: '1 1 23%' }, minWidth: 280, transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
-                      <CardContent sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        {flavor.image_url && (
-                          <Box 
-                            sx={{ 
-                                width: 60, 
-                                height: 60, 
-                                minWidth: 60,
-                                aspectRatio: '1/1', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                bgcolor: 'background.default',
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                overflow: 'hidden'
-                            }}
-                          >
+                    <Card key={flavor.id} sx={{ 
+                        transition: 'all 0.3s ease',
+                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
+                    }}>
+                      <Link to={`/flavor/${flavor.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <Box sx={{ aspectRatio: '1/1', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'divider' }}>
                             <Box 
                                 component="img" 
-                                src={flavor.image_url} 
-                                sx={{ 
-                                    width: '100%', 
-                                    height: '100%', 
-                                    objectFit: 'cover'
-                                }} 
+                                src={flavor.image_url || undefined} 
+                                sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                             />
-                          </Box>
-                        )}
-                        <Box sx={{ flex: 1 }}>
-                          <Link to={`/flavor/${flavor.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>
-                              {flavor.name}
-                            </Typography>
-                          </Link>
-                          <Typography variant="caption" color="text.secondary" sx={{ 
-                              display: '-webkit-box',
-                              overflow: 'hidden',
-                              WebkitBoxOrient: 'vertical',
-                              WebkitLineClamp: 2,
-                              mb: 1
-                          }}>
-                            {flavor.description}
-                          </Typography>
-                          {flavor.shop_url && (
-                            <Button size="small" variant="outlined" component="a" href={flavor.shop_url} target="_blank" sx={{ fontSize: '0.65rem', py: 0, borderRadius: 1.5 }}>
-                              Buy Now
-                            </Button>
-                          )}
                         </Box>
-                      </CardContent>
+                        <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                          <Typography variant="caption" sx={{ 
+                              fontWeight: 'bold', 
+                              display: '-webkit-box',
+                              WebkitLineClamp: 1,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              fontSize: '0.75rem'
+                          }}>
+                            {flavor.name}
+                          </Typography>
+                        </CardContent>
+                      </Link>
                     </Card>
                   ))}
                 </Box>

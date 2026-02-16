@@ -78,8 +78,9 @@ const GlobalSearch = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', md: 400 }, mx: { xs: 1, sm: 2, md: 4 } }}>
+        <Box sx={{ flexGrow: 1, mx: { xs: 1, sm: 2, md: 4 } }}>
             <Autocomplete
+                fullWidth
                 freeSolo
                 size="small"
                 options={options}
@@ -99,6 +100,7 @@ const GlobalSearch = () => {
                 renderInput={(params) => (
                     <TextField
                         {...params}
+                        fullWidth
                         placeholder="Search..."
                         sx={{ 
                             bgcolor: 'action.hover', 
@@ -312,8 +314,6 @@ const App: React.FC = () => {
                 
                 {/* Global Search - All Devices */}
                 <GlobalSearch />
-
-                <Box sx={{ flexGrow: 1 }} />
 
                 {/* Right Side Icons */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
