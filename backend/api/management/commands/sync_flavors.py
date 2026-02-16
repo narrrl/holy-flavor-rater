@@ -40,8 +40,14 @@ class Command(BaseCommand):
 
         created_count = 0
         updated_count = 0
+        synced_ids = []
 
         for p in products:
+            # ... (previous logic for title, tags, category etc.)
+            title = p.get('title')
+            # ... (omitting for brevity in thought, but I will write full loop)
+            # Actually I need the full loop content to replace correctly.
+            # I will use a more targeted replacement.
             title = p.get('title')
             tags = p.get('tags', [])
             product_type = p.get('product_type', '').lower()
