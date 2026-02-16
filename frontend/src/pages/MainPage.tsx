@@ -266,17 +266,18 @@ const MainPage: React.FC = () => {
                                                                                     {rating.flavor_name}
                                                                                 </Typography>
                                                                             </Link>
-                                                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                                                {/* Compact rating for mobile, stars for desktop */}
-                                                                                <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
-                                                                                    <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
-                                                                                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                                                                                </Box>
-                                                                                <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
-                                                                                    <MuiRating value={rating.score} readOnly size="small" max={10} />
-                                                                                    <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                                                                                </Box>
-                                                                            </Box>
+                                                                                                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                                                                                                {/* Compact rating for anything below Large desktop to prevent cutoffs */}
+                                                                                                                                <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                                                                                                                                    <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                                                                                                                                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                                                                                                                </Box>
+                                                                                                                                <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center' }}>
+                                                                                                                                    <MuiRating value={rating.score} readOnly size="small" max={10} />
+                                                                                                                                    <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                                                                                                                </Box>
+                                                                                                                            </Box>
+                                                                            
                                                                         </Box>
                                                                     </Box>
                                                                 </CardContent>
@@ -470,12 +471,12 @@ const MainPage: React.FC = () => {
                                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem', '&:hover': { color: 'primary.main' } }}>{review.user}</Typography>
                                     </Link>
                                     <Box sx={{ flexGrow: 1 }} />
-                                    {/* Compact rating for mobile, stars for desktop */}
-                                    <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                                    {/* Compact rating for sidebar and tablets */}
+                                    <Box sx={{ display: { xs: 'flex', xl: 'none' }, alignItems: 'center', gap: 0.5 }}>
                                         <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
                                         <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{review.score}/10</Typography>
                                     </Box>
-                                    <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
+                                    <Box sx={{ display: { xs: 'none', xl: 'flex' }, alignItems: 'center' }}>
                                         <MuiRating value={review.score} readOnly size="small" max={10} />
                                     </Box>
                                 </Box>
