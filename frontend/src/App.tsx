@@ -32,7 +32,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import { getTheme, type CatppuccinTheme } from './theme';
 import api from './api';
 
-// Lazy load components for production performance
+// Code splitting
 const CategoryList = lazy(() => import('./pages/CategoryList'));
 const CategoryFlavors = lazy(() => import('./pages/categories/CategoryFlavors'));
 const FlavorDetail = lazy(() => import('./pages/flavors/FlavorDetail'));
@@ -87,7 +87,7 @@ const GlobalSearch = () => {
                 freeSolo
                 size="small"
                 options={options}
-                getOptionLabel={(option) => typeof option === 'string' ? option : option.name}
+                getOptionLabel={(option) => typeof option === 'string' ? option : (option.name || '')}
                 inputValue={query}
                 onInputChange={(_, newValue) => setQuery(typeof newValue === 'string' ? newValue : '')}
                 onChange={(_, newValue) => {
@@ -204,7 +204,7 @@ const App: React.FC = () => {
     <Box sx={{ width: 280 }} role="presentation">
       <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
           <Avatar src={user?.avatar || undefined} sx={{ width: 40, height: 40, border: '2px solid', borderColor: 'primary.main' }}>
-              {user?.username && !user.avatar && user.username.charAt(0).toUpperCase()}
+              {user?.username ? user.username.charAt(0).toUpperCase() : '?'}
           </Avatar>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               <Link to="/" onClick={() => setDrawerOpen(false)} style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
@@ -326,7 +326,7 @@ const App: React.FC = () => {
                       <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
                         <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
                           <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
-                              {user.username && !user.avatar && user.username.charAt(0).toUpperCase()}
+                              {user.username ? user.username.charAt(0).toUpperCase() : '?'}
                           </Avatar>
                         </IconButton>
                         <Menu
@@ -382,7 +382,6 @@ const App: React.FC = () => {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
                     <Route path="/login" element={<Login />} />
-                    {/* Fallback route for unknown paths */}
                     <Route path="*" element={<Box sx={{ p: 4, textAlign: 'center' }}><Typography variant="h5">404 - Page Not Found</Typography><Button component={Link} to="/" sx={{ mt: 2 }}>Back to Home</Button></Box>} />
                 </Routes>
             </Suspense>

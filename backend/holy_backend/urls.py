@@ -4,15 +4,14 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 from django.conf.urls.static import static
-
 from django.views.static import serve
-import re
 import os
 
-admin_path = os.environ.get('ADMIN_URL', 'admin/')
+# Ensure the admin path is clean and always ends with a slash for Django
+admin_url = os.environ.get('ADMIN_URL', 'admin').strip('/')
 
 urlpatterns = [
-    path(admin_path, admin.site.urls),
+    path(f'{admin_url}/', admin.site.urls),
     path('api/', include('api.urls')),
     path('api/token/', obtain_auth_token, name='api_token'),
     path('api-auth/', include('rest_framework.urls')),
