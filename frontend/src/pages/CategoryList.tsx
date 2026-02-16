@@ -135,22 +135,23 @@ const CategoryList: React.FC = () => {
 
   // --- HOME VIEW ---
   return (
-    <Box>
+    <Box sx={{ mx: { xs: -2, sm: -4, md: -6 } }}>
       {/* Hero Section */}
       <Paper 
         elevation={0}
         sx={{ 
             p: { xs: 4, md: 8 }, 
             mb: 8, 
-            borderRadius: 4, 
+            borderRadius: 0, 
             background: (theme) => theme.palette.mode === 'dark' 
                 ? 'linear-gradient(45deg, #1a1a2e 30%, #16213e 90%)' 
                 : 'linear-gradient(45deg, #fdf6f7 30%, #f8e1e5 90%)',
             textAlign: 'center',
-            border: '1px solid rgba(255,255,255,0.1)'
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            width: '100%',
         }}
       >
-        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
+        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '4rem' } }}>
             The Ultimate Holy Archive
         </Typography>
         <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto' }}>
@@ -169,8 +170,9 @@ const CategoryList: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* Top Rated Flavors */}
-      {topFlavors.length > 0 && (
+      <Box sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+        {/* Top Rated Flavors */}
+        {topFlavors.length > 0 && (
           <Box sx={{ mb: 8 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
                   <StarIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
