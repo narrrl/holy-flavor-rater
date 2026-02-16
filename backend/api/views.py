@@ -62,13 +62,21 @@ class RatingViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        if self.action in ['list', 'retrieve']:
-            return Rating.objects.select_related('user', 'flavor').prefetch_related('replies', 'replies__user')
-        # Allow users to see only their own ratings when editing/deleting? 
-        # No, for detail views they need to find it. 
-        # The permission class IsOwnerOrReadOnly (custom) would be better, 
-        # but standard ViewSet logic handles "get_object" which we can protect.
-        return Rating.objects.select_related('user', 'flavor').prefetch_related('replies', 'replies__user')
+        return Rating.objects.select_related('user', 'flavor', 'flavor__category').prefetch_related('replies', 'replies__user').order_by('-created_at')
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def feed(self, request):
+        # Get ratings from people the user follows
+        followed_users = request.user.following.all()
+        feed_ratings = Rating.objects.filter(user__in=followed_users).select_related('user', 'flavor', 'flavor__category').prefetch_related('replies', 'replies__user').order_by('-created_at')
+        
+        page = self.paginate_queryset(feed_ratings)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(feed_ratings, many=True)
+        return Response(serializer.data)
 
     def check_object_permissions(self, request, obj):
         super().check_object_permissions(request, obj)
@@ -253,6 +261,20 @@ class UserViewSet(viewsets.ModelViewSet):
         if message:
             data['message'] = message
         return Response(data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def follow(self, request, pk=None):
+        user_to_follow = self.get_object()
+        if user_to_follow == request.user:
+            return Response({'error': 'You cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
+        request.user.following.add(user_to_follow)
+        return Response({'status': 'followed'})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def unfollow(self, request, pk=None):
+        user_to_unfollow = self.get_object()
+        request.user.following.remove(user_to_unfollow)
+        return Response({'status': 'unfollowed'})
 
     @action(detail=False, methods=['post'])
     def confirm_email(self, request):

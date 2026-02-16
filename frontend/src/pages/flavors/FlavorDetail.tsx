@@ -280,12 +280,16 @@ const FlavorDetail: React.FC = () => {
                         ) : (
                             <>
                                 <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                                    <Avatar src={rating.user_avatar || undefined} sx={{ width: 40, height: 40, mr: 2, mt: 0.5 }}>
-                                        {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
-                                    </Avatar>
+                                    <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <Avatar src={rating.user_avatar || undefined} sx={{ width: 40, height: 40, mr: 2, mt: 0.5, '&:hover': { opacity: 0.8 } }}>
+                                            {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                    </Link>
                                     <Box sx={{ flex: 1, minWidth: 0 }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.user}</Typography>
+                                            <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>{rating.user}</Typography>
+                                            </Link>
                                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                                 <MuiRating value={rating.score} readOnly size="small" max={10} />
                                                 <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>

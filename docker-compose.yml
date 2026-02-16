@@ -17,7 +17,6 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      # Ultra-clean rule for maximum Traefik compatibility
       - "traefik.http.routers.holy-energy-backend.priority=100"
       - "traefik.http.routers.holy-energy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
       - "traefik.http.routers.holy-energy-backend.entrypoints=websecure"

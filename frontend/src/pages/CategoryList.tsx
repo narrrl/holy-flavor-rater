@@ -283,12 +283,12 @@ const CategoryList: React.FC = () => {
                                 <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1, fontSize: { xs: '0.9rem', md: '1.1rem' }, display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}>
                                     "{featuredReview.comment}"
                                 </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar src={featuredReview.user_avatar || undefined} sx={{ width: 20, height: 24, fontSize: '0.6rem' }}>
+                                <Link to={`/profile/${featuredReview.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Avatar src={featuredReview.user_avatar || undefined} sx={{ width: 24, height: 24, fontSize: '0.6rem', '&:hover': { opacity: 0.8 } }}>
                                         {!featuredReview.user_avatar && featuredReview.user.charAt(0)}
                                     </Avatar>
-                                    <Typography variant="caption" color="text.secondary">— {featuredReview.user}</Typography>
-                                </Box>
+                                    <Typography variant="caption" color="text.secondary" sx={{ '&:hover': { color: 'primary.main' } }}>— {featuredReview.user}</Typography>
+                                </Link>
                             </Box>
                         )}
 
@@ -360,11 +360,15 @@ const CategoryList: React.FC = () => {
                             sx={{ p: 3, mb: 3, breakInside: 'avoid', borderRadius: 3, transition: 'border-color 0.2s', '&:hover': { borderColor: 'primary.main' } }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                <Avatar src={review.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1 }}>
-                                    {!review.user_avatar && review.user.charAt(0).toUpperCase()}
-                                </Avatar>
+                                <Link to={`/profile/${review.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+                                    <Avatar src={review.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1, '&:hover': { opacity: 0.8 } }}>
+                                        {!review.user_avatar && review.user.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                </Link>
                                 <Box>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{review.user}</Typography>
+                                    <Link to={`/profile/${review.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>{review.user}</Typography>
+                                    </Link>
                                     <Typography variant="caption" color="text.secondary">
                                         on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit' }}>{review.flavor_name}</Link>
                                     </Typography>

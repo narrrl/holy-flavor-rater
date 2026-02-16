@@ -23,6 +23,7 @@ class User(AbstractUser):
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     pending_email = models.EmailField(max_length=254, blank=True, null=True)
     email_confirmation_code = models.CharField(max_length=6, blank=True, null=True)
+    following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
