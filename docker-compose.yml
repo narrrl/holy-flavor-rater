@@ -1,6 +1,5 @@
-version: '3.8'
-
 services:
+  # --- Backend Service ---
   backend:
     build:
       context: ./backend
@@ -25,6 +24,7 @@ services:
       - "traefik.http.routers.holy-backend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-backend.loadbalancer.server.port=8000"
 
+  # --- Frontend Service ---
   frontend:
     build:
       context: ./frontend
