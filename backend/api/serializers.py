@@ -34,11 +34,13 @@ class RatingSerializer(serializers.ModelSerializer):
     user_avatar = serializers.SerializerMethodField()
     flavor_name = serializers.CharField(source='flavor.name', read_only=True)
     flavor_image = serializers.SerializerMethodField()
+    category_name = serializers.CharField(source='flavor.category.name', read_only=True)
+    category_slug = serializers.CharField(source='flavor.category.slug', read_only=True)
     replies = ReplySerializer(many=True, read_only=True)
 
     class Meta:
         model = Rating
-        fields = ['id', 'user', 'user_avatar', 'flavor', 'flavor_name', 'flavor_image', 'score', 'comment', 'created_at', 'replies']
+        fields = ['id', 'user', 'user_avatar', 'flavor', 'flavor_name', 'flavor_image', 'category_name', 'category_slug', 'score', 'comment', 'created_at', 'replies']
 
     def get_user_avatar(self, obj):
         if obj.user.avatar:

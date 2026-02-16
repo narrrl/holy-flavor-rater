@@ -18,7 +18,6 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  useMediaQuery,
   TextField,
   InputAdornment,
   Autocomplete
@@ -75,7 +74,7 @@ const GlobalSearch = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', sm: 400 }, mx: { xs: 1, sm: 2 } }}>
+        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', sm: 400 }, mx: { xs: 1, sm: 4 } }}>
             <Autocomplete
                 freeSolo
                 size="small"
@@ -96,10 +95,10 @@ const GlobalSearch = () => {
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search..."
+                        placeholder="Search flavors..."
                         sx={{ 
                             bgcolor: 'action.hover', 
-                            borderRadius: 1,
+                            borderRadius: 2,
                             '& .MuiOutlinedInput-root': {
                                 color: 'inherit',
                                 '& fieldset': { border: 'none' },
@@ -140,7 +139,6 @@ const App: React.FC = () => {
   const [user, setUser] = useState<{username: string, avatar: string | null} | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const isMobile = useMediaQuery('(max-width:900px)');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -184,33 +182,42 @@ const App: React.FC = () => {
     window.location.href = '/';
   };
 
-  const navItems = user ? [
-    { label: 'Catalog', path: '/' },
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Settings', path: '/settings' },
-  ] : [
-    { label: 'Catalog', path: '/' },
-    { label: 'Login', path: '/login' },
-  ];
-
   const drawer = (
     <Box onClick={() => setDrawerOpen(false)} sx={{ textAlign: 'center' }}>
       <Typography variant="h6" sx={{ my: 2 }}>Holy Flavors</Typography>
       <Divider />
       <List>
-        {navItems.map((item) => (
-          <ListItem key={item.label} disablePadding>
-            <ListItemButton component={Link} to={item.path} sx={{ textAlign: 'center' }}>
-              <ListItemText primary={item.label} />
+        <ListItem disablePadding>
+            <ListItemButton component={Link} to="/" sx={{ textAlign: 'center' }}>
+                <ListItemText primary="Catalog" />
             </ListItemButton>
-          </ListItem>
-        ))}
+        </ListItem>
         {user && (
-          <ListItem disablePadding>
-            <ListItemButton onClick={handleLogout} sx={{ textAlign: 'center' }}>
-              <ListItemText primary="Logout" />
-            </ListItemButton>
-          </ListItem>
+            <>
+                <ListItem disablePadding>
+                    <ListItemButton component={Link} to="/dashboard" sx={{ textAlign: 'center' }}>
+                        <ListItemText primary="Dashboard" />
+                    </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                    <ListItemButton component={Link} to="/settings" sx={{ textAlign: 'center' }}>
+                        <ListItemText primary="Settings" />
+                    </ListItemButton>
+                </ListItem>
+                <Divider />
+                <ListItem disablePadding>
+                    <ListItemButton onClick={handleLogout} sx={{ textAlign: 'center' }}>
+                        <ListItemText primary="Logout" />
+                    </ListItemButton>
+                </ListItem>
+            </>
+        )}
+        {!user && !loadingUser && (
+            <ListItem disablePadding>
+                <ListItemButton component={Link} to="/login" sx={{ textAlign: 'center' }}>
+                    <ListItemText primary="Login" />
+                </ListItemButton>
+            </ListItem>
         )}
       </List>
     </Box>
@@ -220,19 +227,16 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            minHeight: '100vh', 
-            width: '100vw', 
-            maxWidth: '100%', 
-            overflowX: 'hidden' 
-        }}>
-          <AppBar position="fixed" elevation={1}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
+          <AppBar position="fixed" elevation={0} sx={{ 
+              borderBottom: '1px solid', 
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+              color: 'text.primary'
+          }}>
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
                 <IconButton
                   color="inherit"
-                  aria-label="open drawer"
                   edge="start"
                   onClick={() => setDrawerOpen(true)}
                   sx={{ mr: { xs: 0, sm: 2 }, display: { md: 'none' } }}
@@ -240,75 +244,41 @@ const App: React.FC = () => {
                   <MenuIcon />
                 </IconButton>
                 
-                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'block' } }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
                   <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
                 </Typography>
                 
                 <GlobalSearch />
 
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ flexGrow: 1 }} />
 
-                                {!isMobile && !loadingUser && (
-
-                                  <Box sx={{ display: 'flex', gap: 1 }}>
-
-                                    <Button color="inherit" component={Link} to="/">Catalog</Button>
-
-                                  </Box>
-
-                                )}
-
-                                
-
-                                {!loadingUser && (
-
-                                  user ? (
-
-                                    <>
-
-                                      <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-
-                                        <Avatar src={user.avatar || undefined} sx={{ width: 32, height: 32 }}>
-
-                                            {!user.avatar && user.username.charAt(0).toUpperCase()}
-
-                                        </Avatar>
-
-                                      </IconButton>
-
-                                      <Menu
-
-                                        anchorEl={anchorEl}
-
-                                        open={Boolean(anchorEl)}
-
-                                        onClose={() => setAnchorEl(null)}
-
-                                      >
-
-                                        <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>Dashboard</MenuItem>
-
-                                        <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>Settings</MenuItem>
-
-                                        <Divider />
-
-                                        <MenuItem onClick={handleLogout}>Logout</MenuItem>
-
-                                      </Menu>
-
-                                    </>
-
-                                  ) : (
-
-                                    <Button color="inherit" component={Link} to="/login">Login</Button>
-
-                                  )
-
-                                )}
-
-                              </Box>
-
-                
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {!loadingUser && (
+                    user ? (
+                      <>
+                        <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)}>
+                          <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
+                              {!user.avatar && user.username.charAt(0).toUpperCase()}
+                          </Avatar>
+                        </IconButton>
+                        <Menu
+                          anchorEl={anchorEl}
+                          open={Boolean(anchorEl)}
+                          onClose={() => setAnchorEl(null)}
+                          elevation={3}
+                          sx={{ mt: 1 }}
+                        >
+                          <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>Dashboard</MenuItem>
+                          <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>Settings</MenuItem>
+                          <Divider />
+                          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>Logout</MenuItem>
+                        </Menu>
+                      </>
+                    ) : (
+                      <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2 }}>Login</Button>
+                    )
+                  )}
+                </Box>
             </Toolbar>
           </AppBar>
           <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
@@ -319,10 +289,9 @@ const App: React.FC = () => {
               <Route path="/category/:slug" element={<CategoryFlavors />} />
               <Route path="/flavor/:id" element={<FlavorDetail />} />
               <Route path="/profile/:username" element={<PublicProfile />} />
-                          <Route path="/dashboard" element={<Dashboard />} />
-                          <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
-                          <Route path="/login" element={<Login />} />
-              
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
+              <Route path="/login" element={<Login />} />
             </Routes>
           </Box>
 
