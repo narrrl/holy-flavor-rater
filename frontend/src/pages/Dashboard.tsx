@@ -132,8 +132,9 @@ const Dashboard: React.FC = () => {
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 justifyContent: 'center', 
-                                bgcolor: 'action.hover',
-                                p: 0.5,
+                                bgcolor: 'background.default',
+                                border: '1px solid',
+                                borderColor: 'divider',
                                 borderRadius: 1,
                                 overflow: 'hidden'
                             }}
@@ -142,9 +143,9 @@ const Dashboard: React.FC = () => {
                                 component="img" 
                                 src={rating.flavor_image} 
                                 sx={{ 
-                                    maxWidth: '100%', 
-                                    maxHeight: '100%', 
-                                    objectFit: 'contain'
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover'
                                 }} 
                             />
                           </Box>
@@ -206,8 +207,9 @@ const Dashboard: React.FC = () => {
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 justifyContent: 'center', 
-                                bgcolor: 'action.hover',
-                                p: 0.5,
+                                bgcolor: 'background.default',
+                                border: '1px solid',
+                                borderColor: 'divider',
                                 borderRadius: 1,
                                 overflow: 'hidden'
                             }}
@@ -216,9 +218,9 @@ const Dashboard: React.FC = () => {
                                 component="img" 
                                 src={flavor.image_url} 
                                 sx={{ 
-                                    maxWidth: '100%', 
-                                    maxHeight: '100%', 
-                                    objectFit: 'contain'
+                                    width: '100%', 
+                                    height: '100%', 
+                                    objectFit: 'cover'
                                 }} 
                             />
                           </Box>

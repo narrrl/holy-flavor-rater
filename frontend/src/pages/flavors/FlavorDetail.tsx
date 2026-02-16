@@ -161,18 +161,20 @@ const FlavorDetail: React.FC = () => {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
-                    bgcolor: 'action.hover', 
-                    p: { xs: 4, md: 6 } 
+                    bgcolor: 'background.default', 
+                    borderRight: { md: '1px solid' },
+                    borderBottom: { xs: '1px solid', md: 'none' },
+                    borderColor: 'divider',
+                    overflow: 'hidden'
                 }}
             >
                 <Box 
                     component="img" 
                     src={flavor.image_url} 
                     sx={{ 
-                        maxWidth: '100%', 
-                        maxHeight: '100%', 
-                        objectFit: 'contain',
-                        filter: 'drop-shadow(0px 12px 24px rgba(0,0,0,0.15))'
+                        width: '100%', 
+                        height: '100%', 
+                        objectFit: 'cover'
                     }} 
                 />
             </Box>
