@@ -7,9 +7,12 @@ from django.conf.urls.static import static
 
 from django.views.static import serve
 import re
+import os
+
+admin_path = os.environ.get('ADMIN_URL', 'admin/')
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(admin_path, admin.site.urls),
     path('api/', include('api.urls')),
     path('api/token/', obtain_auth_token, name='api_token'),
     path('api-auth/', include('rest_framework.urls')),

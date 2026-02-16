@@ -59,10 +59,10 @@ class Flavor(models.Model):
     image_url = models.URLField(max_length=1000, blank=True, null=True)
     image = models.ImageField(upload_to='flavors/', blank=True, null=True)
     shop_url = models.URLField(max_length=500, blank=True, null=True)
-    is_available = models.BooleanField(default=True)
-    is_legacy = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=True, db_index=True)
+    is_legacy = models.BooleanField(default=False, db_index=True)
     external_id = models.BigIntegerField(unique=True, null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     def __str__(self):
         return self.name
@@ -83,9 +83,9 @@ class Flavor(models.Model):
 class Rating(models.Model):
     user = models.ForeignKey(User, related_name='ratings', on_delete=models.CASCADE)
     flavor = models.ForeignKey(Flavor, related_name='ratings', on_delete=models.CASCADE)
-    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
+    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)], db_index=True)
     comment = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         unique_together = ('user', 'flavor')

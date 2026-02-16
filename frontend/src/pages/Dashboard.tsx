@@ -137,6 +137,7 @@ const Dashboard: React.FC = () => {
                                         component="img" 
                                         src={rating.flavor_image || undefined} 
                                         sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                        loading="lazy"
                                     />
                                     <Box sx={{ 
                                         position: 'absolute', 
@@ -205,6 +206,7 @@ const Dashboard: React.FC = () => {
                                 component="img" 
                                 src={flavor.image_url || undefined} 
                                 sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                loading="lazy"
                             />
                         </Box>
                         <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
