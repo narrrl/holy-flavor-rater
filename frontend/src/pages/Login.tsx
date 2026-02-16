@@ -216,6 +216,8 @@ const Login: React.FC<LoginProps> = () => {
       );
   };
 
+  const adminUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/').replace('/api/', '/admin/');
+
   return (
     <Container maxWidth="xs" sx={{ mt: 8 }}>
       <Paper sx={{ p: 3 }}>
@@ -224,7 +226,7 @@ const Login: React.FC<LoginProps> = () => {
       </Paper>
       <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
-              Admin? Use <a href="http://localhost:8000/admin/" target="_blank" rel="noreferrer">Django Admin</a>
+              Admin? Use <a href={adminUrl} target="_blank" rel="noreferrer">Django Admin</a>
           </Typography>
       </Box>
     </Container>

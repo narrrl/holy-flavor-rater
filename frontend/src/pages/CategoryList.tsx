@@ -95,7 +95,7 @@ const CategoryList: React.FC = () => {
 
       return (
           <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
-              <Typography variant="h4" gutterBottom>Search Results for "{query}"</Typography>
+              <Typography variant="h4" gutterBottom sx={{ overflowWrap: 'break-word' }}>Search Results for "{query}"</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
                   Found {filteredFlavors.length} items
               </Typography>
@@ -136,8 +136,8 @@ const CategoryList: React.FC = () => {
 
   // --- HOME VIEW ---
   return (
-    <Box>
-      {/* Hero Section - True Full Width */}
+    <Box sx={{ width: '100%' }}>
+      {/* Hero Section - True Full Width, No Overflow */}
       <Paper 
         elevation={0}
         sx={{ 
@@ -150,18 +150,30 @@ const CategoryList: React.FC = () => {
             textAlign: 'center',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
             width: '100%',
-            mt: -4 // Counter the parent Box mt
+            mt: -4, // Counter the parent Box py: 4
+            boxSizing: 'border-box',
+            overflow: 'hidden'
         }}
       >
-        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '4.5rem' } }}>
+        <Typography 
+            variant="h2" 
+            component="h1" 
+            gutterBottom 
+            sx={{ 
+                fontWeight: 'bold', 
+                fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' },
+                overflowWrap: 'break-word',
+                px: 2
+            }}
+        >
             The Ultimate Holy Archive
         </Typography>
-        <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto' }}>
+        <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto', px: 2 }}>
             Browse every flavor ever released, discover new favorites, and share your ratings with the community.
         </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap', px: 2 }}>
             <Button variant="contained" size="large" component={Link} to="/login" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
-                Join the Community
+                Join Community
             </Button>
             <Button variant="outlined" size="large" onClick={() => {
                 const element = document.getElementById('categories');
@@ -212,7 +224,7 @@ const CategoryList: React.FC = () => {
         <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Browse by Category</Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {categories.map(category => (
-            <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 23%' }, minWidth: 280 }}>
+            <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 30%' }, minWidth: 280 }}>
                 <Link to={`/category/${category.slug}`} style={{ textDecoration: 'none' }}>
                 <Card sx={{ 
                     height: 120, 

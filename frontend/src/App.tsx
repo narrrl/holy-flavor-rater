@@ -68,7 +68,6 @@ const GlobalSearch = () => {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        // Redirect to categories page with search query
         if (query.trim()) {
             navigate(`/?q=${encodeURIComponent(query.trim())}`);
         } else {
@@ -77,7 +76,7 @@ const GlobalSearch = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, maxWidth: 400, mx: 2 }}>
+        <Box sx={{ flexGrow: 1, maxWidth: { xs: 'none', sm: 400 }, mx: { xs: 1, sm: 2 } }}>
             <Autocomplete
                 freeSolo
                 size="small"
@@ -98,7 +97,7 @@ const GlobalSearch = () => {
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Search catalog..."
+                        placeholder="Search..."
                         sx={{ 
                             bgcolor: 'action.hover', 
                             borderRadius: 1,
@@ -222,93 +221,95 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <AppBar position="fixed" elevation={1}>
-          <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 2, sm: 4, md: 6 } }}>
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={() => setDrawerOpen(true)}
-                sx={{ mr: 2, display: { md: 'none' } }}
-              >
-                <MenuIcon />
-              </IconButton>
-              
-              <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
-                <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
-              </Typography>
-              
-              <GlobalSearch />
-
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                {!isMobile && !loadingUser && (
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    {navItems.map((item) => (
-                      <Button key={item.label} color="inherit" component={Link} to={item.path}>{item.label}</Button>
-                    ))}
-                    {user && (
-                      <Button color="inherit" onClick={handleLogout} sx={{ ml: 1 }}>Logout</Button>
-                    )}
-                  </Box>
-                )}
-                
-                <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-                  <PaletteIcon />
-                </IconButton>
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={() => setAnchorEl(null)}
-                  sx={{ maxHeight: 500 }}
+        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
+          <AppBar position="fixed" elevation={1}>
+            <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={() => setDrawerOpen(true)}
+                  sx={{ mr: { xs: 0, sm: 2 }, display: { md: 'none' } }}
                 >
-                  <ListSubheader>Light Themes</ListSubheader>
-                  <MenuItem onClick={() => handleThemeChange('latte')}>Latte</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('solarized_light')}>Solarized Light</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('one_light')}>One Light</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('paper')}>Paper White</MenuItem>
-                  
-                  <Divider />
-                  
-                  <ListSubheader>Dark Themes</ListSubheader>
-                  <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha (Default)</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('atom')}>Atom One Dark</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('dracula')}>Dracula</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('gruvbox')}>Gruvbox Dark</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('nord')}>Nord</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('cyberpunk')}>Cyberpunk</MenuItem>
-                  <MenuItem onClick={() => handleThemeChange('forest')}>Forest Dark</MenuItem>
-                </Menu>
-              </Box>
-          </Toolbar>
-        </AppBar>
-        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
+                  <MenuIcon />
+                </IconButton>
+                
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: { xs: 'none', md: 'block' } }}>
+                  <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
+                </Typography>
+                
+                <GlobalSearch />
 
-        <Drawer
-          variant="temporary"
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
-          }}
-        >
-          {drawer}
-        </Drawer>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {!isMobile && !loadingUser && (
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {navItems.map((item) => (
+                        <Button key={item.label} color="inherit" component={Link} to={item.path}>{item.label}</Button>
+                      ))}
+                      {user && (
+                        <Button color="inherit" onClick={handleLogout} sx={{ ml: 1 }}>Logout</Button>
+                      )}
+                    </Box>
+                  )}
+                  
+                  <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
+                    <PaletteIcon />
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={() => setAnchorEl(null)}
+                    sx={{ maxHeight: 500 }}
+                  >
+                    <ListSubheader>Light Themes</ListSubheader>
+                    <MenuItem onClick={() => handleThemeChange('latte')}>Latte</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('solarized_light')}>Solarized Light</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('one_light')}>One Light</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('paper')}>Paper White</MenuItem>
+                    
+                    <Divider />
+                    
+                    <ListSubheader>Dark Themes</ListSubheader>
+                    <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha (Default)</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('atom')}>Atom One Dark</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('dracula')}>Dracula</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('gruvbox')}>Gruvbox Dark</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('nord')}>Nord</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('cyberpunk')}>Cyberpunk</MenuItem>
+                    <MenuItem onClick={() => handleThemeChange('forest')}>Forest Dark</MenuItem>
+                  </Menu>
+                </Box>
+            </Toolbar>
+          </AppBar>
+          <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
 
-        <Box sx={{ mt: 4, pb: 4 }}>
-          <Routes>
-            <Route path="/" element={<CategoryList />} />
-            <Route path="/category/:slug" element={<CategoryFlavors />} />
-            <Route path="/flavor/:id" element={<FlavorDetail />} />
-            <Route path="/profile/:username" element={<PublicProfile />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
+          <Box sx={{ flexGrow: 1, py: 4, width: '100%' }}>
+            <Routes>
+              <Route path="/" element={<CategoryList />} />
+              <Route path="/category/:slug" element={<CategoryFlavors />} />
+              <Route path="/flavor/:id" element={<FlavorDetail />} />
+              <Route path="/profile/:username" element={<PublicProfile />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/login" element={<Login />} />
+            </Routes>
+          </Box>
+
+          <Drawer
+            variant="temporary"
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            ModalProps={{ keepMounted: true }}
+            sx={{
+              display: { xs: 'block', md: 'none' },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
+            }}
+          >
+            {drawer}
+          </Drawer>
         </Box>
       </Router>
     </ThemeProvider>
