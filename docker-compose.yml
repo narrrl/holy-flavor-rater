@@ -20,9 +20,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      # Explicitly capture specific paths for the backend
+      # High priority for the backend specific paths
       - "traefik.http.routers.holy-backend.priority=20"
-      - "traefik.http.routers.holy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`)||PathPrefix(`/admin`)||PathPrefix(`/static`)||PathPrefix(`/media`))"
+      - "traefik.http.routers.holy-backend.rule=Host(`holy.narl.io`) && PathPrefix(`/api`, `/admin`, `/static`, `/media`)"
       - "traefik.http.routers.holy-backend.entrypoints=websecure"
       - "traefik.http.routers.holy-backend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-backend.loadbalancer.server.port=8000"
@@ -42,9 +42,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      # Frontend ONLY matches if it's NOT a backend path
+      # Low priority acts as the fallback catch-all
       - "traefik.http.routers.holy-frontend.priority=10"
-      - "traefik.http.routers.holy-frontend.rule=Host(`holy.narl.io`) && ! (PathPrefix(`/api`)||PathPrefix(`/admin`)||PathPrefix(`/static`)||PathPrefix(`/media`))"
+      - "traefik.http.routers.holy-frontend.rule=Host(`holy.narl.io`)"
       - "traefik.http.routers.holy-frontend.entrypoints=websecure"
       - "traefik.http.routers.holy-frontend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-frontend.loadbalancer.server.port=80"
