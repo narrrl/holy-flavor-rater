@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # --- Backend Service ---
+  # --- Backend Service (Gunicorn + WhiteNoise) ---
   backend:
     build:
       context: ./backend
@@ -20,37 +20,36 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      # Explicitly set priority higher than the frontend to catch /api, /admin, etc.
+      # Higher priority for specific backend paths
       - "traefik.http.routers.holy-backend.priority=20"
       - "traefik.http.routers.holy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
       - "traefik.http.routers.holy-backend.entrypoints=websecure"
       - "traefik.http.routers.holy-backend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-backend.loadbalancer.server.port=8000"
 
-  # --- Frontend Service ---
+  # --- Frontend Service (Nginx serving built React app) ---
   frontend:
     build:
       context: ./frontend
+      args:
+        # Bake the API URL into the production build
+        - VITE_API_URL=https://holy.narl.io/api/
     container_name: holy-frontend
     restart: unless-stopped
     networks:
       - narl
-    env_file:
-      - ./.env
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    # In production, we don't mount volumes for code to ensure container integrity
     depends_on:
       - backend
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      # Frontend acts as the fallback for anything else on this domain
+      # Lower priority acts as catch-all for the domain
       - "traefik.http.routers.holy-frontend.priority=10"
       - "traefik.http.routers.holy-frontend.rule=Host(`holy.narl.io`)"
       - "traefik.http.routers.holy-frontend.entrypoints=websecure"
       - "traefik.http.routers.holy-frontend.tls.certresolver=https_resolver"
-      - "traefik.http.services.holy-frontend.loadbalancer.server.port=5173"
+      - "traefik.http.services.holy-frontend.loadbalancer.server.port=80"
 
 networks:
   narl:
