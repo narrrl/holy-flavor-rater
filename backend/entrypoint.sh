@@ -11,8 +11,10 @@ python manage.py migrate
 echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
-# Ensure media directory exists
+# Ensure media and cache directories exist
 mkdir -p media/flavors
+mkdir -p django_cache
+chmod -R 777 django_cache
 
 # Sync flavors from the API
 echo "Syncing flavors..."
