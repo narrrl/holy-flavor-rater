@@ -363,7 +363,7 @@ const App: React.FC = () => {
           <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
 
           <Drawer
-            anchor="left"
+            anchor="right"
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}
           >
