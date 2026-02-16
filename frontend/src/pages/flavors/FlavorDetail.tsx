@@ -10,7 +10,8 @@ import {
   TextField,
   Avatar,
   Alert,
-  Paper
+  Paper,
+  CircularProgress
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
@@ -42,6 +43,7 @@ interface Flavor {
   ratings: Rating[];
   image_url: string | null;
   is_available: boolean;
+  is_legacy: boolean;
   shop_url: string | null;
 }
 
@@ -139,7 +141,7 @@ const FlavorDetail: React.FC = () => {
       }
   };
 
-  if (loading) return <Typography>Loading...</Typography>;
+  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!flavor) return <Typography>Flavor not found</Typography>;
 
   return (
@@ -156,7 +158,9 @@ const FlavorDetail: React.FC = () => {
         )}
         <CardContent sx={{ flex: 1, p: 4 }}>
             {!flavor.is_available && (
-                <Alert severity="error" sx={{ mb: 2 }}>Out of Stock</Alert>
+                <Alert severity={flavor.is_legacy ? "warning" : "error"} sx={{ mb: 2 }}>
+                    {flavor.is_legacy ? "Unavailable (Legacy Flavor)" : "Out of Stock"}
+                </Alert>
             )}
             <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold' }}>{flavor.name}</Typography>
             <Typography variant="h6" color="text.secondary" gutterBottom>{flavor.category_name}</Typography>
@@ -239,7 +243,7 @@ const FlavorDetail: React.FC = () => {
                         )}
 
                         <Box sx={{ mt: 2, ml: { xs: 2, md: 4 }, pl: 2, borderLeft: '2px solid rgba(0,0,0,0.1)' }}>
-                            {rating.replies.map((reply: Reply) => (
+                            {rating.replies.map((reply: any) => (
                                 <Box key={reply.id} sx={{ mb: 2 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{reply.user}</Typography>
                                     <Typography variant="body2">{reply.text}</Typography>

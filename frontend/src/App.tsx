@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ThemeProvider, 
   CssBaseline, 
@@ -18,10 +18,13 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  useMediaQuery
+  useMediaQuery,
+  TextField,
+  InputAdornment
 } from '@mui/material';
 import PaletteIcon from '@mui/icons-material/Palette';
 import MenuIcon from '@mui/icons-material/Menu';
+import SearchIcon from '@mui/icons-material/Search';
 import { getTheme, type CatppuccinTheme } from './theme';
 import CategoryList from './pages/CategoryList';
 import CategoryFlavors from './pages/categories/CategoryFlavors';
@@ -32,13 +35,61 @@ import Login from './pages/Login';
 import Settings from './pages/Settings';
 import api from './api';
 
+const GlobalSearch = () => {
+    const [query, setQuery] = useState('');
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        setQuery(params.get('q') || '');
+    }, [location.search]);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        // Redirect to categories page with search query
+        if (query.trim()) {
+            navigate(`/?q=${encodeURIComponent(query.trim())}`);
+        } else {
+            navigate('/');
+        }
+    };
+
+    return (
+        <form onSubmit={handleSearch} style={{ flexGrow: 1, maxWidth: 400, marginLeft: 16, marginRight: 16 }}>
+            <TextField
+                size="small"
+                fullWidth
+                placeholder="Search catalog..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                sx={{ 
+                    bgcolor: 'rgba(255,255,255,0.1)', 
+                    borderRadius: 1,
+                    '& .MuiOutlinedInput-root': {
+                        color: 'white',
+                        '& fieldset': { border: 'none' },
+                    }
+                }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <SearchIcon sx={{ color: 'white', opacity: 0.7 }} />
+                        </InputAdornment>
+                    ),
+                }}
+            />
+        </form>
+    );
+};
+
 const App: React.FC = () => {
   const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'mocha');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [user, setUser] = useState<{username: string} | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const isMobile = useMediaQuery('(max-width:600px)');
+  const isMobile = useMediaQuery('(max-width:900px)');
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -83,11 +134,11 @@ const App: React.FC = () => {
   };
 
   const navItems = user ? [
-    { label: 'Categories', path: '/' },
+    { label: 'Catalog', path: '/' },
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Settings', path: '/settings' },
   ] : [
-    { label: 'Categories', path: '/' },
+    { label: 'Catalog', path: '/' },
     { label: 'Login', path: '/login' },
   ];
 
@@ -120,21 +171,22 @@ const App: React.FC = () => {
       <Router>
         <AppBar position="fixed" elevation={1}>
           <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 2, sm: 4, md: 6 } }}>
-              {isMobile && (
-                <IconButton
-                  color="inherit"
-                  aria-label="open drawer"
-                  edge="start"
-                  onClick={() => setDrawerOpen(true)}
-                  sx={{ mr: 2 }}
-                >
-                  <MenuIcon />
-                </IconButton>
-              )}
-              <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={() => setDrawerOpen(true)}
+                sx={{ mr: 2, display: { md: 'none' } }}
+              >
+                <MenuIcon />
+              </IconButton>
+              
+              <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
                 <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>Holy Flavors</Link>
               </Typography>
               
+              <GlobalSearch />
+
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 {!isMobile && !loadingUser && (
                   <Box sx={{ display: 'flex', gap: 1 }}>
@@ -156,16 +208,14 @@ const App: React.FC = () => {
                   onClose={() => setAnchorEl(null)}
                 >
                   <MenuItem onClick={() => handleThemeChange('latte')}>Latte</MenuItem>
-                                  <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
-                                  <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
-                                  <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha</MenuItem>
-                                  <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
-                                </Menu>
-                  
+                  <MenuItem onClick={() => handleThemeChange('frappe')}>Frappé</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('macchiato')}>Macchiato</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('mocha')}>Mocha</MenuItem>
+                  <MenuItem onClick={() => handleThemeChange('pink')}>Pastel Pink</MenuItem>
+                </Menu>
               </Box>
           </Toolbar>
         </AppBar>
-        {/* Spacer for the fixed AppBar */}
         <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
 
         <Drawer
@@ -174,7 +224,7 @@ const App: React.FC = () => {
           onClose={() => setDrawerOpen(false)}
           ModalProps={{ keepMounted: true }}
           sx={{
-            display: { xs: 'block', sm: 'none' },
+            display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 240 },
           }}
         >

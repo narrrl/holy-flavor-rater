@@ -1,144 +1,95 @@
+import json
+import os
+import urllib.request
 from django.core.management.base import BaseCommand
+from django.core.files import File
+from tempfile import NamedTemporaryFile
+from django.conf import settings
 from api.models import Category, Flavor
 
 class Command(BaseCommand):
-    help = 'Adds legacy flavors that are no longer in the official API or are old versions'
+    help = 'Adds legacy flavors from JSON files in the legacy/ folder'
+
+    def download_image(self, url, flavor_name):
+        if not url:
+            return None
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req) as response:
+                img_temp = NamedTemporaryFile(delete=True)
+                img_temp.write(response.read())
+                img_temp.flush()
+                
+                ext = url.split('.')[-1].split('?')[0]
+                if len(ext) > 4: ext = 'png'
+                filename = f"legacy_{flavor_name.replace(' ', '_').lower()}.{ext}"
+                return File(img_temp, name=filename)
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f"Could not download image for {flavor_name}: {e}"))
+            return None
 
     def handle(self, *args, **options):
-        # Ensure categories exist
-        energy = Category.objects.get(slug='energy')
-        hydration = Category.objects.get(slug='hydration')
-        iced_tea = Category.objects.get(slug='iced-tea')
+        # 1. Remove old legacy flavors (ones without external_id or marked as legacy)
+        # To be safe, we only remove those marked as legacy or with no external_id
+        removed_count, _ = Flavor.objects.filter(is_legacy=True).delete()
+        Flavor.objects.filter(external_id__isnull=True).delete()
+        self.stdout.write(self.style.SUCCESS(f"Removed {removed_count} old legacy flavors."))
 
-        legacy_data = [
-            {
-                "Name": "Hitschies Saure Drachenzunge (Legacy)",
-                "Geschmack": "Blaue Himbeere",
-                "Beschreibung": "Eine legendäre Kollaboration mit Hitschies. Schmeckt wie die blauen sauren Drachenzungen – süß, fruchtig und sauer.",
-                "Status": "Limited Edition / Vaulted",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/Holy_Energy_Hitschies_Sour_Dragon_Tongue_Tub_720x.png"
-            },
-            {
-                "Name": "Hitschies Saure Drachenzunge Rot (Legacy)",
-                "Geschmack": "Erdbeere & Kirsche",
-                "Beschreibung": "Die rote Variante der Hitschies-Kollaboration. Fruchtiger Mix aus roten Beeren, angelehnt an die roten Drachenzungen.",
-                "Status": "Limited Edition",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/Holy_Energy_Hitschies_Sour_Dragon_Tongue_Red_Tub_720x.png"
-            },
-            {
-                "Name": "Lion's Lemonade (Legacy)",
-                "Geschmack": "Mango & Kiwi",
-                "Beschreibung": "Einer der beliebtesten Klassiker. Ein tropischer, fruchtiger Mix für maximalen Fokus. Oft von Fans zurückgefordert.",
-                "Status": "Vaulted",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Lions_Lemonade_Tub_720x.png"
-            },
-            {
-                "Name": "Lollipop Lovebird (Legacy)",
-                "Geschmack": "Kirsch-Lolli",
-                "Beschreibung": "Erinnert an die klassischen roten Kirsch-Lollies aus der Kindheit. Sehr süß und intensiv.",
-                "Status": "Limited Edition",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Lollipop_Lovebird_Tub_720x.png"
-            },
-            {
-                "Name": "Frosty Fox (Legacy)",
-                "Geschmack": "Eisbonbon",
-                "Beschreibung": "Ein kühler, süßer Geschmack, der an die klassischen Eisbonbons erinnert. Erfrischend mit einer 'kühlen' Note.",
-                "Status": "Limited Edition",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Frosty_Fox_Tub_720x.png"
-            },
-            {
-                "Name": "Bubble Gum Butterfly (Legacy)",
-                "Geschmack": "Kaugummi",
-                "Beschreibung": "Der typische rosa Kaugummi-Geschmack (Bubblegum). Sehr süß und nostalgisch.",
-                "Status": "Limited Edition",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Bubblegum_Butterfly_Tub_720x.png"
-            },
-            {
-                "Name": "Woodruff Wolf (Legacy)",
-                "Geschmack": "Waldmeister",
-                "Beschreibung": "Ein traditioneller deutscher Geschmack. Süß-würzig, wie Wackelpudding oder Waldmeister-Sirup.",
-                "Status": "Limited Edition",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Woodruff_Wolf_Tub_720x.png"
-            },
-            {
-                "Name": "Baked Apple Boar (Legacy)",
-                "Geschmack": "Bratapfel",
-                "Beschreibung": "Eine winterliche Sonderedition mit warmen Noten von Apfel und Zimt.",
-                "Status": "Seasonal / Vaulted",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Baked_Apple_Boar_Tub_720x.png"
-            },
-            {
-                "Name": "Kölle Kamelle (Legacy)",
-                "Geschmack": "Fruchtbonbons (Karnevalsmischung)",
-                "Beschreibung": "Spezialedition zum Kölner Karneval. Schmeckt nach einem Mix aus verschiedenen Fruchtbonbons ('Kamelle').",
-                "Status": "Limited Edition",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Koelle_Kamelle_Tub_720x.png"
-            },
-            {
-                "Name": "Strawberry Shark (Legacy)",
-                "Geschmack": "Erdbeere & Mandarine",
-                "Beschreibung": "Ein fruchtiger Mix aus süßer Erdbeere und spritziger Mandarine. Teil des ursprünglichen 'Squads'.",
-                "Status": "Discontinued",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Strawberry_Shark_Tub_720x.png"
-            },
-            {
-                "Name": "Blueberry Bear (Legacy)",
-                "Geschmack": "Blaubeere & Kokosnuss",
-                "Beschreibung": "Eine weiche Beeren-Note mit einem exotischen Kokos-Abgang.",
-                "Status": "Discontinued",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Blueberry_Bear_Tub_720x.png"
-            },
-            {
-                "Name": "Thai Lime Toucan (Legacy)",
-                "Geschmack": "Kaffir-Limette",
-                "Beschreibung": "Sehr aromatisch und zesty. Unterscheidet sich von normaler Zitrone durch die herbe Kaffir-Note.",
-                "Status": "Discontinued",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Thai_Lime_Toucan_Tub_720x.png"
-            },
-            {
-                "Name": "Cactus Camel (Legacy)",
-                "Geschmack": "Kaktusfeige",
-                "Beschreibung": "Erfrischend, leicht melonenartig und nicht zu süß. Ein sehr eigener, beliebter Geschmack.",
-                "Status": "Discontinued",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Cactus_Camel_Tub_720x.png"
-            },
-            {
-                "Name": "Apple Alligator (Legacy)",
-                "Geschmack": "Grüner Apfel",
-                "Beschreibung": "Knackiger, saurer Apfelgeschmack. Sehr erfrischend.",
-                "Status": "Discontinued",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Apple_Alligator_Tub_720x.png"
-            },
-            {
-                "Name": "Cherry Cheetah (Legacy)",
-                "Geschmack": "Kirsche",
-                "Beschreibung": "Klassischer, fruchtiger Kirschgeschmack.",
-                "Status": "Discontinued",
-                "Bild_URL": "https://weareholy.com/cdn/shop/files/HOLY_Energy_Cherry_Cheetah_Tub_720x.png"
-            }
-        ]
+        # Ensure main categories exist
+        energy = Category.objects.get_or_create(name='Energy', defaults={'slug': 'energy'})[0]
+        hydration = Category.objects.get_or_create(name='Hydration', defaults={'slug': 'hydration'})[0]
+        iced_tea = Category.objects.get_or_create(name='Iced Tea', defaults={'slug': 'iced-tea'})[0]
+        packs = Category.objects.get_or_create(name='Packs and other', defaults={'slug': 'packs-and-other'})[0]
 
-        for data in legacy_data:
-            full_description = f"**Geschmack:** {data['Geschmack']}\n\n{data['Beschreibung']}\n\n**Status:** {data['Status']}"
+        legacy_dir = os.path.join(settings.BASE_DIR, '..', 'legacy')
+        if not os.path.exists(legacy_dir):
+            self.stdout.write(self.style.ERROR(f"Legacy directory not found at {legacy_dir}"))
+            return
+
+        json_files = [f for f in os.listdir(legacy_dir) if f.endswith('.json')]
+        
+        created_count = 0
+
+        for json_file in json_files:
+            file_path = os.path.join(legacy_dir, json_file)
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data_list = json.load(f)
             
-            cat = energy # Default
-            if "hydration" in data['Name'].lower() or "hydration" in data['Beschreibung'].lower():
-                cat = hydration
-            elif "iced tea" in data['Name'].lower() or "eistee" in data['Name'].lower():
-                cat = iced_tea
+            for data in data_list:
+                name = data.get('Name')
+                desc = data.get('Beschreibung')
+                taste = data.get('Geschmack')
+                status_text = data.get('Status')
+                image_url = data.get('Bild_URL')
 
-            flavor, created = Flavor.objects.update_or_create(
-                name=data['Name'],
-                defaults={
-                    'category': cat,
-                    'description': full_description,
-                    'image_url': data['Bild_URL'],
-                    'is_available': False,
-                    'external_id': None 
-                }
-            )
+                full_desc = f"**Geschmack:** {taste}\n\n{desc}\n\n**Status:** {status_text}"
+                
+                # Determine category
+                cat = energy
+                if "hydration" in name.lower() or "hydration" in desc.lower():
+                    cat = hydration
+                elif "iced tea" in name.lower() or "eistee" in name.lower():
+                    cat = iced_tea
+                elif any(k in name.lower() for k in ['bundle', 'set', 'box', 'probe', 'sample', 'taster', 'shaker', 'starter']):
+                    cat = packs
 
-            if created:
-                self.stdout.write(self.style.SUCCESS(f"Added legacy flavor: {data['Name']}"))
-            else:
-                self.stdout.write(self.style.SUCCESS(f"Updated legacy flavor: {data['Name']}"))
+                flavor = Flavor(
+                    name=name,
+                    category=cat,
+                    description=full_desc,
+                    image_url=image_url,
+                    is_available=False,
+                    is_legacy=True,
+                    external_id=None
+                )
+
+                if image_url:
+                    img_file = self.download_image(image_url, name)
+                    if img_file:
+                        flavor.image.save(img_file.name, img_file, save=False)
+                
+                flavor.save()
+                created_count += 1
+                self.stdout.write(f"Added legacy flavor: {name}")
+
+        self.stdout.write(self.style.SUCCESS(f"Finished! Created {created_count} legacy flavors from JSON."))

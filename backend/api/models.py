@@ -31,9 +31,11 @@ class Flavor(models.Model):
     category = models.ForeignKey(Category, related_name='flavors', on_delete=models.CASCADE)
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    image_url = models.URLField(max_length=500, blank=True, null=True)
+    image_url = models.URLField(max_length=1000, blank=True, null=True)
+    image = models.ImageField(upload_to='flavors/', blank=True, null=True)
     shop_url = models.URLField(max_length=500, blank=True, null=True)
     is_available = models.BooleanField(default=True)
+    is_legacy = models.BooleanField(default=False)
     external_id = models.BigIntegerField(unique=True, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -46,6 +48,12 @@ class Flavor(models.Model):
         if ratings.exists():
             return sum(r.score for r in ratings) / ratings.count()
         return 0.0
+
+    @property
+    def cached_image_url(self):
+        if self.image:
+            return self.image.url
+        return self.image_url
 
 class Rating(models.Model):
     user = models.ForeignKey(User, related_name='ratings', on_delete=models.CASCADE)
