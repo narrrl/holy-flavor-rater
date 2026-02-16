@@ -20,8 +20,24 @@ class User(AbstractUser):
         ('forest', 'Forest Dark'),
     ]
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='mocha')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     pending_email = models.EmailField(max_length=254, blank=True, null=True)
     email_confirmation_code = models.CharField(max_length=6, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.avatar:
+            try:
+                from PIL import Image
+                img = Image.open(self.avatar.path)
+                if img.height > 256 or img.width > 256 or img.format != 'JPEG':
+                    output_size = (256, 256)
+                    img.thumbnail(output_size)
+                    if img.mode in ("RGBA", "P"):
+                        img = img.convert("RGB")
+                    img.save(self.avatar.path, 'JPEG', quality=90)
+            except Exception:
+                pass
 
     def __str__(self):
         return self.username

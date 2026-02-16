@@ -27,6 +27,7 @@ interface Reply {
 interface Rating {
     id: number;
     user: string;
+    user_avatar: string | null;
     score: number;
     comment: string;
     created_at: string;
@@ -224,7 +225,9 @@ const FlavorDetail: React.FC = () => {
                         ) : (
                             <>
                                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                    <Avatar sx={{ width: 32, height: 32, mr: 1.5 }}>{rating.user.charAt(0).toUpperCase()}</Avatar>
+                                    <Avatar src={rating.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1.5 }}>
+                                        {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                                    </Avatar>
                                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.user}</Typography>
                                     <Box sx={{ flexGrow: 1 }} />
                                     <MuiRating value={rating.score} readOnly size="small" max={10} />

@@ -2,9 +2,19 @@ from rest_framework import serializers
 from .models import User, Flavor, Category, Rating, Reply
 
 class UserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'theme']
+        fields = ['id', 'username', 'email', 'theme', 'avatar']
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,13 +31,22 @@ class ReplySerializer(serializers.ModelSerializer):
 
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
+    user_avatar = serializers.SerializerMethodField()
     flavor_name = serializers.CharField(source='flavor.name', read_only=True)
     flavor_image = serializers.SerializerMethodField()
     replies = ReplySerializer(many=True, read_only=True)
 
     class Meta:
         model = Rating
-        fields = ['id', 'user', 'flavor', 'flavor_name', 'flavor_image', 'score', 'comment', 'created_at', 'replies']
+        fields = ['id', 'user', 'user_avatar', 'flavor', 'flavor_name', 'flavor_image', 'score', 'comment', 'created_at', 'replies']
+
+    def get_user_avatar(self, obj):
+        if obj.user.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.user.avatar.url)
+            return obj.user.avatar.url
+        return None
 
     def get_flavor_image(self, obj):
         if obj.flavor.image:

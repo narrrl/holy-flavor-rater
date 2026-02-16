@@ -6,7 +6,8 @@ import {
   Button, 
   Paper, 
   Alert,
-  Container
+  Container,
+  Avatar
 } from '@mui/material';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -16,6 +17,7 @@ const Settings: React.FC = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [currentEmail, setCurrentEmail] = useState('');
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [confirmationCode, setConfirmationCode] = useState('');
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
@@ -29,12 +31,36 @@ const Settings: React.FC = () => {
         setUsername(res.data.username);
         setEmail(res.data.email);
         setCurrentEmail(res.data.email);
+        setAvatar(res.data.avatar);
       } catch (err) {
         console.error(err);
       }
     };
     fetchUser();
   }, []);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+          setMessage({ type: 'error', text: 'File size exceeds 2MB limit' });
+          return;
+      }
+
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      try {
+          const res = await api.post('users/update_avatar/', formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          setAvatar(res.data.avatar);
+          setMessage({ type: 'success', text: 'Avatar updated successfully!' });
+      } catch (err: any) {
+          setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to upload avatar' });
+      }
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +112,24 @@ const Settings: React.FC = () => {
           {message.text}
         </Alert>
       )}
+
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom>Profile Picture</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
+            <Avatar src={avatar || undefined} sx={{ width: 100, height: 100 }}>
+                {!avatar && username.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+                <Button variant="outlined" component="label">
+                    Upload New Avatar
+                    <input type="file" hidden accept="image/*" onChange={handleAvatarUpload} />
+                </Button>
+                <Typography variant="caption" display="block" sx={{ mt: 1 }} color="text.secondary">
+                    Max size: 2MB. JPG, PNG or WEBP.
+                </Typography>
+            </Box>
+        </Box>
+      </Paper>
 
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" gutterBottom>Profile Information</Typography>

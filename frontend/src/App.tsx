@@ -9,6 +9,7 @@ import {
   Button, 
   Box,
   IconButton,
+  Avatar,
   Menu,
   MenuItem,
   Drawer,
@@ -138,7 +139,7 @@ const GlobalSearch = () => {
 const App: React.FC = () => {
   const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'mocha');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [user, setUser] = useState<{username: string} | null>(null);
+  const [user, setUser] = useState<{username: string, avatar: string | null} | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width:900px)');
@@ -259,9 +260,21 @@ const App: React.FC = () => {
                     </Box>
                   )}
                   
-                  <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-                    <PaletteIcon />
-                  </IconButton>
+                                  <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
+                  
+                                    {user?.avatar ? (
+                  
+                                        <Avatar src={user.avatar} sx={{ width: 32, height: 32 }} />
+                  
+                                    ) : (
+                  
+                                        <PaletteIcon />
+                  
+                                    )}
+                  
+                                  </IconButton>
+                  
+                  
                   <Menu
                     anchorEl={anchorEl}
                     open={Boolean(anchorEl)}

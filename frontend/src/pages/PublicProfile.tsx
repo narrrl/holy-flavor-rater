@@ -26,6 +26,7 @@ interface Rating {
 interface ProfileData {
     username: string;
     theme: string;
+    avatar: string | null;
     ratings: Rating[];
 }
 
@@ -59,8 +60,8 @@ const PublicProfile: React.FC = () => {
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 6, gap: 3 }}>
-        <Avatar sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'primary.main' }}>
-            {data.username.charAt(0).toUpperCase()}
+        <Avatar src={data.avatar || undefined} sx={{ width: 80, height: 80, fontSize: '2rem', bgcolor: 'primary.main' }}>
+            {!data.avatar && data.username.charAt(0).toUpperCase()}
         </Avatar>
         <Box>
             <Typography variant="h3" sx={{ fontWeight: 'bold' }}>{data.username}</Typography>

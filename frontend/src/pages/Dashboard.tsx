@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Typography, Card, CardContent, Box, Rating as MuiRating, Button, TextField, Container, CircularProgress } from '@mui/material';
+import { Typography, Card, CardContent, Box, Rating as MuiRating, Button, TextField, Container, CircularProgress, Avatar } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
 interface DashboardData {
-    user: { username: string };
+    user: { username: string, avatar: string | null };
     rated_count: number;
     missing_count: number;
     missing_flavors: any[];
@@ -44,7 +44,12 @@ const Dashboard: React.FC = () => {
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
-          <Typography variant="h4">Personal Dashboard</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar src={data.user.avatar || undefined} sx={{ width: 48, height: 48 }}>
+                  {!data.user.avatar && data.user.username.charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography variant="h4">Personal Dashboard</Typography>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <TextField 
                 size="small" 

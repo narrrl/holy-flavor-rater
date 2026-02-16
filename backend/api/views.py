@@ -172,6 +172,22 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response({'error': 'Invalid theme'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
+    def update_avatar(self, request):
+        user = request.user
+        avatar = request.FILES.get('avatar')
+        if not avatar:
+            return Response({'error': 'No avatar provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check size (2MB = 2 * 1024 * 1024 bytes)
+        if avatar.size > 2 * 1024 * 1024:
+            return Response({'error': 'File size exceeds 2MB limit'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user.avatar = avatar
+        user.save()
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
     def change_password(self, request):
         user = request.user
         old_password = request.data.get('old_password')

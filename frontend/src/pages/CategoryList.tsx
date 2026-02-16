@@ -37,6 +37,7 @@ interface Flavor {
 interface Review {
     id: number;
     user: string;
+    user_avatar: string | null;
     flavor_name: string;
     flavor_image: string | null;
     score: number;
@@ -268,7 +269,9 @@ const CategoryList: React.FC = () => {
                         }}
                       >
                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                              <Avatar sx={{ width: 32, height: 32, mr: 1 }}>{review.user.charAt(0).toUpperCase()}</Avatar>
+                              <Avatar src={review.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1 }}>
+                                  {!review.user_avatar && review.user.charAt(0).toUpperCase()}
+                              </Avatar>
                               <Box>
                                   <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{review.user}</Typography>
                                   <Typography variant="caption" color="text.secondary">
