@@ -214,7 +214,7 @@ const App: React.FC = () => {
       <List>
         <ListItem disablePadding>
             <ListItemButton component={Link} to="/" onClick={() => setDrawerOpen(false)}>
-                <ListItemText primary="Catalog Home" />
+                <ListItemText primary="Home" />
             </ListItemButton>
         </ListItem>
         
@@ -244,7 +244,7 @@ const App: React.FC = () => {
             <>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to="/dashboard" onClick={() => setDrawerOpen(false)}>
-                        <ListItemText primary="Personal Dashboard" />
+                        <ListItemText primary="Dashboard" />
                     </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>

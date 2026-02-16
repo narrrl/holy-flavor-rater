@@ -148,11 +148,11 @@ const FlavorDetail: React.FC = () => {
 
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
-      <Button component={Link} to={`/category/${flavor.category_slug}`} sx={{ mb: 2 }}>
+      <Button component={Link} to={`/category/${flavor.category_slug}`} sx={{ mb: 2, textTransform: 'none' }}>
         &larr; Back to {flavor.category_name}
       </Button>
 
-      <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, mb: 4, overflow: 'hidden' }}>
+      <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, mb: 4, overflow: 'hidden', borderRadius: { xs: 2, md: 4 } }}>
         {flavor.image_url && (
             <Box 
                 sx={{ 
@@ -179,24 +179,32 @@ const FlavorDetail: React.FC = () => {
                 />
             </Box>
         )}
-        <CardContent sx={{ flex: 1, p: 4 }}>
+        <CardContent sx={{ flex: 1, p: { xs: 3, md: 4 } }}>
             {!flavor.is_available && (
                 <Alert severity={flavor.is_legacy ? "warning" : "error"} sx={{ mb: 2 }}>
                     {flavor.is_legacy ? "Unavailable (Legacy Flavor)" : "Out of Stock"}
                 </Alert>
             )}
-            <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold' }}>{flavor.name}</Typography>
-            <Typography variant="h6" color="text.secondary" gutterBottom>{flavor.category_name}</Typography>
+            <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2rem', md: '3rem' } }}>
+                {flavor.name}
+            </Typography>
+            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
+                {flavor.category_name}
+            </Typography>
             
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
                 <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} size="large" max={10} />
-                <Typography variant="h5" sx={{ ml: 2 }}>{(flavor.average_rating || 0).toFixed(1)} / 10</Typography>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
+                    {(flavor.average_rating || 0).toFixed(1)} / 10
+                </Typography>
             </Box>
 
-            <Typography variant="body1" sx={{ mb: 4, lineHeight: 1.8 }}>{flavor.description}</Typography>
+            <Typography variant="body1" sx={{ mb: 4, lineHeight: 1.8, fontSize: { xs: '0.95rem', md: '1rem' } }}>
+                {flavor.description}
+            </Typography>
 
             {flavor.shop_url && (
-                <Button variant="contained" size="large" component="a" href={flavor.shop_url} target="_blank">
+                <Button variant="contained" size="large" component="a" href={flavor.shop_url} target="_blank" fullWidth sx={{ maxWidth: { md: 200 }, borderRadius: 2 }}>
                     Buy Now
                 </Button>
             )}
@@ -205,11 +213,11 @@ const FlavorDetail: React.FC = () => {
 
       {/* New Rating Form */}
       {currentUser && flavor.user_rating === null && (
-          <Paper sx={{ p: 3, mb: 4 }}>
-              <Typography variant="h5" gutterBottom>Rate this flavor</Typography>
+          <Paper sx={{ p: { xs: 3, md: 4 }, mb: 4, borderRadius: 2 }}>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>Rate this flavor</Typography>
               <form onSubmit={handleRatingSubmit}>
-                  <Box sx={{ mb: 2 }}>
-                      <Typography component="legend">Score (1-10)</Typography>
+                  <Box sx={{ mb: 3 }}>
+                      <Typography component="legend" gutterBottom>Score (1-10)</Typography>
                       <MuiRating max={10} value={newScore} onChange={(_, val) => setNewScore(val)} size="large" />
                   </Box>
                   <TextField
@@ -219,25 +227,44 @@ const FlavorDetail: React.FC = () => {
                       label="Your Comment (Optional)"
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      sx={{ mb: 2 }}
+                      sx={{ 
+                          mb: 3,
+                          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+                      }}
+                      InputLabelProps={{ shrink: true }}
                   />
-                  <Button variant="contained" type="submit" disabled={!newScore}>Submit Rating</Button>
+                  <Button variant="contained" type="submit" disabled={!newScore} fullWidth sx={{ maxWidth: { md: 200 }, borderRadius: 2 }}>
+                      Submit Rating
+                  </Button>
               </form>
           </Paper>
       )}
 
-      <Typography variant="h4" gutterBottom sx={{ mt: 6, mb: 3 }}>Community Reviews</Typography>
+      <Typography variant="h4" gutterBottom sx={{ mt: 6, mb: 3, fontWeight: 'bold', fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
+          Community Reviews
+      </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {flavor.ratings.length === 0 ? (
-            <Typography color="text.secondary">No reviews yet.</Typography>
+            <Typography color="text.secondary">No reviews yet. Be the first to rate it!</Typography>
         ) : (
             flavor.ratings.map((rating: Rating) => (
-                <Card key={rating.id} variant="outlined">
-                    <CardContent>
+                <Card key={rating.id} variant="outlined" sx={{ borderRadius: 2 }}>
+                    <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                         {editMode === rating.id ? (
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <MuiRating max={10} value={editScore} onChange={(_, val) => setEditScore(val || 0)} />
-                                <TextField multiline fullWidth value={editComment} onChange={(e) => setEditComment(e.target.value)} />
+                                <MuiRating max={10} value={editScore} onChange={(_, val) => setEditScore(val || 0)} size="large" />
+                                <TextField 
+                                    multiline 
+                                    fullWidth 
+                                    rows={3} 
+                                    value={editComment} 
+                                    onChange={(e) => setEditComment(e.target.value)}
+                                    label="Your Comment"
+                                    sx={{ 
+                                        '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
+                                    }}
+                                    InputLabelProps={{ shrink: true }}
+                                />
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>Save</Button>
                                     <Button onClick={() => setEditMode(null)}>Cancel</Button>
@@ -245,40 +272,57 @@ const FlavorDetail: React.FC = () => {
                             </Box>
                         ) : (
                             <>
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                    <Avatar src={rating.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
+                                    <Avatar src={rating.user_avatar || undefined} sx={{ width: 40, height: 40, mr: 2, mt: 0.5 }}>
                                         {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
                                     </Avatar>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.user}</Typography>
-                                    <Box sx={{ flexGrow: 1 }} />
-                                    <MuiRating value={rating.score} readOnly size="small" max={10} />
-                                    <Typography variant="body2" sx={{ ml: 1 }}>{rating.score}/10</Typography>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.user}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <MuiRating value={rating.score} readOnly size="small" max={10} />
+                                                <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                            </Box>
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary" display="block">
+                                            {new Date(rating.created_at).toLocaleDateString()}
+                                        </Typography>
+                                    </Box>
                                 </Box>
-                                {rating.comment && <Typography variant="body1" sx={{ mb: 2 }}>{rating.comment}</Typography>}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Typography variant="caption" color="text.secondary">{new Date(rating.created_at).toLocaleDateString()}</Typography>
+                                {rating.comment && (
+                                    <Typography variant="body1" sx={{ mb: 2, pl: { md: 7 }, overflowWrap: 'break-word', lineHeight: 1.6 }}>
+                                        {rating.comment}
+                                    </Typography>
+                                )}
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                                     {currentUser === rating.user && (
-                                        <Box>
+                                        <>
                                             <Button size="small" onClick={() => startEdit(rating)}>Edit</Button>
                                             <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)}>Delete</Button>
-                                        </Box>
+                                        </>
                                     )}
                                 </Box>
                             </>
                         )}
 
-                        <Box sx={{ mt: 2, ml: { xs: 2, md: 4 }, pl: 2, borderLeft: '2px solid rgba(0,0,0,0.1)' }}>
+                        <Box sx={{ mt: 2, ml: { xs: 2, md: 7 }, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
                             {rating.replies.map((reply: any) => (
                                 <Box key={reply.id} sx={{ mb: 2 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{reply.user}</Typography>
-                                    <Typography variant="body2">{reply.text}</Typography>
+                                    <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>{reply.text}</Typography>
                                     <Typography variant="caption" color="text.secondary">{new Date(reply.created_at).toLocaleDateString()}</Typography>
                                 </Box>
                             ))}
                             {currentUser && (
                                 <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                                    <TextField size="small" placeholder="Write a reply..." fullWidth value={replyInputs[rating.id] || ''} onChange={(e) => setReplyInputs({ ...replyInputs, [rating.id]: e.target.value })} />
-                                    <Button size="small" disabled={!replyInputs[rating.id]} onClick={() => handleReplySubmit(rating.id)}>Reply</Button>
+                                    <TextField 
+                                        size="small" 
+                                        placeholder="Write a reply..." 
+                                        fullWidth 
+                                        value={replyInputs[rating.id] || ''} 
+                                        onChange={(e) => setReplyInputs({ ...replyInputs, [rating.id]: e.target.value })} 
+                                    />
+                                    <Button variant="contained" size="small" disabled={!replyInputs[rating.id]} onClick={() => handleReplySubmit(rating.id)}>Reply</Button>
                                 </Box>
                             )}
                         </Box>
