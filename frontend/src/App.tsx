@@ -33,7 +33,7 @@ import { getTheme, type CatppuccinTheme } from './theme';
 import api from './api';
 
 // Code splitting
-const CategoryList = lazy(() => import('./pages/CategoryList'));
+const MainPage = lazy(() => import('./pages/MainPage'));
 const CategoryFlavors = lazy(() => import('./pages/categories/CategoryFlavors'));
 const FlavorDetail = lazy(() => import('./pages/flavors/FlavorDetail'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -394,7 +394,7 @@ const App: React.FC = () => {
           <Box sx={{ flexGrow: 1, width: '100%' }}>
             <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>}>
                 <Routes>
-                    <Route path="/" element={<CategoryList />} />
+                    <Route path="/" element={<MainPage />} />
                     <Route path="/category/:slug" element={<CategoryFlavors />} />
                     <Route path="/flavor/:id" element={<FlavorDetail />} />
                     <Route path="/profile/:username" element={<PublicProfile />} />
