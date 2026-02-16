@@ -10,10 +10,13 @@ import {
   Rating as MuiRating,
   Paper,
   Chip,
-  Container
+  Container,
+  IconButton
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import StarIcon from '@mui/icons-material/Star';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
@@ -32,6 +35,7 @@ interface Flavor {
     image_url: string | null;
     is_available: boolean;
     is_legacy: boolean;
+    ratings: any[];
 }
 
 interface Review {
@@ -52,6 +56,7 @@ const CategoryList: React.FC = () => {
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
   const [allFlavors, setAllFlavors] = useState<Flavor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
   const location = useLocation();
   
   const query = new URLSearchParams(location.search).get('q') || '';
@@ -82,9 +87,22 @@ const CategoryList: React.FC = () => {
     fetchData();
   }, [query]);
 
+  // Auto-rotate
+  useEffect(() => {
+      if (topFlavors.length > 0 && !query) {
+          const timer = setInterval(() => {
+              setActiveIndex(prev => (prev + 1) % topFlavors.length);
+          }, 6000);
+          return () => clearInterval(timer);
+      }
+  }, [topFlavors, query]);
+
   useTitle(query ? `Search: ${query}` : 'Holy Flavors Archive');
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
+
+  const handlePrev = () => setActiveIndex(prev => (prev - 1 + topFlavors.length) % topFlavors.length);
+  const handleNext = () => setActiveIndex(prev => (prev + 1) % topFlavors.length);
 
   // --- SEARCH VIEW ---
   if (query) {
@@ -160,9 +178,12 @@ const CategoryList: React.FC = () => {
   }
 
   // --- HOME VIEW ---
+  const currentTop = topFlavors[activeIndex];
+  const featuredReview = currentTop?.ratings?.find(r => r.comment) || null;
+
   return (
     <Box sx={{ width: '100%' }}>
-      {/* Hero Section - True Full Width, No Overflow */}
+      {/* Hero Section */}
       <Paper 
         elevation={0}
         sx={{ 
@@ -175,22 +196,11 @@ const CategoryList: React.FC = () => {
             textAlign: 'center',
             borderBottom: '1px solid rgba(255,255,255,0.1)',
             width: '100%',
-            maxWidth: '100%',
             boxSizing: 'border-box',
             overflow: 'hidden'
         }}
       >
-        <Typography 
-            variant="h2" 
-            component="h1" 
-            gutterBottom 
-            sx={{ 
-                fontWeight: 'bold', 
-                fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' },
-                overflowWrap: 'break-word',
-                px: 2
-            }}
-        >
+        <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' }, overflowWrap: 'break-word', px: 2 }}>
             The Ultimate Holy Archive
         </Typography>
         <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto', px: 2 }}>
@@ -200,146 +210,165 @@ const CategoryList: React.FC = () => {
             <Button variant="contained" size="large" component={Link} to="/login" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
                 Join Community
             </Button>
-            <Button variant="outlined" size="large" onClick={() => {
-                const element = document.getElementById('categories');
-                element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }} sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
+            <Button variant="outlined" size="large" onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })} sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
                 Explore Categories
             </Button>
         </Box>
       </Paper>
 
-      {/* Main Content inside Container */}
       <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, pb: 8 }}>
-        {/* Top Rated Flavors */}
-        {topFlavors.length > 0 && (
-          <Box sx={{ mb: 10 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                  <StarIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
-                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Hall of Fame</Typography>
-                  <Chip label="Top 10" color="primary" sx={{ ml: 2 }} size="small" />
-              </Box>
-              <Box sx={{ display: 'flex', gap: 3, overflowX: 'auto', pb: 2, px: 1, '&::-webkit-scrollbar': { height: 8 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.1)', borderRadius: 4 } }}>
-                  {topFlavors.map(flavor => (
-                      <Box key={flavor.id} sx={{ flex: '0 0 280px' }}>
-                          <Card sx={{ height: '100%', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-8px)' } }}>
-                              <Box component={Link} to={`/flavor/${flavor.id}`} sx={{ textDecoration: 'none', color: 'inherit' }}>
-                                  {flavor.image_url && (
-                                      <Box 
-                                          sx={{ 
-                                              width: '100%', 
-                                              aspectRatio: '1/1', 
-                                              display: 'flex', 
-                                              alignItems: 'center', 
-                                              justifyContent: 'center', 
-                                              bgcolor: 'background.default',
-                                              borderBottom: '1px solid',
-                                              borderColor: 'divider',
-                                              overflow: 'hidden'
-                                          }}
-                                      >
-                                          <Box 
-                                              component="img" 
-                                              src={flavor.image_url} 
-                                              sx={{ 
-                                                  width: '100%', 
-                                                  height: '100%', 
-                                                  objectFit: 'cover',
-                                                  transition: 'transform 0.5s ease',
-                                                  '&:hover': { transform: 'scale(1.1)' }
-                                              }} 
-                                          />
-                                      </Box>
-                                  )}
-                                  <CardContent>
-                                      <Typography variant="h6" noWrap>{flavor.name}</Typography>
-                                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                                          <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} max={10} size="small" />
-                                          <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>
-                                              {(flavor.average_rating || 0).toFixed(1)}
-                                          </Typography>
-                                      </Box>
-                                  </CardContent>
-                              </Box>
-                          </Card>
-                      </Box>
-                  ))}
-              </Box>
-          </Box>
-      )}
+        
+        {/* Hall of Fame Carousel */}
+        {topFlavors.length > 0 && currentTop && (
+            <Box sx={{ mb: 12 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, justifyContent: 'space-between' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <StarIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
+                        <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Hall of Fame</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <IconButton onClick={handlePrev} sx={{ border: '1px solid', borderColor: 'divider' }}><ChevronLeftIcon /></IconButton>
+                        <IconButton onClick={handleNext} sx={{ border: '1px solid', borderColor: 'divider' }}><ChevronRightIcon /></IconButton>
+                    </Box>
+                </Box>
 
-      {/* Categories Grid */}
-      <Box id="categories" sx={{ mb: 10 }}>
-        <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Browse by Category</Typography>
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-            {categories.map(category => (
-            <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 23%' }, minWidth: 280 }}>
-                <Link to={`/category/${category.slug}`} style={{ textDecoration: 'none' }}>
                 <Card sx={{ 
-                    height: 120, 
                     display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    transition: 'all 0.3s',
-                    position: 'relative',
+                    flexDirection: { xs: 'column', md: 'row' }, 
+                    minHeight: 400,
+                    borderRadius: 4,
                     overflow: 'hidden',
-                    '&:hover': {
-                        transform: 'scale(1.02)',
-                        bgcolor: 'primary.main',
-                        '& .cat-name': { color: 'white' }
-                    }
+                    position: 'relative'
                 }}>
-                    <CardContent>
-                        <Typography variant="h5" className="cat-name" color="primary" sx={{ fontWeight: 'bold' }}>{category.name}</Typography>
+                    <Box 
+                        component={Link}
+                        to={`/flavor/${currentTop.id}`}
+                        sx={{ 
+                            width: { xs: '100%', md: '45%' }, 
+                            aspectRatio: '1/1',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'action.hover',
+                            overflow: 'hidden',
+                            textDecoration: 'none'
+                        }}
+                    >
+                        <Box 
+                            component="img"
+                            src={currentTop.image_url || ''}
+                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                    </Box>
+                    <CardContent sx={{ flex: 1, p: { xs: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <Chip label={`Rank #${activeIndex + 1}`} color="primary" sx={{ width: 'fit-content', mb: 2, fontWeight: 'bold' }} />
+                        <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold' }}>{currentTop.name}</Typography>
+                        
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                            <MuiRating value={currentTop.average_rating || 0} readOnly precision={0.5} max={10} size="large" />
+                            <Typography variant="h5" sx={{ ml: 2, fontWeight: 'bold' }}>{(currentTop.average_rating || 0).toFixed(1)} / 10</Typography>
+                        </Box>
+
+                        {featuredReview && (
+                            <Box sx={{ mt: 2, p: 3, bgcolor: 'action.hover', borderRadius: 3, position: 'relative' }}>
+                                <Typography variant="body1" sx={{ fontStyle: 'italic', mb: 2, fontSize: '1.1rem' }}>
+                                    "{featuredReview.comment}"
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <Avatar sx={{ width: 24, height: 24, fontSize: '0.7rem' }}>{featuredReview.user.charAt(0)}</Avatar>
+                                    <Typography variant="subtitle2" color="text.secondary">— {featuredReview.user}</Typography>
+                                </Box>
+                            </Box>
+                        )}
+
+                        <Button 
+                            variant="contained" 
+                            component={Link} 
+                            to={`/flavor/${currentTop.id}`}
+                            sx={{ mt: 4, width: 'fit-content', px: 4, py: 1.5, borderRadius: 2 }}
+                        >
+                            View All Reviews
+                        </Button>
                     </CardContent>
                 </Card>
-                </Link>
+                
+                {/* Progress Indicators */}
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, gap: 1 }}>
+                    {topFlavors.map((_, i) => (
+                        <Box 
+                            key={i} 
+                            onClick={() => setActiveIndex(i)}
+                            sx={{ 
+                                width: activeIndex === i ? 24 : 8, 
+                                height: 8, 
+                                borderRadius: 4, 
+                                bgcolor: activeIndex === i ? 'primary.main' : 'divider',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease'
+                            }} 
+                        />
+                    ))}
+                </Box>
             </Box>
-            ))}
-        </Box>
-      </Box>
+        )}
 
-      {/* Recent Reviews */}
-      {recentReviews.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-              <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Community Voice</Typography>
-              <Box sx={{ columns: { xs: 1, sm: 2, md: 3 }, columnGap: 3 }}>
-                  {recentReviews.map(review => (
-                      <Paper 
-                        key={review.id} 
-                        variant="outlined" 
-                        sx={{ 
-                            p: 3, 
-                            mb: 3, 
-                            breakInside: 'avoid', 
-                            borderRadius: 3,
-                            transition: 'border-color 0.2s',
-                            '&:hover': { borderColor: 'primary.main' }
-                        }}
-                      >
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                              <Avatar src={review.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1 }}>
-                                  {!review.user_avatar && review.user.charAt(0).toUpperCase()}
-                              </Avatar>
-                              <Box>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{review.user}</Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                      on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit' }}>{review.flavor_name}</Link>
-                                  </Typography>
-                              </Box>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                              <MuiRating value={review.score} readOnly size="small" max={10} />
-                              <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{review.score}/10</Typography>
-                          </Box>
-                          <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                              "{review.comment}"
-                          </Typography>
-                      </Paper>
-                  ))}
-              </Box>
-          </Box>
-      )}
+        {/* Categories Grid */}
+        <Box id="categories" sx={{ mb: 10 }}>
+            <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Browse by Category</Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                {categories.map(category => (
+                <Box key={category.id} sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%', lg: '1 1 23%' }, minWidth: 280 }}>
+                    <Link to={`/category/${category.slug}`} style={{ textDecoration: 'none' }}>
+                    <Card sx={{ 
+                        height: 120, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        transition: 'all 0.3s',
+                        '&:hover': { transform: 'scale(1.02)', bgcolor: 'primary.main', '& .cat-name': { color: 'white' } }
+                    }}>
+                        <CardContent>
+                            <Typography variant="h5" className="cat-name" color="primary" sx={{ fontWeight: 'bold' }}>{category.name}</Typography>
+                        </CardContent>
+                    </Card>
+                    </Link>
+                </Box>
+                ))}
+            </Box>
+        </Box>
+
+        {/* Recent Reviews */}
+        {recentReviews.length > 0 && (
+            <Box sx={{ mb: 4 }}>
+                <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Community Voice</Typography>
+                <Box sx={{ columns: { xs: 1, sm: 2, md: 3 }, columnGap: 3 }}>
+                    {recentReviews.map(review => (
+                        <Paper 
+                            key={review.id} 
+                            variant="outlined" 
+                            sx={{ p: 3, mb: 3, breakInside: 'avoid', borderRadius: 3, transition: 'border-color 0.2s', '&:hover': { borderColor: 'primary.main' } }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                <Avatar src={review.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1 }}>
+                                    {!review.user_avatar && review.user.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <Box>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{review.user}</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit' }}>{review.flavor_name}</Link>
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                <MuiRating value={review.score} readOnly size="small" max={10} />
+                                <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{review.score}/10</Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ fontStyle: 'italic' }}>"{review.comment}"</Typography>
+                        </Paper>
+                    ))}
+                </Box>
+            </Box>
+        )}
       </Container>
     </Box>
   );
