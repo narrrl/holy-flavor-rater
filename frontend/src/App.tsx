@@ -21,10 +21,8 @@ import {
   useMediaQuery,
   TextField,
   InputAdornment,
-  Autocomplete,
-  ListSubheader
+  Autocomplete
 } from '@mui/material';
-import PaletteIcon from '@mui/icons-material/Palette';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import { getTheme, type CatppuccinTheme } from './theme';

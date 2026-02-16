@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
-import { CatppuccinTheme } from '../theme';
+import type { CatppuccinTheme } from '../theme';
 
 interface SettingsProps {
     themeName: CatppuccinTheme;
