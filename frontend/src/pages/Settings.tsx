@@ -117,7 +117,15 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
 
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ mt: 4 }}>Account Settings</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4, mt: 4 }}>
+          <Avatar src={avatar || undefined} sx={{ width: 80, height: 80, border: '3px solid', borderColor: 'primary.main' }}>
+              {!avatar && username.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box>
+              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{username}</Typography>
+              <Typography variant="body2" color="text.secondary">Manage your account and preferences</Typography>
+          </Box>
+      </Box>
       
       {message && (
         <Alert severity={message.type} sx={{ mb: 3 }} onClose={() => setMessage(null)}>
