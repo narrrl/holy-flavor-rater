@@ -240,15 +240,20 @@ const MainPage: React.FC = () => {
                         {feedRatings.map(rating => (
                                                             <Card key={rating.id} sx={{ borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
                                                                 <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-                                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                                                                        <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-                                                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 24, height: 24, mr: 1 }}>
-                                                                                {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
-                                                                            </Avatar>
-                                                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>{rating.user}</Typography>
-                                                                        </Link>
-                                                                        <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>rated</Typography>
-                                                                    </Box>
+                                                                                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                                                                                                <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+                                                                                                                    <Avatar src={rating.user_avatar || undefined} sx={{ width: 24, height: 24, mr: 1 }}>
+                                                                                                                        {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                                                                                                                    </Avatar>
+                                                                                                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>{rating.user}</Typography>
+                                                                                                                </Link>
+                                                                                                                <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>rated</Typography>
+                                                                                                                <Box sx={{ flexGrow: 1 }} />
+                                                                                                                <Typography variant="caption" color="text.secondary">
+                                                                                                                    {new Date(rating.created_at).toLocaleDateString()}
+                                                                                                                </Typography>
+                                                                                                            </Box>
+                                                                    
                                                                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
                                                                         <Box 
                                                                             component="img" 
@@ -475,7 +480,7 @@ const MainPage: React.FC = () => {
                                     </Box>
                                 </Box>
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                                    on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit', fontWeight: 'bold' }}>{review.flavor_name}</Link>
+                                    {new Date(review.created_at).toLocaleDateString()} • on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit', fontWeight: 'bold' }}>{review.flavor_name}</Link>
                                 </Typography>
                                 <Typography variant="body2" sx={{ fontStyle: 'italic', fontSize: '0.85rem', display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}>
                                     "{review.comment}"
