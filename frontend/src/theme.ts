@@ -8,13 +8,13 @@ export const getTheme = (mode: CatppuccinTheme) => {
 
   if (mode === 'pink') {
       palette = {
-          base: { hex: '#fff0f5' }, // Lavender Blush
-          surface0: { hex: '#ffe4e1' }, // Misty Rose
-          crust: { hex: '#ffc0cb' }, // Pink
-          text: { hex: '#5c4b51' }, // Darker text for contrast
-          subtext0: { hex: '#8b6b7a' },
-          mauve: { hex: '#ff69b4' }, // Hot Pink (Primary)
-          pink: { hex: '#db7093' }, // Pale Violet Red (Secondary)
+          base: { hex: '#fdf6f7' }, // Soft cream pink
+          surface0: { hex: '#f8e1e5' }, // Pastel pink
+          crust: { hex: '#f2ccd5' }, // Deeper pink for headers
+          text: { hex: '#4a3135' }, // Deep maroon-brown for high readability
+          subtext0: { hex: '#7d5c62' },
+          mauve: { hex: '#e05a8d' }, // Rich pink (Primary)
+          pink: { hex: '#4ecdc4' }, // Fresh Turquoise (Secondary/Accent)
       };
   } else {
       const flavor = flavors[mode];

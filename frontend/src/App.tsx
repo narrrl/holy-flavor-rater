@@ -100,10 +100,10 @@ const GlobalSearch = () => {
                         {...params}
                         placeholder="Search catalog..."
                         sx={{ 
-                            bgcolor: 'rgba(255,255,255,0.1)', 
+                            bgcolor: 'action.hover', 
                             borderRadius: 1,
                             '& .MuiOutlinedInput-root': {
-                                color: 'white',
+                                color: 'inherit',
                                 '& fieldset': { border: 'none' },
                             }
                         }}
@@ -111,7 +111,7 @@ const GlobalSearch = () => {
                             ...params.InputProps,
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon sx={{ color: 'white', opacity: 0.7 }} />
+                                    <SearchIcon sx={{ color: 'inherit', opacity: 0.7 }} />
                                 </InputAdornment>
                             ),
                         }}
