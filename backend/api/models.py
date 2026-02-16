@@ -54,7 +54,7 @@ class Category(models.Model):
 
 class Flavor(models.Model):
     category = models.ForeignKey(Category, related_name='flavors', on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100) # Removed unique=True here
     description = models.TextField(blank=True)
     image_url = models.URLField(max_length=1000, blank=True, null=True)
     image = models.ImageField(upload_to='flavors/', blank=True, null=True)
@@ -64,8 +64,14 @@ class Flavor(models.Model):
     external_id = models.BigIntegerField(unique=True, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        # This allows "Erdbeere" in Iced Tea and "Erdbeere" in Milkshake
+        constraints = [
+            models.UniqueConstraint(fields=['name', 'category'], name='unique_flavor_name_per_category')
+        ]
+
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.category.name})"
 
     @property
     def get_average_rating(self):
