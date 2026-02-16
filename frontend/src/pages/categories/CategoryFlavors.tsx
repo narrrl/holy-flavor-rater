@@ -45,9 +45,10 @@ const CategoryFlavors: React.FC = () => {
       setLoading(true);
       try {
         const res = await api.get(`flavors/?category__slug=${slug}`);
-        setFlavors(res.data);
-        if (res.data.length > 0) {
-          setCategoryName(res.data[0].category_name);
+        const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+        setFlavors(data);
+        if (data.length > 0) {
+          setCategoryName(data[0].category_name);
         }
       } catch (err) {
         console.error(err);

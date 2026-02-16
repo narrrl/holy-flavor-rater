@@ -69,16 +69,16 @@ const CategoryList: React.FC = () => {
       try {
         if (query) {
             const res = await api.get(`flavors/`);
-            setAllFlavors(res.data);
+            setAllFlavors(Array.isArray(res.data) ? res.data : (res.data.results || []));
         } else {
             const [catRes, topRes, recentRes] = await Promise.all([
                 api.get('categories/'),
                 api.get('flavors/top/'),
                 api.get('ratings/recent/')
             ]);
-            setCategories(catRes.data);
-            setTopFlavors(topRes.data);
-            setRecentReviews(recentRes.data);
+            setCategories(Array.isArray(catRes.data) ? catRes.data : (catRes.data.results || []));
+            setTopFlavors(Array.isArray(topRes.data) ? topRes.data : (topRes.data.results || []));
+            setRecentReviews(Array.isArray(recentRes.data) ? recentRes.data : (recentRes.data.results || []));
         }
       } catch (err) {
         console.error(err);
