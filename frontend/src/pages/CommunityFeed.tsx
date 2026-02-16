@@ -11,6 +11,7 @@ import {
   Rating as MuiRating,
   Button
 } from '@mui/material';
+import StarIcon from '@mui/icons-material/Star';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -111,8 +112,15 @@ const CommunityFeed: React.FC = () => {
                         </Typography>
                         
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                            <MuiRating value={rating.score} readOnly max={10} size="small" />
-                            <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                            {/* Compact rating for mobile, stars for desktop */}
+                            <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                                <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                            </Box>
+                            <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
+                                <MuiRating value={rating.score} readOnly max={10} size="small" />
+                                <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                            </Box>
                         </Box>
 
                         {rating.comment && (

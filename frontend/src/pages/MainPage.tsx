@@ -238,37 +238,45 @@ const MainPage: React.FC = () => {
                 ) : (
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
                         {feedRatings.map(rating => (
-                            <Card key={rating.id} sx={{ borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
-                                <CardContent>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                                        <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 32, height: 32, mr: 1 }}>
-                                                {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
-                                            </Avatar>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{rating.user}</Typography>
-                                        </Link>
-                                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>rated</Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                        <Box 
-                                            component="img" 
-                                            src={rating.flavor_image || undefined} 
-                                            sx={{ width: 60, height: 60, borderRadius: 1, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} 
-                                        />
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                <Typography variant="body1" sx={{ fontWeight: 'bold', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: '0.95rem' }}>
-                                                    {rating.flavor_name}
-                                                </Typography>
-                                            </Link>
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <MuiRating value={rating.score} readOnly size="small" max={10} />
-                                                <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                </CardContent>
-                            </Card>
+                                                            <Card key={rating.id} sx={{ borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                                                                <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
+                                                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                                                        <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+                                                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 24, height: 24, mr: 1 }}>
+                                                                                {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                                                                            </Avatar>
+                                                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>{rating.user}</Typography>
+                                                                        </Link>
+                                                                        <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>rated</Typography>
+                                                                    </Box>
+                                                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                                                        <Box 
+                                                                            component="img" 
+                                                                            src={rating.flavor_image || undefined} 
+                                                                            sx={{ width: 50, height: 50, borderRadius: 1, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} 
+                                                                        />
+                                                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                                            <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                                                <Typography variant="body2" sx={{ fontWeight: 'bold', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: '0.85rem', mb: 0.5 }}>
+                                                                                    {rating.flavor_name}
+                                                                                </Typography>
+                                                                            </Link>
+                                                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                                                {/* Compact rating for mobile, stars for desktop */}
+                                                                                <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                                                                                    <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                                                                                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                                                                </Box>
+                                                                                <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
+                                                                                    <MuiRating value={rating.score} readOnly size="small" max={10} />
+                                                                                    <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                                                                </Box>
+                                                                            </Box>
+                                                                        </Box>
+                                                                    </Box>
+                                                                </CardContent>
+                                                            </Card>
+                            
                         ))}
                     </Box>
                 )}
@@ -457,7 +465,14 @@ const MainPage: React.FC = () => {
                                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem', '&:hover': { color: 'primary.main' } }}>{review.user}</Typography>
                                     </Link>
                                     <Box sx={{ flexGrow: 1 }} />
-                                    <MuiRating value={review.score} readOnly size="small" max={10} />
+                                    {/* Compact rating for mobile, stars for desktop */}
+                                    <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                                        <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{review.score}/10</Typography>
+                                    </Box>
+                                    <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
+                                        <MuiRating value={review.score} readOnly size="small" max={10} />
+                                    </Box>
                                 </Box>
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                                     on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit', fontWeight: 'bold' }}>{review.flavor_name}</Link>
