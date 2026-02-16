@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # --- Backend Service ---
   backend:
     build:
       context: ./backend
@@ -19,12 +20,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
-      # Route /api, /admin, /static and /media traffic to the backend
+      # Explicitly set priority higher than the frontend to catch /api, /admin, etc.
+      - "traefik.http.routers.holy-backend.priority=20"
       - "traefik.http.routers.holy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
       - "traefik.http.routers.holy-backend.entrypoints=websecure"
       - "traefik.http.routers.holy-backend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-backend.loadbalancer.server.port=8000"
 
+  # --- Frontend Service ---
   frontend:
     build:
       context: ./frontend
@@ -42,6 +45,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
+      # Frontend acts as the fallback for anything else on this domain
+      - "traefik.http.routers.holy-frontend.priority=10"
       - "traefik.http.routers.holy-frontend.rule=Host(`holy.narl.io`)"
       - "traefik.http.routers.holy-frontend.entrypoints=websecure"
       - "traefik.http.routers.holy-frontend.tls.certresolver=https_resolver"
