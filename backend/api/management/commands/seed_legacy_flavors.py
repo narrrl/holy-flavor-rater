@@ -41,7 +41,7 @@ class Command(BaseCommand):
         iced_tea = Category.objects.get_or_create(name='Iced Tea', defaults={'slug': 'iced-tea'})[0]
         packs = Category.objects.get_or_create(name='Packs and other', defaults={'slug': 'packs-and-other'})[0]
 
-        legacy_dir = os.path.join(settings.BASE_DIR, '..', 'legacy')
+        legacy_dir = os.path.join(settings.BASE_DIR, 'legacy')
         if not os.path.exists(legacy_dir):
             self.stdout.write(self.style.ERROR(f"Legacy directory not found at {legacy_dir}"))
             return
