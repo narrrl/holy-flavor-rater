@@ -6,8 +6,12 @@ from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
+from rest_framework.pagination import PageNumberPagination
 from .models import User, Flavor, Category, Rating, Reply
 from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer
+
+class FeedPagination(PageNumberPagination):
+    page_size = 10
 
 class FlavorViewSet(viewsets.ModelViewSet):
     queryset = Flavor.objects.annotate(average_rating=Avg('ratings__score')).order_by('-average_rating')
@@ -77,10 +81,11 @@ class RatingViewSet(viewsets.ModelViewSet):
         followed_users = request.user.following.all()
         feed_ratings = Rating.objects.filter(user__in=followed_users).select_related('user', 'flavor', 'flavor__category').prefetch_related('replies', 'replies__user').order_by('-created_at')
         
-        page = self.paginate_queryset(feed_ratings)
+        paginator = FeedPagination()
+        page = paginator.paginate_queryset(feed_ratings, request)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            return paginator.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(feed_ratings, many=True)
         return Response(serializer.data)
@@ -115,6 +120,12 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action in ['signup', 'verify_signup', 'request_password_reset', 'complete_password_reset']:
             return [permissions.AllowAny()]
         return super().get_permissions()
+
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def following_list(self, request):
+        following = request.user.following.all()
+        serializer = self.get_serializer(following, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
     @method_decorator(ratelimit(key='ip', rate='5/h', method='POST', block=True))
