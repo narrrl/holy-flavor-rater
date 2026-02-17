@@ -1,4 +1,5 @@
 from django.core.mail import send_mail
+from django.conf import settings
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -8,7 +9,7 @@ from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from rest_framework.pagination import PageNumberPagination
 from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP
-from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer, NotificationSerializer, TicketSerializer, TicketMessageSerializer, AdminUserSerializer
+from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer, NotificationSerializer, TicketSerializer, TicketMessageSerializer, AdminUserListSerializer, AdminUserDetailSerializer
 
 def log_user_ip(user, request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -362,95 +363,6 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
-class TicketViewSet(viewsets.ModelViewSet):
-    serializer_class = TicketSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return Ticket.objects.all()
-        return Ticket.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    @action(detail=True, methods=['post'])
-    def add_message(self, request, pk=None):
-        ticket = self.get_object()
-        text = request.data.get('text')
-        if not text:
-            return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        msg = TicketMessage.objects.create(ticket=ticket, user=request.user, text=text)
-        return Response(TicketMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
-    def update_status(self, request, pk=None):
-        ticket = self.get_object()
-        new_status = request.data.get('status')
-        if new_status in dict(Ticket.STATUS_CHOICES):
-            ticket.status = new_status
-            ticket.save()
-            return Response({'status': 'updated'})
-        return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
-
-class AdminViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAdminUser]
-
-    @action(detail=False, methods=['get'])
-    def stats(self, request):
-        return Response({
-            'total_users': User.objects.count(),
-            'total_ratings': Rating.objects.count(),
-            'total_replies': Reply.objects.count(),
-            'open_tickets': Ticket.objects.filter(status='open').count(),
-            'email_config': {
-                'host': getattr(settings, 'EMAIL_HOST', 'None'),
-                'port': getattr(settings, 'EMAIL_PORT', 'None'),
-                'use_tls': getattr(settings, 'EMAIL_USE_TLS', False),
-                'use_ssl': getattr(settings, 'EMAIL_USE_SSL', False),
-                'skip_verify': getattr(settings, 'EMAIL_SKIP_CERT_VERIFICATION', False),
-            }
-        })
-
-    @action(detail=False, methods=['post'])
-    def send_test_email(self, request):
-        try:
-            send_mail(
-                'Holy Flavors Admin Test Email',
-                f'This is a test email sent to {request.user.email} from the Holy Flavors Admin Interface.',
-                'noreply@holyflavors.com',
-                [request.user.email],
-                fail_silently=False,
-            )
-            return Response({'status': 'Test email sent!'})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=False, methods=['get'])
-    def users(self, request):
-        users = User.objects.all().prefetch_related('ips').order_by('-date_joined')
-        return Response(AdminUserSerializer(users, many=True).data)
-
-    @action(detail=True, methods=['get', 'patch', 'delete'])
-    def user_detail(self, request, pk=None):
-        try:
-            user = User.objects.get(pk=pk)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        if request.method == 'GET':
-            return Response(AdminUserSerializer(user).data)
-        elif request.method == 'PATCH':
-            is_active = request.data.get('is_active')
-            if is_active is not None:
-                user.is_active = is_active
-                user.save()
-            return Response(AdminUserSerializer(user).data)
-        elif request.method == 'DELETE':
-            user.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
     @action(detail=False, methods=['patch'])
     def update_preferences(self, request):
         user = request.user
@@ -654,3 +566,91 @@ class AdminViewSet(viewsets.ViewSet):
             'missing_flavors': FlavorSerializer(missing_flavors, many=True, context={'request': request}).data,
             'my_ratings': RatingSerializer(rated_flavors, many=True, context={'request': request}).data
         })
+class TicketViewSet(viewsets.ModelViewSet):
+    serializer_class = TicketSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Ticket.objects.all().prefetch_related('messages', 'messages__user').order_by('-updated_at')
+        return Ticket.objects.filter(user=self.request.user).prefetch_related('messages', 'messages__user').order_by('-updated_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def add_message(self, request, pk=None):
+        ticket = self.get_object()
+        text = request.data.get('text')
+        if not text:
+            return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        msg = TicketMessage.objects.create(ticket=ticket, user=request.user, text=text)
+        return Response(TicketMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def update_status(self, request, pk=None):
+        ticket = self.get_object()
+        new_status = request.data.get('status')
+        if new_status in dict(Ticket.STATUS_CHOICES):
+            ticket.status = new_status
+            ticket.save()
+            return Response({'status': 'updated'})
+        return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+
+class AdminViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        return Response({
+            'total_users': User.objects.count(),
+            'total_ratings': Rating.objects.count(),
+            'total_replies': Reply.objects.count(),
+            'open_tickets': Ticket.objects.filter(status='open').count(),
+            'email_config': {
+                'host': getattr(settings, 'EMAIL_HOST', 'None'),
+                'port': getattr(settings, 'EMAIL_PORT', 'None'),
+                'use_tls': getattr(settings, 'EMAIL_USE_TLS', False),
+                'use_ssl': getattr(settings, 'EMAIL_USE_SSL', False),
+                'skip_verify': getattr(settings, 'EMAIL_SKIP_CERT_VERIFICATION', False),
+            }
+        })
+
+    @action(detail=False, methods=['post'])
+    def send_test_email(self, request):
+        try:
+            send_mail(
+                'Holy Flavors Admin Test Email',
+                f'This is a test email sent to {request.user.email} from the Holy Flavors Admin Interface.',
+                'noreply@holyflavors.com',
+                [request.user.email],
+                fail_silently=False,
+            )
+            return Response({'status': 'Test email sent!'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'])
+    def users(self, request):
+        users = User.objects.all().prefetch_related('ips').order_by('-date_joined')
+        return Response(AdminUserListSerializer(users, many=True).data)
+
+    @action(detail=True, methods=['get', 'patch', 'delete'])
+    def user_detail(self, request, pk=None):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'GET':
+            return Response(AdminUserDetailSerializer(user, context={'request': request}).data)
+        elif request.method == 'PATCH':
+            is_active = request.data.get('is_active')
+            if is_active is not None:
+                user.is_active = is_active
+                user.save()
+            return Response(AdminUserDetailSerializer(user, context={'request': request}).data)
+        elif request.method == 'DELETE':
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
