@@ -16,9 +16,11 @@ import {
   ListItemAvatar,
   ListItemText,
   ListItemButton,
-  Pagination
+  Pagination,
+  TextField,
+  InputAdornment
 } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
+import SearchIcon from '@mui/icons-material/Search';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -51,6 +53,11 @@ const CommunityFeed: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [followingSearch, setFollowingSearch] = useState('');
+
+  const filteredFollowing = following.filter(user => 
+    user.username.toLowerCase().includes(followingSearch.toLowerCase())
+  );
 
   const fetchFeedData = async (pageNum: number) => {
     setLoading(true);
@@ -159,8 +166,7 @@ const CommunityFeed: React.FC = () => {
                                             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                                                 {/* Compact rating for mobile, stars for desktop */}
                                                 <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
-                                                    <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
-                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>⭐ {rating.score}/10</Typography>
                                                 </Box>
                                                 <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
                                                     <MuiRating value={rating.score} readOnly max={10} size="small" />
@@ -211,15 +217,37 @@ const CommunityFeed: React.FC = () => {
               <Card sx={{ borderRadius: 3, position: { md: 'sticky' }, top: { md: 100 } }}>
                   <CardContent sx={{ p: 0 }}>
                       <Box sx={{ p: 2, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Following ({following.length})</Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>Following ({following.length})</Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            placeholder="Search friends..."
+                            value={followingSearch}
+                            onChange={(e) => setFollowingSearch(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon sx={{ fontSize: '1.1rem' }} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{ 
+                                bgcolor: 'background.paper', 
+                                borderRadius: 1,
+                                '& .MuiOutlinedInput-root': {
+                                    '& fieldset': { border: 'none' },
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                                }
+                            }}
+                          />
                       </Box>
                       {following.length === 0 ? (
                           <Box sx={{ p: 3, textAlign: 'center' }}>
                               <Typography variant="body2" color="text.secondary">You aren't following anyone yet.</Typography>
                           </Box>
                       ) : (
-                          <List sx={{ py: 0 }}>
-                              {following.map((user) => (
+                          <List sx={{ py: 0, maxHeight: '60vh', overflowY: 'auto' }}>
+                              {filteredFollowing.map((user) => (
                                   <React.Fragment key={user.id}>
                                       <ListItem disablePadding>
                                           <ListItemButton component={Link} to={`/profile/${user.username}`}>
@@ -237,6 +265,11 @@ const CommunityFeed: React.FC = () => {
                                       <Divider component="li" />
                                   </React.Fragment>
                               ))}
+                              {filteredFollowing.length === 0 && followingSearch && (
+                                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                                      <Typography variant="body2" color="text.secondary">No matching friends found.</Typography>
+                                  </Box>
+                              )}
                           </List>
                       )}
                   </CardContent>

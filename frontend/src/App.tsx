@@ -70,13 +70,16 @@ const GlobalSearch = () => {
             try {
                 // Fetch unified results: flavors, categories, and users
                 const res = await api.get('flavors/search/');
-                setOptions(res.data);
+                // Filter to only flavors
+                const results = (Array.isArray(res.data) ? res.data : (res.data.results || []))
+                    .filter((item: any) => item.type === 'flavor');
+                setOptions(results);
             } catch (err) {
                 console.error('Failed to fetch search options');
             }
         };
         fetchSearchOptions();
-    }, []); // Only fetch once to avoid excessive API calls
+    }, []); 
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -108,8 +111,6 @@ const GlobalSearch = () => {
                 onChange={(_, newValue) => {
                     if (newValue && typeof newValue !== 'string') {
                         if (newValue.type === 'flavor') navigate(`/flavor/${newValue.id}`);
-                        if (newValue.type === 'category') navigate(`/category/${newValue.slug}`);
-                        if (newValue.type === 'user') navigate(`/profile/${newValue.slug}`);
                     }
                 }}
                 onKeyDown={(e) => {
@@ -261,12 +262,6 @@ const App: React.FC = () => {
             </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding>
-            <ListItemButton component={Link} to="/about" onClick={() => setDrawerOpen(false)}>
-                <ListItemText primary={t('nav.about')} />
-            </ListItemButton>
-        </ListItem>
-        
         <ListItemButton onClick={() => setCatOpen(!catOpen)}>
             <ListItemText primary={t('nav.categories')} />
             {catOpen ? <ExpandLess /> : <ExpandMore />}
@@ -365,14 +360,6 @@ const App: React.FC = () => {
                         sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
                     >
                         {t('nav.community')}
-                    </Button>
-                    <Button 
-                        color="inherit" 
-                        component={Link}
-                        to="/about"
-                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
-                    >
-                        {t('nav.about')}
                     </Button>
                     <Button 
                         color="inherit" 
