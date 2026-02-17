@@ -25,7 +25,7 @@ class User(AbstractUser):
         ('en', 'English'),
         ('de', 'Deutsch'),
     ]
-    theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='holy_dark')
+    theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='holy_light')
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='en')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     pending_email = models.EmailField(max_length=254, blank=True, null=True)

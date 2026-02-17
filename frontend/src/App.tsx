@@ -167,7 +167,7 @@ const GlobalSearch = () => {
 
 const App: React.FC = () => {
   const { i18n, t } = useTranslation();
-  const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'holy_dark');
+  const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'holy_light');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const [categories, setCategories] = useState<{name: string, slug: string}[]>([]);
