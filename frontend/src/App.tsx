@@ -25,10 +25,12 @@ import {
   CircularProgress,
   ListItemAvatar,
   ListSubheader,
+  Badge,
   alpha
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -57,6 +59,19 @@ interface SearchResult {
     subtitle: string;
     image_url: string | null;
     slug: string | null;
+}
+
+interface Notification {
+    id: number;
+    actor_username: string;
+    actor_avatar: string | null;
+    notification_type: 'reply' | 'mention';
+    rating: number | null;
+    reply: number | null;
+    is_read: boolean;
+    created_at: string;
+    flavor_name: string | null;
+    flavor_id: number | null;
 }
 
 const GlobalSearch = () => {
@@ -169,13 +184,24 @@ const App: React.FC = () => {
   const { i18n, t } = useTranslation();
   const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'holy_light');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const [categories, setCategories] = useState<{name: string, slug: string}[]>([]);
-  const [user, setUser] = useState<{username: string, avatar: string | null} | null>(null);
+  const [user, setUser] = useState<{username: string, avatar: string | null, unread_notifications_count: number} | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [following, setFollowing] = useState<{id: number, username: string, avatar: string | null}[]>([]);
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+        const res = await api.get('notifications/');
+        setNotifications(res.data);
+    } catch (err) {
+        console.error('Failed to fetch notifications');
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -195,6 +221,7 @@ const App: React.FC = () => {
             try {
                 const followRes = await api.get('users/following_list/');
                 setFollowing(followRes.data);
+                fetchNotifications();
             } catch (err) {
                 console.error('Failed to fetch following list');
             }
@@ -211,9 +238,43 @@ const App: React.FC = () => {
       }
     };
     fetchData();
+
+    // Poll for notifications every 60 seconds
+    const interval = setInterval(() => {
+        if (localStorage.getItem('token')) {
+            fetchNotifications();
+            // Also refresh user data for the count
+            api.get('users/me/').then(res => setUser(res.data)).catch(() => {});
+        }
+    }, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const theme = useMemo(() => getTheme(themeName), [themeName]);
+
+  const handleMarkAllRead = async () => {
+    try {
+        await api.post('notifications/mark_all_read/');
+        setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+        if (user) setUser({ ...user, unread_notifications_count: 0 });
+    } catch (err) {
+        console.error('Failed to mark all as read');
+    }
+  };
+
+  const handleNotificationClick = async (notif: Notification) => {
+    if (!notif.is_read) {
+        try {
+            await api.post(`notifications/${notif.id}/mark_read/`);
+            setNotifications(notifications.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+            if (user) setUser({ ...user, unread_notifications_count: Math.max(0, user.unread_notifications_count - 1) });
+        } catch (err) { /* ignore */ }
+    }
+    setNotifAnchorEl(null);
+    if (notif.flavor_id) {
+        window.location.href = `/flavor/${notif.flavor_id}`;
+    }
+  };
 
   const handleThemeChange = async (newTheme: CatppuccinTheme) => {
     setThemeName(newTheme);
@@ -283,6 +344,14 @@ const App: React.FC = () => {
         
         {user ? (
             <>
+                <ListItem disablePadding>
+                    <ListItemButton onClick={(e) => setNotifAnchorEl(e.currentTarget)}>
+                        <ListItemText 
+                            primary="Notifications" 
+                            secondary={user.unread_notifications_count > 0 ? `${user.unread_notifications_count} unread` : null} 
+                        />
+                    </ListItemButton>
+                </ListItem>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to={`/profile/${user.username}`} onClick={() => setDrawerOpen(false)}>
                         <ListItemText 
@@ -413,7 +482,63 @@ const App: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   {!loadingUser && (
                     user ? (
-                      <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+                      <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
+                        <IconButton color="inherit" onClick={(e) => setNotifAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
+                            <Badge badgeContent={user.unread_notifications_count} color="error">
+                                <NotificationsIcon />
+                            </Badge>
+                        </IconButton>
+                        <Menu
+                            anchorEl={notifAnchorEl}
+                            open={Boolean(notifAnchorEl)}
+                            onClose={() => setNotifAnchorEl(null)}
+                            elevation={3}
+                            sx={{ mt: 1 }}
+                            PaperProps={{ sx: { width: 320, maxHeight: 400 } }}
+                        >
+                            <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Notifications</Typography>
+                                {user.unread_notifications_count > 0 && (
+                                    <Button size="small" onClick={handleMarkAllRead}>Mark all read</Button>
+                                )}
+                            </Box>
+                            {notifications.length === 0 ? (
+                                <Box sx={{ p: 4, textAlign: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary">No notifications yet</Typography>
+                                </Box>
+                            ) : (
+                                notifications.map(n => (
+                                    <MenuItem 
+                                        key={n.id} 
+                                        onClick={() => handleNotificationClick(n)}
+                                        sx={{ 
+                                            py: 1.5, 
+                                            px: 2, 
+                                            borderBottom: '1px solid', 
+                                            borderColor: 'divider',
+                                            bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
+                                            whiteSpace: 'normal',
+                                            display: 'flex',
+                                            gap: 2,
+                                            alignItems: 'flex-start'
+                                        }}
+                                    >
+                                        <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
+                                            {n.actor_username.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? 'replied to your review' : 'mentioned you'} on <strong>{n.flavor_name}</strong>
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {new Date(n.created_at).toLocaleDateString()}
+                                            </Typography>
+                                        </Box>
+                                    </MenuItem>
+                                ))
+                            )}
+                        </Menu>
+
                         <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
                           <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
                               {user.username ? user.username.charAt(0).toUpperCase() : '?'}

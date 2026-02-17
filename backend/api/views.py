@@ -7,8 +7,25 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from rest_framework.pagination import PageNumberPagination
-from .models import User, Flavor, Category, Rating, Reply
-from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer
+from .models import User, Flavor, Category, Rating, Reply, Notification
+from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer, NotificationSerializer
+
+def parse_mentions(text, actor, rating=None, reply=None):
+    import re
+    mentions = re.findall(r'@(\w+)', text)
+    for username in set(mentions):
+        try:
+            recipient = User.objects.get(username__iexact=username)
+            if recipient != actor:
+                Notification.objects.get_or_create(
+                    recipient=recipient,
+                    actor=actor,
+                    notification_type='mention',
+                    rating=rating,
+                    reply=reply
+                )
+        except User.DoesNotExist:
+            continue
 
 class FeedPagination(PageNumberPagination):
     page_size = 10
@@ -98,7 +115,10 @@ class RatingViewSet(viewsets.ModelViewSet):
         flavor = serializer.validated_data['flavor']
         if Rating.objects.filter(user=self.request.user, flavor=flavor).exists():
              raise serializers.ValidationError('You have already rated this flavor.')
-        serializer.save(user=self.request.user)
+        rating = serializer.save(user=self.request.user)
+        # Parse mentions in the rating comment
+        if rating.comment:
+            parse_mentions(rating.comment, self.request.user, rating=rating)
 
     def get_queryset(self):
         return Rating.objects.select_related('user', 'flavor', 'flavor__category').prefetch_related('replies', 'replies__user').order_by('-created_at')
@@ -137,7 +157,61 @@ class RatingViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         reply = Reply.objects.create(user=request.user, rating=rating, text=text)
-        return Response(ReplySerializer(reply).data, status=status.HTTP_201_CREATED)
+        
+        # Notify the rating author if it's not the same person
+        if rating.user != request.user:
+            Notification.objects.create(
+                recipient=rating.user,
+                actor=request.user,
+                notification_type='reply',
+                rating=rating,
+                reply=reply
+            )
+            
+        # Parse mentions in the reply text
+        parse_mentions(text, request.user, rating=rating, reply=reply)
+        
+        return Response(ReplySerializer(reply, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+class ReplyViewSet(viewsets.ModelViewSet):
+    queryset = Reply.objects.all()
+    serializer_class = ReplySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Reply.objects.select_related('user', 'rating').order_by('created_at')
+
+    def perform_update(self, serializer):
+        reply = self.get_object()
+        if reply.user != self.request.user:
+            raise permissions.PermissionDenied("You cannot edit this reply.")
+        new_reply = serializer.save()
+        # Parse mentions in the updated text
+        parse_mentions(new_reply.text, self.request.user, rating=new_reply.rating, reply=new_reply)
+
+    def perform_destroy(self, instance):
+        if instance.user != self.request.user:
+            raise permissions.PermissionDenied("You cannot delete this reply.")
+        instance.delete()
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.request.user.notifications.select_related('actor', 'rating__flavor', 'reply__rating__flavor').order_by('-created_at')
+
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        request.user.notifications.filter(is_read=False).update(is_read=True)
+        return Response({'status': 'all read'})
+
+    @action(detail=True, methods=['post'])
+    def mark_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({'status': 'marked read'})
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

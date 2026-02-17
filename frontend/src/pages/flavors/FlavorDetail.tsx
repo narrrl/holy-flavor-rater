@@ -16,7 +16,8 @@ import {
   Grid,
   Chip,
   Stack,
-  alpha
+  alpha,
+  useTheme
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
@@ -59,6 +60,7 @@ interface Flavor {
 
 const FlavorDetail: React.FC = () => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [flavor, setFlavor] = useState<Flavor | null>(null);
@@ -74,6 +76,10 @@ const FlavorDetail: React.FC = () => {
   const [editMode, setEditMode] = useState<number | null>(null);
   const [editScore, setEditScore] = useState(0);
   const [editComment, setEditComment] = useState('');
+
+  // Reply Edit state
+  const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
+  const [editReplyText, setEditReplyText] = useState('');
 
   const fetchFlavor = async () => {
     try {
@@ -127,6 +133,27 @@ const FlavorDetail: React.FC = () => {
       }
   };
 
+  const handleUpdateReply = async (replyId: number) => {
+      if (!editReplyText) return;
+      try {
+          await api.patch(`replies/${replyId}/`, { text: editReplyText });
+          setEditingReplyId(null);
+          fetchFlavor();
+      } catch (err) {
+          alert('Failed to update reply');
+      }
+  };
+
+  const handleDeleteReply = async (replyId: number) => {
+      if (!confirm('Delete this reply?')) return;
+      try {
+          await api.delete(`replies/${replyId}/`);
+          fetchFlavor();
+      } catch (err) {
+          alert('Failed to delete reply');
+      }
+  };
+
   const handleDeleteRating = async (ratingId: number) => {
       if (!confirm('Are you sure?')) return;
       try {
@@ -161,7 +188,33 @@ const FlavorDetail: React.FC = () => {
       }
   };
 
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
+    const renderTextWithMentions = (text: string) => {
+        const parts = text.split(/(@\w+)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('@')) {
+                const username = part.substring(1);
+                return (
+                    <Link 
+                        key={i} 
+                        to={`/profile/${username}`} 
+                        style={{ 
+                            color: theme.palette.primary.main, 
+                            textDecoration: 'none', 
+                            fontWeight: 'bold',
+                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                            padding: '0 4px',
+                            borderRadius: '4px'
+                        }}
+                    >
+                        {part}
+                    </Link>
+                );
+            }
+            return part;
+        });
+    };
+
+    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!flavor) return <Typography>Flavor not found</Typography>;
 
   return (
@@ -374,7 +427,7 @@ const FlavorDetail: React.FC = () => {
 
                                     {rating.comment && (
                                         <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
-                                            {rating.comment}
+                                            {renderTextWithMentions(rating.comment)}
                                         </Typography>
                                     )}
 
@@ -404,11 +457,44 @@ const FlavorDetail: React.FC = () => {
                                 }}>
                                     {rating.replies.map((reply: any) => (
                                         <Box key={reply.id} sx={{ mb: 1.5, '&:last-child': { mb: 0 } }}>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
-                                                {reply.user} 
-                                                {reply.user === rating.user && <VerifiedIcon sx={{ fontSize: '0.8rem', color: 'primary.main', ml: 0.5, verticalAlign: 'middle' }} />}
-                                            </Typography>
-                                            <Typography variant="body2">{reply.text}</Typography>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                <Link to={`/profile/${reply.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                                        {reply.user} 
+                                                        {reply.user === rating.user && <VerifiedIcon sx={{ fontSize: '0.8rem', color: 'primary.main', ml: 0.5, verticalAlign: 'middle' }} />}
+                                                    </Typography>
+                                                </Link>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                                        {new Date(reply.created_at).toLocaleDateString()} {new Date(reply.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </Typography>
+                                                    {currentUser === reply.user && editingReplyId !== reply.id && (
+                                                        <Box sx={{ display: 'flex' }}>
+                                                            <Button size="small" sx={{ minWidth: 0, p: 0.5, fontSize: '0.7rem' }} onClick={() => { setEditingReplyId(reply.id); setEditReplyText(reply.text); }}>Edit</Button>
+                                                            <Button size="small" color="error" sx={{ minWidth: 0, p: 0.5, fontSize: '0.7rem' }} onClick={() => handleDeleteReply(reply.id)}>Delete</Button>
+                                                        </Box>
+                                                    )}
+                                                </Box>
+                                            </Box>
+                                            {editingReplyId === reply.id ? (
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                                                    <TextField 
+                                                        size="small" 
+                                                        fullWidth 
+                                                        multiline 
+                                                        value={editReplyText} 
+                                                        onChange={(e) => setEditReplyText(e.target.value)}
+                                                    />
+                                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                                        <Button variant="contained" size="small" onClick={() => handleUpdateReply(reply.id)}>Save</Button>
+                                                        <Button size="small" onClick={() => setEditingReplyId(null)}>Cancel</Button>
+                                                    </Box>
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
+                                                    {renderTextWithMentions(reply.text)}
+                                                </Typography>
+                                            )}
                                         </Box>
                                     ))}
                                 </Box>

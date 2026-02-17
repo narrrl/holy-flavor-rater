@@ -119,3 +119,22 @@ class Reply(models.Model):
 
     def __str__(self):
         return f"Reply by {self.user.username} on {self.rating.id}"
+
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('reply', 'Reply'),
+        ('mention', 'Mention'),
+    ]
+    recipient = models.ForeignKey(User, related_name='notifications', on_delete=models.CASCADE)
+    actor = models.ForeignKey(User, related_name='actions', on_delete=models.CASCADE)
+    notification_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    rating = models.ForeignKey(Rating, on_delete=models.CASCADE, null=True, blank=True)
+    reply = models.ForeignKey(Reply, on_delete=models.CASCADE, null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.notification_type} for {self.recipient.username}"
