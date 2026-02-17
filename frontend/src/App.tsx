@@ -41,33 +41,36 @@ const FlavorDetail = lazy(() => import('./pages/flavors/FlavorDetail'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const CommunityFeed = lazy(() => import('./pages/CommunityFeed'));
+const About = lazy(() => import('./pages/About'));
 const Login = lazy(() => import('./pages/Login'));
 const Settings = lazy(() => import('./pages/Settings'));
 
-interface SearchFlavor {
+interface SearchResult {
     id: number;
     name: string;
+    type: 'flavor' | 'category' | 'user';
+    subtitle: string;
     image_url: string | null;
-    category_name: string;
+    slug: string | null;
 }
 
 const GlobalSearch = () => {
     const [query, setQuery] = useState('');
-    const [options, setOptions] = useState<SearchFlavor[]>([]);
+    const [options, setOptions] = useState<SearchResult[]>([]);
     const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
-        const fetchFlavors = async () => {
+        const fetchSearchOptions = async () => {
             try {
-                // Fetch from unpaginated search endpoint for full catalog coverage
+                // Fetch unified results: flavors, categories, and users
                 const res = await api.get('flavors/search/');
                 setOptions(res.data);
             } catch (err) {
                 console.error('Failed to fetch search options');
             }
         };
-        fetchFlavors();
+        fetchSearchOptions();
     }, []); // Only fetch once to avoid excessive API calls
 
     useEffect(() => {
@@ -93,13 +96,15 @@ const GlobalSearch = () => {
                 options={options}
                 getOptionLabel={(option) => {
                     if (typeof option === 'string') return option;
-                    return option.category_name ? `${option.name} (${option.category_name})` : (option.name || '');
+                    return option.name || '';
                 }}
                 inputValue={query}
                 onInputChange={(_, newValue) => setQuery(typeof newValue === 'string' ? newValue : '')}
                 onChange={(_, newValue) => {
                     if (newValue && typeof newValue !== 'string') {
-                        navigate(`/flavor/${newValue.id}`);
+                        if (newValue.type === 'flavor') navigate(`/flavor/${newValue.id}`);
+                        if (newValue.type === 'category') navigate(`/category/${newValue.slug}`);
+                        if (newValue.type === 'user') navigate(`/profile/${newValue.slug}`);
                     }
                 }}
                 onKeyDown={(e) => {
@@ -111,7 +116,7 @@ const GlobalSearch = () => {
                     <TextField
                         {...params}
                         fullWidth
-                        placeholder="Search flavors..."
+                        placeholder="Search..."
                         sx={{ 
                             bgcolor: 'action.hover', 
                             borderRadius: 2,
@@ -134,12 +139,16 @@ const GlobalSearch = () => {
                     const { key, ...optionProps } = props as any;
                     return (
                         <Box component="li" key={key} {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            {option.image_url && (
-                                <Box component="img" src={option.image_url} sx={{ width: 32, height: 32, objectFit: 'contain' }} />
+                            {option.image_url ? (
+                                <Avatar src={option.image_url} sx={{ width: 32, height: 32, borderRadius: 1 }} />
+                            ) : (
+                                <Avatar sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: 'primary.main', fontSize: '0.8rem' }}>
+                                    {option.name.charAt(0).toUpperCase()}
+                                </Avatar>
                             )}
                             <Box>
                                 <Typography variant="body2">{option.name}</Typography>
-                                <Typography variant="caption" color="text.secondary">{option.category_name}</Typography>
+                                <Typography variant="caption" color="text.secondary">{option.subtitle}</Typography>
                             </Box>
                         </Box>
                     );
@@ -241,6 +250,12 @@ const App: React.FC = () => {
         <ListItem disablePadding>
             <ListItemButton component={Link} to="/community" onClick={() => setDrawerOpen(false)}>
                 <ListItemText primary="Community" />
+            </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+            <ListItemButton component={Link} to="/about" onClick={() => setDrawerOpen(false)}>
+                <ListItemText primary="About" />
             </ListItemButton>
         </ListItem>
         
@@ -345,6 +360,14 @@ const App: React.FC = () => {
                     </Button>
                     <Button 
                         color="inherit" 
+                        component={Link}
+                        to="/about"
+                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
+                    >
+                        About
+                    </Button>
+                    <Button 
+                        color="inherit" 
                         endIcon={<ArrowDropDownIcon />}
                         onClick={(e) => setCatAnchorEl(e.currentTarget)}
                         sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem' }}
@@ -433,6 +456,7 @@ const App: React.FC = () => {
                     <Route path="/flavor/:id" element={<FlavorDetail />} />
                     <Route path="/profile/:username" element={<PublicProfile />} />
                     <Route path="/community" element={<CommunityFeed />} />
+                    <Route path="/about" element={<About />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
                     <Route path="/login" element={<Login />} />

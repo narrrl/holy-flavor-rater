@@ -15,7 +15,9 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  ListItemButton
+  ListItemButton,
+  Pagination,
+  Paper as MuiPaper
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import { Link } from 'react-router-dom';
@@ -48,53 +50,52 @@ const CommunityFeed: React.FC = () => {
   const [ratings, setRatings] = useState<FeedRating[]>([]);
   const [following, setFollowing] = useState<FollowedUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [nextPage, setNextPage] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchInitialData = async () => {
+  const fetchFeedData = async (pageNum: number) => {
     setLoading(true);
     try {
       const [feedRes, followingRes] = await Promise.all([
-          api.get('ratings/feed/'),
+          api.get(`ratings/feed/?page=${pageNum}`),
           api.get('users/following_list/')
       ]);
       
-      const feedData = feedRes.data.results || feedRes.data;
-      setRatings(Array.isArray(feedData) ? feedData : []);
-      setNextPage(feedRes.data.next || null);
+      const feedData = feedRes.data.results || [];
+      setRatings(feedData);
+      
+      // Calculate total pages (DRF returns total count)
+      const count = feedRes.data.count || 0;
+      setTotalPages(Math.ceil(count / 10)); // 10 is our page_size
+      
       setFollowing(followingRes.data);
     } catch (err) {
-      console.error('Failed to fetch initial feed data', err);
+      console.error('Failed to fetch feed data', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLoadMore = async () => {
-      if (!nextPage || loadingMore) return;
-      setLoadingMore(true);
-      try {
-          // nextPage is a full URL from DRF, we can use axios directly or parse it
-          const res = await api.get(nextPage);
-          const newData = res.data.results || res.data;
-          setRatings(prev => [...prev, ...(Array.isArray(newData) ? newData : [])]);
-          setNextPage(res.data.next || null);
-      } catch (err) {
-          console.error('Failed to load more feed items', err);
-      } finally {
-          setLoadingMore(false);
-      }
+  useEffect(() => {
+    fetchFeedData(page);
+  }, [page]);
+
+  const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+      setPage(value);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
+  if (loading && ratings.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Community Feed</Typography>
+      <Box sx={{ mb: 6 }}>
+          <Typography variant="h3" sx={{ mb: 1, fontWeight: 'bold' }}>Community Activity</Typography>
+          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: 700, lineHeight: 1.6 }}>
+              Discover which Holy Energy flavors your circle is currently testing. 
+              See their latest ratings, read their reviews, and find your next favorite together.
+          </Typography>
+      </Box>
       
       <Grid container spacing={4}>
           {/* Main Feed */}
@@ -111,87 +112,95 @@ const CommunityFeed: React.FC = () => {
                 </Box>
             ) : (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {ratings.map(rating => (
-                    <Card key={rating.id} sx={{ borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-2px)' } }}>
-                    <CardContent sx={{ p: 3 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 40, height: 40, mr: 2 }}>
-                            {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
-                            </Avatar>
-                            <Box>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>
-                                    {rating.user}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    {new Date(rating.created_at).toLocaleDateString()}
-                                </Typography>
-                            </Box>
-                        </Link>
-                        </Box>
-
-                        <Divider sx={{ my: 2 }} />
-
-                        <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-                            <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none' }}>
-                                <Box sx={{ width: { xs: '100%', sm: 100 }, aspectRatio: '1/1', borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
-                                    <Box 
-                                        component="img" 
-                                        src={rating.flavor_image || undefined} 
-                                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                    />
-                                </Box>
-                            </Link>
-                            <Box sx={{ flex: 1 }}>
-                                <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                    <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 0.5, '&:hover': { color: 'primary.main' } }}>
-                                        {rating.flavor_name}
-                                    </Typography>
-                                </Link>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                                    {rating.category_name}
-                                </Typography>
-                                
-                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                                    {/* Compact rating for mobile, stars for desktop */}
-                                    <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
-                                        <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
-                                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress /></Box>
+                ) : (
+                    <>
+                        {ratings.map(rating => (
+                            <Card key={rating.id} sx={{ borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-2px)' } }}>
+                                <CardContent sx={{ p: 3 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                    <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
+                                        <Avatar src={rating.user_avatar || undefined} sx={{ width: 40, height: 40, mr: 2 }}>
+                                        {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                                        </Avatar>
+                                        <Box>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>
+                                                {rating.user}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {new Date(rating.created_at).toLocaleDateString()}
+                                            </Typography>
+                                        </Box>
+                                    </Link>
                                     </Box>
-                                    <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
-                                        <MuiRating value={rating.score} readOnly max={10} size="small" />
-                                        <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+
+                                    <Divider sx={{ my: 2 }} />
+
+                                    <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
+                                        <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none' }}>
+                                            <Box sx={{ width: { xs: '100%', sm: 100 }, aspectRatio: '1/1', borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+                                                <Box 
+                                                    component="img" 
+                                                    src={rating.flavor_image || undefined} 
+                                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                                />
+                                            </Box>
+                                        </Link>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 0.5, '&:hover': { color: 'primary.main' } }}>
+                                                    {rating.flavor_name}
+                                                </Typography>
+                                            </Link>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                                                {rating.category_name}
+                                            </Typography>
+                                            
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                                                {/* Compact rating for mobile, stars for desktop */}
+                                                <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', gap: 0.5 }}>
+                                                    <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                                </Box>
+                                                <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center' }}>
+                                                    <MuiRating value={rating.score} readOnly max={10} size="small" />
+                                                    <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                                </Box>
+                                            </Box>
+
+                                            {rating.comment && (
+                                                <Typography variant="body2" sx={{ 
+                                                    fontStyle: 'italic', 
+                                                    color: 'text.secondary',
+                                                    borderLeft: '3px solid',
+                                                    borderColor: 'divider',
+                                                    pl: 2,
+                                                    py: 0.5
+                                                }}>
+                                                    "{rating.comment}"
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </Box>
-                                </Box>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </>
+                )}
 
-                                {rating.comment && (
-                                    <Typography variant="body2" sx={{ 
-                                        fontStyle: 'italic', 
-                                        color: 'text.secondary',
-                                        borderLeft: '3px solid',
-                                        borderColor: 'divider',
-                                        pl: 2,
-                                        py: 0.5
-                                    }}>
-                                        "{rating.comment}"
-                                    </Typography>
-                                )}
-                            </Box>
-                        </Box>
-                    </CardContent>
-                    </Card>
-                ))}
-
-                {nextPage && (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                        <Button 
-                            variant="outlined" 
-                            onClick={handleLoadMore} 
-                            disabled={loadingMore}
-                            sx={{ borderRadius: 2, px: 4 }}
-                        >
-                            {loadingMore ? <CircularProgress size={24} /> : 'Load More Activity'}
-                        </Button>
+                {totalPages > 1 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                        <Pagination 
+                            count={totalPages} 
+                            page={page} 
+                            onChange={handlePageChange} 
+                            color="primary" 
+                            size="large"
+                            sx={{ 
+                                '& .MuiPaginationItem-root': { borderRadius: 2, fontWeight: 'bold' }
+                            }}
+                        />
                     </Box>
                 )}
                 </Box>
