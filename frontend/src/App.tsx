@@ -26,7 +26,8 @@ import {
   ListItemAvatar,
   ListSubheader,
   Badge,
-  alpha
+  alpha,
+  useMediaQuery
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -82,6 +83,7 @@ const GlobalSearch = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const isMobile = useMediaQuery('(max-width:900px)');
 
     // Debounced search
     useEffect(() => {
@@ -122,14 +124,14 @@ const GlobalSearch = () => {
     };
 
     return (
-        <Box sx={{ flexGrow: 1, mx: { xs: 1, sm: 2, md: 4 } }}>
+        <Box sx={{ flexGrow: 1, mx: isMobile ? 1 : 4 }}>
             <Autocomplete
                 fullWidth
                 freeSolo
                 size="small"
                 loading={loading}
                 options={options}
-                filterOptions={(x) => x} // Disable local filtering as we do it on server
+                filterOptions={(x) => x} 
                 getOptionLabel={(option) => {
                     if (typeof option === 'string') return option;
                     return option.name || '';
@@ -209,6 +211,7 @@ const App: React.FC = () => {
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width:900px)');
 
   const fetchNotifications = async () => {
     try {
@@ -234,7 +237,6 @@ const App: React.FC = () => {
             if (userRes.data.theme) setThemeName(userRes.data.theme);
             if (userRes.data.language) i18n.changeLanguage(userRes.data.language);
             
-            // Also fetch following list for the mobile sidebar
             try {
                 const followRes = await api.get('users/following_list/');
                 const followData = Array.isArray(followRes.data) ? followRes.data : (followRes.data.results || []);
@@ -257,11 +259,9 @@ const App: React.FC = () => {
     };
     fetchData();
 
-    // Poll for notifications every 60 seconds
     const interval = setInterval(() => {
         if (localStorage.getItem('token')) {
             fetchNotifications();
-            // Also refresh user data for the count
             api.get('users/me/').then(res => setUser(res.data)).catch(() => {});
         }
     }, 60000);
@@ -365,14 +365,6 @@ const App: React.FC = () => {
         {user ? (
             <>
                 <ListItem disablePadding>
-                    <ListItemButton onClick={(e) => setNotifAnchorEl(e.currentTarget)}>
-                        <ListItemText 
-                            primary="Notifications" 
-                            secondary={user.unread_notifications_count > 0 ? `${user.unread_notifications_count} unread` : null} 
-                        />
-                    </ListItemButton>
-                </ListItem>
-                <ListItem disablePadding>
                     <ListItemButton component={Link} to={`/profile/${user.username}`} onClick={() => setDrawerOpen(false)}>
                         <ListItemText 
                             primary={t('nav.profile')} 
@@ -436,6 +428,66 @@ const App: React.FC = () => {
     </Box>
   );
 
+  const notificationsMenu = (
+    <>
+        <IconButton color="inherit" onClick={(e) => setNotifAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
+            <Badge badgeContent={user?.unread_notifications_count || 0} color="error">
+                <NotificationsIcon />
+            </Badge>
+        </IconButton>
+        <Menu
+            anchorEl={notifAnchorEl}
+            open={Boolean(notifAnchorEl)}
+            onClose={() => setNotifAnchorEl(null)}
+            elevation={3}
+            sx={{ mt: 1 }}
+            PaperProps={{ sx: { width: 320, maxHeight: 400 } }}
+        >
+            <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Notifications</Typography>
+                {(user?.unread_notifications_count || 0) > 0 && (
+                    <Button size="small" onClick={handleMarkAllRead}>Mark all read</Button>
+                )}
+            </Box>
+            {notifications.length === 0 ? (
+                <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">No notifications yet</Typography>
+                </Box>
+            ) : (
+                notifications.map(n => (
+                    <MenuItem 
+                        key={n.id} 
+                        onClick={() => handleNotificationClick(n)}
+                        sx={{ 
+                            py: 1.5, 
+                            px: 2, 
+                            borderBottom: '1px solid', 
+                            borderColor: 'divider',
+                            bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
+                            whiteSpace: 'normal',
+                            display: 'flex',
+                            gap: 2,
+                            alignItems: 'flex-start'
+                        }}
+                    >
+                        <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
+                            {n.actor_username.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? 'replied' : 'mentioned you'} on <strong>{n.flavor_name}</strong>
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {formatDate(n.created_at)}
+                            </Typography>
+                        </Box>
+                    </MenuItem>
+                ))
+            )}
+        </Menu>
+    </>
+  );
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -453,14 +505,14 @@ const App: React.FC = () => {
             }}
           >
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
-                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-                  <Link to="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Box component="img" src="/favicon.svg" sx={{ width: { xs: 32, sm: 24 }, height: { xs: 32, sm: 24 } }} />
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mr: 2 }}>
+                  <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
                       <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Holy Flavors Archive</Box>
+                      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>HFA</Box>
                   </Link>
                 </Typography>
 
-                <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4 }}>
+                <Box sx={{ display: isMobile ? 'none' : 'flex', ml: 2 }}>
                     {user && (
                         <Button 
                             color="inherit" 
@@ -503,100 +555,47 @@ const App: React.FC = () => {
 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   {!loadingUser && (
-                    user ? (
-                      <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }}>
-                        <IconButton color="inherit" onClick={(e) => setNotifAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-                            <Badge badgeContent={user.unread_notifications_count} color="error">
-                                <NotificationsIcon />
-                            </Badge>
-                        </IconButton>
-                        <Menu
-                            anchorEl={notifAnchorEl}
-                            open={Boolean(notifAnchorEl)}
-                            onClose={() => setNotifAnchorEl(null)}
+                    <>
+                      {user && notificationsMenu}
+
+                      {user ? (
+                        <Box sx={{ display: isMobile ? 'none' : 'flex', ml: 1 }}>
+                            <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)}>
+                            <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
+                                {user.username.charAt(0).toUpperCase()}
+                            </Avatar>
+                            </IconButton>
+                            <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={() => setAnchorEl(null)}
                             elevation={3}
                             sx={{ mt: 1 }}
-                            PaperProps={{ sx: { width: 320, maxHeight: 400 } }}
-                        >
-                            <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Notifications</Typography>
-                                {user.unread_notifications_count > 0 && (
-                                    <Button size="small" onClick={handleMarkAllRead}>Mark all read</Button>
-                                )}
-                            </Box>
-                            {notifications.length === 0 ? (
-                                <Box sx={{ p: 4, textAlign: 'center' }}>
-                                    <Typography variant="body2" color="text.secondary">No notifications yet</Typography>
-                                </Box>
-                            ) : (
-                                notifications.map(n => (
-                                    <MenuItem 
-                                        key={n.id} 
-                                        onClick={() => handleNotificationClick(n)}
-                                        sx={{ 
-                                            py: 1.5, 
-                                            px: 2, 
-                                            borderBottom: '1px solid', 
-                                            borderColor: 'divider',
-                                            bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
-                                            whiteSpace: 'normal',
-                                            display: 'flex',
-                                            gap: 2,
-                                            alignItems: 'flex-start'
-                                        }}
-                                    >
-                                        <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
-                                            {n.actor_username.charAt(0).toUpperCase()}
-                                        </Avatar>
-                                        <Box sx={{ flex: 1 }}>
-                                            <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
-                                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? 'replied to your review' : 'mentioned you'} on <strong>{n.flavor_name}</strong>
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {formatDate(n.created_at)}
-                                            </Typography>
-                                        </Box>
-                                    </MenuItem>
-                                ))
-                            )}
-                        </Menu>
-
-                        <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-                          <Avatar src={user.avatar || undefined} sx={{ width: 36, height: 36, border: '2px solid', borderColor: 'primary.main' }}>
-                              {user.username ? user.username.charAt(0).toUpperCase() : '?'}
-                          </Avatar>
-                        </IconButton>
-                        <Menu
-                          anchorEl={anchorEl}
-                          open={Boolean(anchorEl)}
-                          onClose={() => setAnchorEl(null)}
-                          elevation={3}
-                          sx={{ mt: 1 }}
-                        >
-                          <MenuItem component={Link} to={`/profile/${user.username}`} onClick={() => setAnchorEl(null)}>{t('nav.profile')}</MenuItem>
-                          <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>{t('nav.dashboard')}</MenuItem>
-                          <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>{t('nav.settings')}</MenuItem>
-                          <Divider />
-                          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>{t('nav.logout')}</MenuItem>
-                        </Menu>
-                      </Box>
-                    ) : (
-                      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                        <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2 }}>Login</Button>
-                      </Box>
-                    )
+                            >
+                            <MenuItem component={Link} to={`/profile/${user.username}`} onClick={() => setAnchorEl(null)}>{t('nav.profile')}</MenuItem>
+                            <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>{t('nav.dashboard')}</MenuItem>
+                            <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>{t('nav.settings')}</MenuItem>
+                            <Divider />
+                            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>{t('nav.logout')}</MenuItem>
+                            </Menu>
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: isMobile ? 'none' : 'block' }}>
+                            <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2 }}>Login</Button>
+                        </Box>
+                      )}
+                    </>
                   )}
 
-                  <Box sx={{ display: { xs: 'flex', md: 'none' } }}>
+                  {isMobile && (
                       <IconButton
                           color="inherit"
-                          aria-label="open drawer"
                           onClick={() => setDrawerOpen(true)}
                           sx={{ ml: 1 }}
                       >
                           <MenuIcon />
                       </IconButton>
-                  </Box>
+                  )}
                 </Box>
             </Toolbar>
           </AppBar>
