@@ -1,0 +1,86 @@
+[
+  {
+    "Name": "Dolphin Daiquiri",
+    "Geschmack": "Erdbeere & Limette",
+    "Beschreibung": "Ein sommerlicher Klassiker aus der alten Squad-Reihe. Nachempfunden dem Strawberry Daiquiri Cocktail (alkoholfrei). Eine süße Erdbeernote gemischt mit spritziger Limette.",
+    "Status": "Discontinued",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/daiquiri-dolphin/2f2be0d2eb-1770905032/ne-0032-01.png"
+  },
+  {
+    "Name": "Hitschies Saure Drachenzunge (Blau)",
+    "Geschmack": "Blaue Himbeere",
+    "Beschreibung": "Der Klassiker der Kollaboration. Schmeckt wie die blauen sauren Drachenzungen – süß, fruchtig und sauer.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/blaue-drachenzungen/65d13502ae-1770905033/ne-0028-01.png"
+  },
+  {
+    "Name": "Hitschies Saure Krakenarme",
+    "Geschmack": "Orange & Vanille",
+    "Beschreibung": "Cremige Vanille trifft auf saure Orange. Erinnert stark an die originalen Krakenarme-Süßigkeiten oder Solero-Eis.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/krakenarme/33e8c8649b-1770905036/ne-0030-01.png"
+  },
+  {
+    "Name": "Hitschies Saure Spinnenbeine",
+    "Geschmack": "Cola & Zitrone",
+    "Beschreibung": "Saurer Cola-Geschmack, angelehnt an die Hitschies Spinnenbeine Fruchtgummis.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/spinnenbeine/a1c99108e8-1770905035/ne-0029-01.png"
+  },
+  {
+    "Name": "HOLY Xmas",
+    "Geschmack": "Pflaume & Zimt",
+    "Beschreibung": "Eine winterliche Limited Edition, die nach Pflaume und Zimt schmeckt.",
+    "Status": "Vaulted / Seasonal",
+	"Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/holy-xmas/f8b4f0e89b-1770905045/ne-0006.png"
+  },
+  {
+    "Name": "Energy Eel",
+    "Geschmack": "Guarana (Klassischer Energy)",
+    "Beschreibung": "Der Versuch eines 'klassischen' Energy-Geschmacks, basierend auf Guarana.",
+    "Status": "Vaulted / Limited",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/energy-eel/f48f40b53f-1770905031/ne-0024-01.png"
+  },
+  {
+    "Name": "Caipirinha Crab",
+    "Geschmack": "Limette & Rohrzucker",
+    "Beschreibung": "Ein alkoholfreier Cocktail-Geschmack, inspiriert vom Caipirinha.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/caipirinha-crab/966b1dba40-1770905032/ne-0031-01.png"
+  },
+  {
+    "Name": "Mojito Macaw",
+    "Geschmack": "Limette & Minze",
+    "Beschreibung": "Erfrischender Mojito-Geschmack mit deutlicher Minznote.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/mojito-macaw/ef1c75b720-1770905032/ne-0033-01.png"
+  },
+  {
+    "Name": "BURRsday Bunny",
+    "Geschmack": "Litschi",
+    "Beschreibung": "Jubiläums-Sorte (zum 3. oder 4. Geburtstag). Exotischer, süßer Litschi-Geschmack.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/burrsday-bunny/2cf46a3a93-1770905037/bunny_20tub.png"
+  },
+  {
+    "Name": "Colada Capybara",
+    "Geschmack": "Ananas & Kokosnuss",
+    "Beschreibung": "Piña Colada Style. Cremige Kokosnuss trifft auf fruchtige Ananas.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/colada-capybara/ec02595c46-1770905037/capybara_20tub.png"
+  },
+  {
+    "Name": "Cotton Candy Caterpillar",
+    "Geschmack": "Zuckerwatte",
+    "Beschreibung": "Sehr süßer Zuckerwatte-Geschmack. (Wurde kurz nach Release wegen eines Deklarationsfehlers bzgl. Vegan/Laktose zurückgerufen).",
+    "Status": "Recalled / Vaulted",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-energy/cotton-candy-caterpillar/dbe0df4759-1770905039/energy_20tub_20caterpillar.png"
+  },
+  {
+    "Name": "Kola Koala",
+    "Geschmack": "Cola",
+    "Beschreibung": "Klassischer Cola-Geschmack, oft Teil des Adventskalenders.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://www.picclickimg.com/bBkAAeSw~hhphERE/Holy-Energy-Koala-Kola-Einzelprobe-selbst-abgef%C3%BCllt.webp"
+  }
+]

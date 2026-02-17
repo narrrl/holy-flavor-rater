@@ -1,0 +1,25 @@
+[
+  {
+    "Name": "Double Apple x Green Tea",
+    "Geschmack": "Apfel x Grüntee (Doppelapfel)",
+    "Beschreibung": "Schmeckt intensiv nach Doppelapfel (bekannt von Shisha-Tabak) auf Grüntee-Basis.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-iced-tea/double-apple-x-green-tea/4c843d9352-1770905057/ni-0004-01.png"
+  },
+  {
+    "Name": "Pineapple x Green Tea",
+    "Edition": "SpongeBob Edition",
+    "Geschmack": "Ananas x Grüntee",
+    "Beschreibung": "Teil der SpongeBob-Kollaboration. Fruchtige Ananas trifft auf herben Grüntee.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-iced-tea/pineapple-x-green-tea/e045627974-1770905051/spongebob_20tub.png"
+  },
+  {
+    "Name": "Starfruit x Hibiscus Tea",
+    "Edition": "Patrick Star Edition",
+    "Geschmack": "Sternfrucht x Hibiskustee",
+    "Beschreibung": "Teil der SpongeBob-Kollaboration (Patrick). Exotische Sternfrucht auf Hibiskus-Basis.",
+    "Status": "Limited Edition",
+    "Bild_URL": "https://ochdenis.de/media/pages/holy/sorten/holy-iced-tea/starfruit-x-hibiscus-tea/22b053bd70-1770905052/patrick_20tub.png"
+  }
+]

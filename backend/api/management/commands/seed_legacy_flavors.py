@@ -43,14 +43,16 @@ class Command(BaseCommand):
             return None
 
     def handle(self, *args, **options):
-        # Remove old legacy entries
-        Flavor.objects.filter(is_legacy=True).delete()
-        Flavor.objects.filter(external_id__isnull=True).delete()
+        # We no longer delete everything to preserve user data like ratings
+        # Instead, we update existing entries.
 
-        energy = Category.objects.get_or_create(name='Energy', defaults={'slug': 'energy'})[0]
-        hydration = Category.objects.get_or_create(name='Hydration', defaults={'slug': 'hydration'})[0]
-        iced_tea = Category.objects.get_or_create(name='Iced Tea', defaults={'slug': 'iced-tea'})[0]
-        packs = Category.objects.get_or_create(name='Packs and other', defaults={'slug': 'packs-and-other'})[0]
+        cat_map = {
+            'energy': Category.objects.get_or_create(name='Energy', defaults={'slug': 'energy'})[0],
+            'hydration': Category.objects.get_or_create(name='Hydration', defaults={'slug': 'hydration'})[0],
+            'iced-tea': Category.objects.get_or_create(name='Iced Tea', defaults={'slug': 'iced-tea'})[0],
+            'milkshake': Category.objects.get_or_create(name='Milkshake', defaults={'slug': 'milkshake'})[0],
+            'packs': Category.objects.get_or_create(name='Packs and other', defaults={'slug': 'packs-and-other'})[0],
+        }
 
         legacy_dir = os.path.join(settings.BASE_DIR, 'legacy')
         if not os.path.exists(legacy_dir):
@@ -61,10 +63,24 @@ class Command(BaseCommand):
             return
 
         json_files = [f for f in os.listdir(legacy_dir) if f.endswith('.json')]
-        created_count = 0
+        processed_count = 0
 
         for json_file in json_files:
             file_path = os.path.join(legacy_dir, json_file)
+            file_lower = json_file.lower()
+            
+            # Determine category from filename
+            if 'energy' in file_lower:
+                file_cat = cat_map['energy']
+            elif 'iced_tea' in file_lower or 'iced-tea' in file_lower:
+                file_cat = cat_map['iced-tea']
+            elif 'hydration' in file_lower:
+                file_cat = cat_map['hydration']
+            elif 'milkshake' in file_lower:
+                file_cat = cat_map['milkshake']
+            else:
+                file_cat = None
+
             with open(file_path, 'r', encoding='utf-8') as f:
                 data_list = json.load(f)
             
@@ -77,23 +93,37 @@ class Command(BaseCommand):
 
                 full_desc = f"**Geschmack:** {taste}\n\n{desc}\n\n**Status:** {status_text}"
                 
-                cat = energy
-                if "hydration" in name.lower() or "hydration" in desc.lower():
-                    cat = hydration
-                elif "iced tea" in name.lower() or "eistee" in name.lower():
-                    cat = iced_tea
-                elif any(k in name.lower() for k in ['bundle', 'set', 'box', 'probe', 'sample', 'taster', 'shaker', 'starter']):
-                    cat = packs
+                # Determine final category
+                cat = file_cat
+                if not cat:
+                    # Fallback to name/desc detection if filename was ambiguous
+                    if "hydration" in name.lower() or "hydration" in desc.lower():
+                        cat = cat_map['hydration']
+                    elif "iced tea" in name.lower() or "eistee" in name.lower():
+                        cat = cat_map['iced-tea']
+                    elif "milkshake" in name.lower():
+                        cat = cat_map['milkshake']
+                    elif any(k in name.lower() for k in ['bundle', 'set', 'box', 'probe', 'sample', 'taster', 'shaker', 'starter']):
+                        cat = cat_map['packs']
+                    else:
+                        cat = cat_map['energy'] # Ultimate fallback
 
-                flavor = Flavor(
-                    name=name,
-                    category=cat,
-                    description=full_desc,
-                    image_url=image_url,
-                    is_available=False,
-                    is_legacy=True,
-                    external_id=None
-                )
+                # Try to find existing flavor by name and category
+                flavor = Flavor.objects.filter(name=name, category=cat, is_legacy=True).first()
+                
+                if not flavor:
+                    flavor = Flavor(
+                        name=name,
+                        category=cat,
+                        is_legacy=True,
+                        external_id=None
+                    )
+                    self.stdout.write(f"Adding new legacy flavor: {name}")
+                else:
+                    self.stdout.write(f"Updating legacy flavor: {name}")
+
+                flavor.description = full_desc
+                flavor.is_available = False # Legacy is always unavailable via API
 
                 if image_url:
                     # Check if local file exists
@@ -103,13 +133,15 @@ class Command(BaseCommand):
                         if os.path.exists(abs_path):
                             file_exists = True
 
-                    if not file_exists:
+                    # Download if missing OR if image_url changed
+                    if not file_exists or flavor.image_url != image_url:
                         rel_path = self.download_image(image_url, name)
                         if rel_path:
                             flavor.image = rel_path
+                            self.stdout.write(f"  -> Updated image for: {name}")
                 
+                flavor.image_url = image_url
                 flavor.save()
-                created_count += 1
-                self.stdout.write(f"Added legacy flavor: {name}")
+                processed_count += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Finished! Created {created_count} legacy flavors."))
+        self.stdout.write(self.style.SUCCESS(f"Finished! Processed {processed_count} legacy flavors."))
