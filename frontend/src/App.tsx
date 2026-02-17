@@ -54,6 +54,9 @@ const About = lazy(() => import('./pages/About'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Login = lazy(() => import('./pages/Login'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Support = lazy(() => import('./pages/Support'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'));
 
 interface SearchResult {
     id: number;
@@ -206,7 +209,7 @@ const App: React.FC = () => {
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
   const [categories, setCategories] = useState<{name: string, slug: string}[]>([]);
-  const [user, setUser] = useState<{username: string, avatar: string | null, unread_notifications_count: number} | null>(null);
+  const [user, setUser] = useState<{username: string, avatar: string | null, unread_notifications_count: number, is_superuser: boolean} | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [following, setFollowing] = useState<{id: number, username: string, avatar: string | null}[]>([]);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -392,6 +395,19 @@ const App: React.FC = () => {
                         <ListItemText primary={t('nav.settings')} />
                     </ListItemButton>
                 </ListItem>
+                <ListItem disablePadding>
+                    <ListItemButton component={Link} to="/support" onClick={() => setDrawerOpen(false)}>
+                        <ListItemText primary={t('support.title')} />
+                    </ListItemButton>
+                </ListItem>
+
+                {user.is_superuser && (
+                    <ListItem disablePadding>
+                        <ListItemButton component={Link} to="/admin" onClick={() => setDrawerOpen(false)}>
+                            <ListItemText primary="Admin Panel" sx={{ color: 'primary.main', fontWeight: 'bold' }} />
+                        </ListItemButton>
+                    </ListItem>
+                )}
 
                 {following.length > 0 && (
                     <>
@@ -574,11 +590,14 @@ const App: React.FC = () => {
                             sx={{ mt: 1 }}
                             >
                             <MenuItem component={Link} to={`/profile/${user.username}`} onClick={() => setAnchorEl(null)}>{t('nav.profile')}</MenuItem>
-                            <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>{t('nav.dashboard')}</MenuItem>
-                            <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>{t('nav.settings')}</MenuItem>
-                            <Divider />
-                            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>{t('nav.logout')}</MenuItem>
-                            </Menu>
+                                                      <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>{t('nav.dashboard')}</MenuItem>
+                                                      <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>{t('nav.settings')}</MenuItem>
+                                                      <MenuItem component={Link} to="/support" onClick={() => setAnchorEl(null)}>{t('support.title')}</MenuItem>
+                                                      {user.is_superuser && (
+                                                          <MenuItem component={Link} to="/admin" onClick={() => setAnchorEl(null)} sx={{ fontWeight: 'bold', color: 'primary.main' }}>Admin Panel</MenuItem>
+                                                      )}
+                                                      <Divider />
+                                                      <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>{t('nav.logout')}</MenuItem>                            </Menu>
                         </Box>
                       ) : (
                         <Box sx={{ display: isMobile ? 'none' : 'block' }}>
@@ -621,6 +640,9 @@ const App: React.FC = () => {
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
+                    <Route path="/support" element={<Support />} />
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/admin/user/:id" element={<AdminUserDetail />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="*" element={<Box sx={{ p: 4, textAlign: 'center' }}><Typography variant="h5">404 - Page Not Found</Typography><Button component={Link} to="/" sx={{ mt: 2 }}>Back to Home</Button></Box>} />
                 </Routes>

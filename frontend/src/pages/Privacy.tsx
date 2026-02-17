@@ -65,6 +65,11 @@ const Privacy: React.FC = () => {
                     Community-Funktionen (Bewertungen, Folgen von Nutzern) verwendet. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
                 </Typography>
                 <Typography variant="body2" paragraph sx={{ lineHeight: 1.7 }}>
+                    <strong>IP-Adressen:</strong> Zur Gewährleistung der Sicherheit unserer IT-Systeme und zur Missbrauchsverhinderung 
+                    speichern wir die IP-Adressen, von denen aus Sie sich anmelden. Diese Daten werden gelöscht, sobald sie für 
+                    die Erreichung des Zweckes ihrer Erhebung nicht mehr erforderlich sind. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO.
+                </Typography>
+                <Typography variant="body2" paragraph sx={{ lineHeight: 1.7 }}>
                     <strong>Öffentliches Profil:</strong> Ihr Benutzername, Ihr Avatar und Ihre Bewertungen sind für 
                     andere Nutzer öffentlich sichtbar. Sie können diese Daten jederzeit in den Einstellungen ändern oder löschen.
                 </Typography>
@@ -107,6 +112,11 @@ const Privacy: React.FC = () => {
                     <strong>Registration:</strong> When you create an account, we store your username, email address, 
                     and password (encrypted). This data is used to provide community features (ratings, following users). 
                     The legal basis is Art. 6 Para. 1 lit. b GDPR.
+                </Typography>
+                <Typography variant="body2" paragraph sx={{ lineHeight: 1.7 }}>
+                    <strong>IP Addresses:</strong> To ensure the security of our IT systems and to prevent abuse, 
+                    we store the IP addresses from which you log in. This data is deleted as soon as it is no longer 
+                    necessary to achieve the purpose for which it was collected. The legal basis is Art. 6 Para. 1 lit. f GDPR.
                 </Typography>
                 <Typography variant="body2" paragraph sx={{ lineHeight: 1.7 }}>
                     <strong>Public Profile:</strong> Your username, avatar, and ratings are publicly visible to other users. 
