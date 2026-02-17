@@ -423,8 +423,15 @@ class UserViewSet(viewsets.ModelViewSet):
     def dashboard(self, request):
         user = request.user
         rated_ids = user.ratings.values_list('flavor_id', flat=True)
-        missing_flavors = Flavor.objects.exclude(id__in=rated_ids).exclude(category__slug='packs-and-other').select_related('category')
-        rated_flavors = user.ratings.select_related('flavor', 'flavor__category').exclude(flavor__category__slug='packs-and-other')
+        
+        # Annotate with community average rating so it's available for sorting/display
+        missing_flavors = Flavor.objects.exclude(id__in=rated_ids) \
+            .exclude(category__slug='packs-and-other') \
+            .select_related('category') \
+            .annotate(average_rating=Avg('ratings__score'))
+            
+        rated_flavors = user.ratings.select_related('flavor', 'flavor__category') \
+            .exclude(flavor__category__slug='packs-and-other')
         
         return Response({
             'user': UserSerializer(user).data,
