@@ -347,8 +347,7 @@ const App: React.FC = () => {
               borderColor: 'divider',
               bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
               backdropFilter: 'blur(12px)',
-              color: 'text.primary',
-              zIndex: (theme) => theme.zIndex.drawer + 1
+              color: 'text.primary'
             }}
           >
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
