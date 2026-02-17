@@ -18,7 +18,8 @@ import {
   ListItemButton,
   Pagination,
   TextField,
-  InputAdornment
+  InputAdornment,
+  alpha
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { Link } from 'react-router-dom';
@@ -216,7 +217,13 @@ const CommunityFeed: React.FC = () => {
           <Grid size={{ xs: 12, md: 4 }} sx={{ display: { xs: 'none', md: 'block' } }}>
               <Card sx={{ borderRadius: 3, position: { md: 'sticky' }, top: { md: 100 } }}>
                   <CardContent sx={{ p: 0 }}>
-                      <Box sx={{ p: 2, bgcolor: 'action.hover', borderBottom: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ 
+                          p: 2, 
+                          bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4), 
+                          backdropFilter: 'blur(8px)',
+                          borderBottom: '1px solid', 
+                          borderColor: 'divider' 
+                      }}>
                           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>Following ({following.length})</Typography>
                           <TextField
                             fullWidth
