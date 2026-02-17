@@ -39,16 +39,65 @@ class FlavorViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return Flavor.objects.select_related('category').annotate(average_rating=Avg('ratings__score')).order_by('-average_rating').distinct()
+        qs = Flavor.objects.select_related('category').annotate(average_rating=Avg('ratings__score')).order_by('-average_rating').distinct()
+        
+        # Handle category keywords in search query for main results too
+        search_query = self.request.query_params.get('search', '').lower().strip()
+        if search_query:
+            cat_keywords = {
+                'iced tea': 'iced-tea',
+                'eistee': 'iced-tea',
+                'energy': 'energy',
+                'hydration': 'hydration',
+                'milkshake': 'milkshake'
+            }
+            for keyword, slug in cat_keywords.items():
+                if keyword in search_query:
+                    qs = qs.filter(category__slug=slug)
+                    break # Only one category at a time
+        
+        return qs
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def search(self, request):
-        # Global unpaginated search for autocomplete
-        results = []
+        query = request.query_params.get('q', '').lower().strip()
+        if not query:
+            return Response([])
+
+        # Start with all flavors
+        flavors = Flavor.objects.select_related('category').distinct()
+
+        # Intelligent category filtering based on keywords
+        cat_keywords = {
+            'iced tea': 'iced-tea',
+            'eistee': 'iced-tea',
+            'energy': 'energy',
+            'hydration': 'hydration',
+            'milkshake': 'milkshake'
+        }
+
+        active_cat_slug = None
+        remaining_query = query
+        for keyword, slug in cat_keywords.items():
+            if keyword in query:
+                active_cat_slug = slug
+                remaining_query = remaining_query.replace(keyword, '').strip()
+                break
         
-        # 1. Flavors
-        flavors = Flavor.objects.select_related('category').order_by('name').distinct()
-        for f in flavors:
+        if active_cat_slug:
+            flavors = flavors.filter(category__slug=active_cat_slug)
+        
+        # Filter by remaining query words in name or description
+        if remaining_query:
+            words = remaining_query.split()
+            for word in words:
+                flavors = flavors.filter(
+                    Q(name__icontains=word) | Q(description__icontains=word)
+                )
+
+        # Limit results for performance
+        results = []
+        for f in flavors.order_by('name')[:15]:
             results.append({
                 'id': f.id,
                 'name': f.name,
@@ -56,30 +105,6 @@ class FlavorViewSet(viewsets.ModelViewSet):
                 'subtitle': f.category.name,
                 'image_url': request.build_absolute_uri(f.image.url) if f.image else f.image_url,
                 'slug': None
-            })
-            
-        # 2. Categories
-        categories = Category.objects.all().order_by('name')
-        for c in categories:
-            results.append({
-                'id': c.id,
-                'name': c.name,
-                'type': 'category',
-                'subtitle': 'Category',
-                'image_url': None,
-                'slug': c.slug
-            })
-            
-        # 3. Users
-        users = User.objects.filter(is_active=True).order_by('username')
-        for u in users:
-            results.append({
-                'id': u.id,
-                'name': u.username,
-                'type': 'user',
-                'subtitle': 'Community Member',
-                'image_url': request.build_absolute_uri(u.avatar.url) if u.avatar else None,
-                'slug': u.username
             })
 
         return Response(results)
