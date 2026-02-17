@@ -18,7 +18,8 @@ import {
   TextField,
   alpha,
   IconButton,
-  Collapse
+  Collapse,
+  Link as MuiLink
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CommentIcon from '@mui/icons-material/Comment';
@@ -253,7 +254,7 @@ const CommunityFeed: React.FC = () => {
                                 <Box sx={{ display: 'flex', gap: 3 }}>
                                     <Box sx={{ flex: 1 }}>
                                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                            Rated <Link to={`/flavor/${rating.flavor}`} style={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}>{rating.flavor_name}</Link>
+                                            Rated <MuiLink component={Link} to={`/flavor/${rating.flavor}`} sx={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}>{rating.flavor_name}</MuiLink>
                                         </Typography>
                                         {rating.comment ? (
                                             <Typography variant="body1" sx={{ lineHeight: 1.6, fontStyle: 'italic', color: 'text.primary' }}>
