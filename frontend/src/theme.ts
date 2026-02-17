@@ -15,13 +15,13 @@ export const getTheme = (mode: CatppuccinTheme) => {
 
   if (mode === 'holy_light') {
       palette = {
-          base: { hex: '#ffffff' }, 
-          surface0: { hex: '#f8f9fa' }, 
-          crust: { hex: '#e9ecef' }, 
-          text: { hex: '#1a1a1a' }, 
-          subtext0: { hex: '#6c757d' },
-          mauve: { hex: '#8a2be2' }, // Holy Purple
-          pink: { hex: '#ff00ff' }, // Holy Pink/Magenta
+          base: { hex: '#f0f2f5' }, // Softer off-white/gray
+          surface0: { hex: '#ffffff' }, // Pure white for cards/surfaces
+          crust: { hex: '#e4e6eb' }, // Darker divider/header color
+          text: { hex: '#1c1e21' }, 
+          subtext0: { hex: '#65676b' },
+          mauve: { hex: '#6a1b9a' }, // Softer Holy Purple
+          pink: { hex: '#d81b60' }, // Softer, more professional Pink/Magenta
       };
   } else if (mode === 'holy_dark') {
       palette = {
@@ -139,13 +139,13 @@ export const getTheme = (mode: CatppuccinTheme) => {
           palette = flavor.colors;
       } else {
           palette = {
-              base: { hex: '#ffffff' }, 
-              surface0: { hex: '#f8f9fa' }, 
-              crust: { hex: '#e9ecef' }, 
-              text: { hex: '#1a1a1a' }, 
-              subtext0: { hex: '#6c757d' },
-              mauve: { hex: '#8a2be2' },
-              pink: { hex: '#ff00ff' },
+              base: { hex: '#f0f2f5' }, 
+              surface0: { hex: '#ffffff' }, 
+              crust: { hex: '#e4e6eb' }, 
+              text: { hex: '#1c1e21' }, 
+              subtext0: { hex: '#65676b' },
+              mauve: { hex: '#6a1b9a' },
+              pink: { hex: '#d81b60' },
           };
           mode = 'holy_light';
       }
