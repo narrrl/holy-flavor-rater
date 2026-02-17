@@ -26,11 +26,12 @@ const resources = {
       },
       "dashboard": {
         "welcome": "Welcome back, {{username}}!",
-        "shareProfile": "Share Profile:",
+        "shareProfile": "Share Profile",
         "copySuccess": "Link copied to clipboard!",
         "myRatings": "My Ratings",
         "missing": "Missing",
         "noRatings": "You haven't rated any flavors yet.",
+        "noComment": "No comment provided.",
         "exploreFlavors": "Go explore flavors",
         "allRated": "Amazing! You've rated everything! 🏆",
         "myReviews": "My Reviews",
@@ -38,7 +39,13 @@ const resources = {
         "editingReview": "Editing review for {{flavor}}",
         "newScore": "New Score:",
         "searchMissing": "Search flavors you haven't rated...",
-        "circleAvg": "Average rating from people you follow"
+        "searchRated": "Search your reviews...",
+        "circleAvg": "Average rating from people you follow",
+        "sortBy": "Sort by",
+        "date": "Date",
+        "rating": "Rating",
+        "communityRating": "Community Rating",
+        "circleRating": "Circle Rating"
       },
       "settings": {
         "subtitle": "Manage your account and preferences",
@@ -163,11 +170,12 @@ const resources = {
       },
       "dashboard": {
         "welcome": "Willkommen zurück, {{username}}!",
-        "shareProfile": "Profil teilen:",
+        "shareProfile": "Profil teilen",
         "copySuccess": "Link in die Zwischenablage kopiert!",
         "myRatings": "Meine Bewertungen",
         "missing": "Fehlend",
         "noRatings": "Du hast noch keine Sorten bewertet.",
+        "noComment": "Kein Kommentar abgegeben.",
         "exploreFlavors": "Sorten entdecken",
         "allRated": "Wahnsinn! Du hast alles bewertet! 🏆",
         "myReviews": "Meine Rezensionen",
@@ -175,7 +183,13 @@ const resources = {
         "editingReview": "Rezension bearbeiten für {{flavor}}",
         "newScore": "Neue Bewertung:",
         "searchMissing": "Suche nach Sorten, die du noch nicht bewertet hast...",
-        "circleAvg": "Durchschnittsbewertung der Personen, denen du folgst"
+        "searchRated": "Suche in deinen Rezensionen...",
+        "circleAvg": "Durchschnittsbewertung der Personen, denen du folgst",
+        "sortBy": "Sortieren nach",
+        "date": "Datum",
+        "rating": "Bewertung",
+        "communityRating": "Community-Bewertung",
+        "circleRating": "Circle-Bewertung"
       },
       "settings": {
         "subtitle": "Verwalte dein Konto und deine Einstellungen",

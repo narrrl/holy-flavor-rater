@@ -52,9 +52,15 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
   
-  // Filtering states
+  // Filtering states for Explore New
   const [exploreCategory, setExploreCategory] = useState<string>('All');
   const [exploreSearch, setExploreSearch] = useState('');
+  const [exploreSort, setExploreSort] = useState<'community' | 'circle'>('community');
+
+  // Filtering states for My Reviews
+  const [ratedCategory, setRatedCategory] = useState<string>('All');
+  const [ratedSearch, setRatedSearch] = useState('');
+  const [ratedSort, setRatedSort] = useState<'date' | 'rating'>('date');
 
   // Inline Review Edit state
   const [editingRatingId, setEditingRatingId] = useState<number | null>(null);
@@ -129,21 +135,50 @@ const Dashboard: React.FC = () => {
       } catch (err) { alert('Failed to delete reply'); }
   };
 
-  // Performance Optimization: Memoize grouped missing flavors
-  const categories = useMemo(() => {
+  // Performance Optimization: Memoize categories and filtered lists
+  const exploreCategories = useMemo(() => {
       if (!data) return ['All'];
       const cats = new Set(data.missing_flavors.map(f => f.category_name));
       return ['All', ...Array.from(cats).sort()];
   }, [data]);
 
+  const ratedCategories = useMemo(() => {
+      if (!data) return ['All'];
+      const cats = new Set(data.my_ratings.map(r => r.category_name));
+      return ['All', ...Array.from(cats).sort()];
+  }, [data]);
+
   const filteredMissing = useMemo(() => {
       if (!data) return [];
-      return data.missing_flavors.filter(f => {
+      let items = data.missing_flavors.filter(f => {
           const matchCat = exploreCategory === 'All' || f.category_name === exploreCategory;
           const matchSearch = f.name.toLowerCase().includes(exploreSearch.toLowerCase());
           return matchCat && matchSearch;
       });
-  }, [data, exploreCategory, exploreSearch]);
+
+      if (exploreSort === 'community') {
+          items.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+      } else {
+          items.sort((a, b) => (b.followed_average_rating || 0) - (a.followed_average_rating || 0));
+      }
+      return items;
+  }, [data, exploreCategory, exploreSearch, exploreSort]);
+
+  const filteredAndSortedRated = useMemo(() => {
+      if (!data) return [];
+      let items = [...data.my_ratings].filter(r => {
+          const matchCat = ratedCategory === 'All' || r.category_name === ratedCategory;
+          const matchSearch = r.flavor_name.toLowerCase().includes(ratedSearch.toLowerCase());
+          return matchCat && matchSearch;
+      });
+
+      if (ratedSort === 'rating') {
+          items.sort((a, b) => b.score - a.score || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      } else {
+          items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      }
+      return items;
+  }, [data, ratedCategory, ratedSearch, ratedSort]);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!data) return <Typography>Please login to view dashboard.</Typography>;
@@ -219,123 +254,164 @@ const Dashboard: React.FC = () => {
 
       {/* TAB 0: MY REVIEWS */}
       {activeTab === 0 && (
-          <Stack spacing={3}>
-              {data.my_ratings.length === 0 ? (
-                  <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
-                      <Typography variant="h6" color="text.secondary">{t('dashboard.noRatings')}</Typography>
-                      <Button onClick={() => setActiveTab(1)} sx={{ mt: 2 }}>{t('dashboard.exploreFlavors')}</Button>
+          <Box>
+              {/* Filter Controls for Reviews */}
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 4 }}>
+                  <Box sx={{ flexGrow: 1 }}>
+                      <TextField 
+                        fullWidth placeholder={t('dashboard.searchRated')} 
+                        value={ratedSearch} onChange={e => setRatedSearch(e.target.value)}
+                        slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> } }}
+                        sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
+                      />
                   </Box>
-              ) : (
-                  data.my_ratings.map(rating => (
-                      <Card key={rating.id} elevation={0} sx={{ 
-                          borderRadius: 4, 
-                          border: '1px solid', 
-                          borderColor: 'divider',
-                          bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
-                          transition: 'border-color 0.2s',
-                          '&:hover': { borderColor: 'primary.main' }
-                      }}>
-                          <CardContent sx={{ p: 3 }}>
-                              {editingRatingId === rating.id ? (
-                                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{t('dashboard.editingReview', { flavor: rating.flavor_name })}</Typography>
-                                      <Stack direction="row" spacing={2} alignItems="center">
-                                          <Typography variant="body2">{t('dashboard.newScore')}</Typography>
-                                          <TextField 
-                                            type="number" size="small" 
-                                            slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
-                                            value={editScore} onChange={(e) => setEditScore(Number(e.target.value))} 
-                                            sx={{ width: 80 }}
+                  <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
+                      {ratedCategories.map(cat => (
+                          <Chip 
+                            key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.my_ratings.find(r => r.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
+                            onClick={() => setRatedCategory(cat)}
+                            color={ratedCategory === cat ? 'primary' : 'default'}
+                            variant={ratedCategory === cat ? 'filled' : 'outlined'}
+                            sx={{ fontWeight: 'bold', height: 40, px: 1 }}
+                          />
+                      ))}
+                  </Stack>
+                  <Stack direction="row" spacing={1} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                      <Button 
+                        size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
+                        onClick={() => setRatedSort('date')}
+                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                      >
+                          {t('dashboard.date')}
+                      </Button>
+                      <Button 
+                        size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
+                        onClick={() => setRatedSort('rating')}
+                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                      >
+                          {t('dashboard.rating')}
+                      </Button>
+                  </Stack>
+              </Stack>
+
+              <Stack spacing={3}>
+                  {filteredAndSortedRated.length === 0 ? (
+                      <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
+                          <Typography variant="h6" color="text.secondary">{t('dashboard.noRatings')}</Typography>
+                          <Button onClick={() => setActiveTab(1)} sx={{ mt: 2 }}>{t('dashboard.exploreFlavors')}</Button>
+                      </Box>
+                  ) : (
+                      filteredAndSortedRated.map(rating => (
+                          <Card key={rating.id} elevation={0} sx={{ 
+                              borderRadius: 4, 
+                              border: '1px solid', 
+                              borderColor: 'divider',
+                              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
+                              transition: 'border-color 0.2s',
+                              '&:hover': { borderColor: 'primary.main' }
+                          }}>
+                              <CardContent sx={{ p: 3 }}>
+                                  {editingRatingId === rating.id ? (
+                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{t('dashboard.editingReview', { flavor: rating.flavor_name })}</Typography>
+                                          <Stack direction="row" spacing={2} alignItems="center">
+                                              <Typography variant="body2">{t('dashboard.newScore')}</Typography>
+                                              <TextField 
+                                                type="number" size="small" 
+                                                slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
+                                                value={editScore} onChange={(e) => setEditScore(Number(e.target.value))} 
+                                                sx={{ width: 80 }}
+                                              />
+                                          </Stack>
+                                          <MentionTextField 
+                                            multiline rows={3} value={editComment} 
+                                            onChange={setEditComment} 
                                           />
-                                      </Stack>
-                                      <MentionTextField 
-                                        multiline rows={3} value={editComment} 
-                                        onChange={setEditComment} 
-                                      />
-                                      <Stack direction="row" spacing={1}>
-                                          <Button variant="contained" size="small" onClick={() => handleUpdateRating(rating.id)}>{t('common.save')}</Button>
-                                          <Button variant="outlined" size="small" onClick={() => setEditingRatingId(null)}>{t('common.cancel')}</Button>
-                                      </Stack>
-                                  </Box>
-                              ) : (
-                                  <>
-                                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                          <Box sx={{ display: 'flex', gap: 2 }}>
-                                              <Avatar src={rating.flavor_image || undefined} variant="rounded" sx={{ width: 60, height: 60, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', p: 0.5 }}>
-                                                  F
-                                              </Avatar>
-                                              <Box>
-                                                  <Typography variant="h6" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
-                                                      <Link to={`/flavor/${rating.flavor}`} style={{ color: 'inherit', textDecoration: 'none' }}>{rating.flavor_name}</Link>
-                                                  </Typography>
-                                                  <Typography variant="caption" color="text.secondary" display="block">
-                                                      {t(`categories.${rating.category_slug}`, { defaultValue: rating.category_name })} • {formatDate(rating.created_at)}
-                                                  </Typography>
-                                              </Box>
-                                          </Box>
-                                          <RatingBadge score={rating.score} size="large" />
+                                          <Stack direction="row" spacing={1}>
+                                              <Button variant="contained" size="small" onClick={() => handleUpdateRating(rating.id)}>{t('common.save')}</Button>
+                                              <Button variant="outlined" size="small" onClick={() => setEditingRatingId(null)}>{t('common.cancel')}</Button>
+                                          </Stack>
                                       </Box>
-
-                                      <Box sx={{ mb: 2, p: 2, bgcolor: alpha('#000', 0.02), borderRadius: 2 }}>
-                                          {rating.comment ? (
-                                              <RichText text={rating.comment} />
-                                          ) : (
-                                              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('dashboard.noRatings')}</Typography>
-                                          )}
-                                      </Box>
-
-                                      <Stack direction="row" spacing={2} alignItems="center">
-                                          <Button 
-                                            size="small" 
-                                            startIcon={<CommentIcon fontSize="small" />} 
-                                            onClick={() => setExpandedReplies(prev => ({ ...prev, [rating.id]: !prev[rating.id] }))}
-                                            sx={{ textTransform: 'none', fontWeight: 'bold', color: 'text.secondary' }}
-                                          >
-                                              {rating.replies.length} {t('common.replies')}
-                                          </Button>
-                                          <Box sx={{ flexGrow: 1 }} />
-                                          <Button size="small" sx={{ fontWeight: 'bold' }} onClick={() => { setEditingRatingId(rating.id); setEditScore(rating.score); setEditComment(rating.comment || ''); }}>{t('common.edit')}</Button>
-                                          <Button size="small" color="error" sx={{ fontWeight: 'bold' }} onClick={() => handleDeleteRating(rating.id)}>{t('common.delete')}</Button>
-                                      </Stack>
-
-                                      {/* Replies Inline */}
-                                      <Collapse in={expandedReplies[rating.id]}>
-                                          <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                              {rating.replies.map((reply: any) => (
-                                                  <Box key={reply.id} sx={{ mb: 2, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}>
-                                                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
-                                                              {reply.user}
-                                                              {reply.user === data.user.username && <VerifiedIcon sx={{ fontSize: '0.8rem', color: 'primary.main', ml: 0.5 }} />}
-                                                          </Typography>
-                                                          <Stack direction="row" spacing={1} alignItems="center">
-                                                              <Typography variant="caption" color="text.secondary">{formatDate(reply.created_at)}</Typography>
-                                                              {reply.user === data.user.username && (
-                                                                  <Button size="small" color="error" sx={{ minWidth: 0, p: 0, fontSize: '0.7rem' }} onClick={() => handleDeleteReply(reply.id)}>{t('common.delete')}</Button>
-                                                              )}
-                                                          </Stack>
-                                                      </Box>
-                                                      <Typography variant="body2"><RichText text={reply.text} /></Typography>
+                                  ) : (
+                                      <>
+                                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                              <Box sx={{ display: 'flex', gap: 2 }}>
+                                                  <Avatar src={rating.flavor_image || undefined} variant="rounded" sx={{ width: 60, height: 60, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', p: 0.5 }}>
+                                                      F
+                                                  </Avatar>
+                                                  <Box>
+                                                      <Typography variant="h6" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
+                                                          <Link to={`/flavor/${rating.flavor}`} style={{ color: 'inherit', textDecoration: 'none' }}>{rating.flavor_name}</Link>
+                                                      </Typography>
+                                                      <Typography variant="caption" color="text.secondary" display="block">
+                                                          {t(`categories.${rating.category_slug}`, { defaultValue: rating.category_name })} • {formatDate(rating.created_at)}
+                                                      </Typography>
                                                   </Box>
-                                              ))}
-                                              <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                                                  <MentionTextField 
-                                                    placeholder={t('community.writeReply')} 
-                                                    value={replyInputs[rating.id] || ''} 
-                                                    onChange={val => setReplyInputs({ ...replyInputs, [rating.id]: val })} 
-                                                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleReplySubmit(rating.id)}
-                                                  />
-                                                  <Button variant="contained" size="small" onClick={() => handleReplySubmit(rating.id)} disabled={!replyInputs[rating.id]} sx={{ height: 40, px: 3 }}>{t('common.reply')}</Button>
-                                              </Stack>
+                                              </Box>
+                                              <RatingBadge score={rating.score} size="large" />
                                           </Box>
-                                      </Collapse>
-                                  </>
-                              )}
-                          </CardContent>
-                      </Card>
-                  ))
-              )}
-          </Stack>
+
+                                          <Box sx={{ mb: 2, p: 2, bgcolor: alpha('#000', 0.02), borderRadius: 2 }}>
+                                              {rating.comment ? (
+                                                  <RichText text={rating.comment} />
+                                              ) : (
+                                                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('dashboard.noComment')}</Typography>
+                                              )}
+                                          </Box>
+
+                                          <Stack direction="row" spacing={2} alignItems="center">
+                                              <Button 
+                                                size="small" 
+                                                startIcon={<CommentIcon fontSize="small" />} 
+                                                onClick={() => setExpandedReplies(prev => ({ ...prev, [rating.id]: !prev[rating.id] }))}
+                                                sx={{ textTransform: 'none', fontWeight: 'bold', color: 'text.secondary' }}
+                                              >
+                                                  {rating.replies.length} {t('common.replies')}
+                                              </Button>
+                                              <Box sx={{ flexGrow: 1 }} />
+                                              <Button size="small" sx={{ fontWeight: 'bold' }} onClick={() => { setEditingRatingId(rating.id); setEditScore(rating.score); setEditComment(rating.comment || ''); }}>{t('common.edit')}</Button>
+                                              <Button size="small" color="error" sx={{ fontWeight: 'bold' }} onClick={() => handleDeleteRating(rating.id)}>{t('common.delete')}</Button>
+                                          </Stack>
+
+                                          {/* Replies Inline */}
+                                          <Collapse in={expandedReplies[rating.id]}>
+                                              <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                                                  {rating.replies.map((reply: any) => (
+                                                      <Box key={reply.id} sx={{ mb: 2, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}>
+                                                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                                                  {reply.user}
+                                                                  {reply.user === data.user.username && <VerifiedIcon sx={{ fontSize: '0.8rem', color: 'primary.main', ml: 0.5 }} />}
+                                                              </Typography>
+                                                              <Stack direction="row" spacing={1} alignItems="center">
+                                                                  <Typography variant="caption" color="text.secondary">{formatDate(reply.created_at)}</Typography>
+                                                                  {reply.user === data.user.username && (
+                                                                      <Button size="small" color="error" sx={{ minWidth: 0, p: 0, fontSize: '0.7rem' }} onClick={() => handleDeleteReply(reply.id)}>{t('common.delete')}</Button>
+                                                                  )}
+                                                              </Stack>
+                                                          </Box>
+                                                          <Typography variant="body2"><RichText text={reply.text} /></Typography>
+                                                      </Box>
+                                                  ))}
+                                                  <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+                                                      <MentionTextField 
+                                                        placeholder={t('community.writeReply')} 
+                                                        value={replyInputs[rating.id] || ''} 
+                                                        onChange={val => setReplyInputs({ ...replyInputs, [rating.id]: val })} 
+                                                        onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleReplySubmit(rating.id)}
+                                                      />
+                                                      <Button variant="contained" size="small" onClick={() => handleReplySubmit(rating.id)} disabled={!replyInputs[rating.id]} sx={{ height: 40, px: 3 }}>{t('common.reply')}</Button>
+                                                  </Stack>
+                                              </Box>
+                                          </Collapse>
+                                      </>
+                                  )}
+                              </CardContent>
+                          </Card>
+                      ))
+                  )}
+              </Stack>
+          </Box>
       )}
 
       {/* TAB 1: EXPLORE NEW */}
@@ -352,7 +428,7 @@ const Dashboard: React.FC = () => {
                       />
                   </Box>
                   <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
-                      {categories.map(cat => (
+                      {exploreCategories.map(cat => (
                           <Chip 
                             key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.missing_flavors.find(f => f.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
                             onClick={() => setExploreCategory(cat)}
@@ -361,6 +437,22 @@ const Dashboard: React.FC = () => {
                             sx={{ fontWeight: 'bold', height: 40, px: 1 }}
                           />
                       ))}
+                  </Stack>
+                  <Stack direction="row" spacing={1} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                      <Button 
+                        size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
+                        onClick={() => setExploreSort('community')}
+                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                      >
+                          {t('dashboard.communityRating')}
+                      </Button>
+                      <Button 
+                        size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
+                        onClick={() => setExploreSort('circle')}
+                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                      >
+                          {t('dashboard.circleRating')}
+                      </Button>
                   </Stack>
               </Stack>
 
