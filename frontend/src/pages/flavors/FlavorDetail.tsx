@@ -15,7 +15,8 @@ import {
   Container,
   Grid,
   Chip,
-  Stack
+  Stack,
+  alpha
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
@@ -189,19 +190,21 @@ const FlavorDetail: React.FC = () => {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
-                    bgcolor: 'background.paper',
+                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
+                    backdropFilter: 'blur(10px)',
                     borderRadius: 4,
                     overflow: 'hidden',
                     border: '1px solid',
-                    borderColor: 'divider',
-                    position: 'relative'
+                    borderColor: (theme) => alpha(theme.palette.text.primary, 0.05),
+                    position: 'relative',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
                 }}
               >
                   {!flavor.is_available && (
                         <Chip 
                             label={flavor.is_legacy ? "Unavailable" : "Out of Stock"} 
                             color={flavor.is_legacy ? "warning" : "error"}
-                            sx={{ position: 'absolute', top: 16, right: 16, fontWeight: 'bold' }}
+                            sx={{ position: 'absolute', top: 16, right: 16, fontWeight: 'bold', backdropFilter: 'blur(4px)', bgcolor: (theme) => alpha(theme.palette[flavor.is_legacy ? 'warning' : 'error'].main, 0.8) }}
                         />
                   )}
                   {flavor.image_url ? (
@@ -209,10 +212,10 @@ const FlavorDetail: React.FC = () => {
                         component="img" 
                         src={flavor.image_url} 
                         sx={{ 
-                            width: '80%', 
-                            height: '80%', 
+                            width: '85%', 
+                            height: '85%', 
                             objectFit: 'contain',
-                            filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.15))'
+                            filter: 'drop-shadow(0px 15px 30px rgba(0,0,0,0.2))'
                         }} 
                       />
                   ) : (
@@ -276,7 +279,18 @@ const FlavorDetail: React.FC = () => {
 
           {/* New Rating Form */}
           {currentUser && flavor.user_rating === null && (
-              <Paper variant="outlined" sx={{ p: 4, mb: 6, borderRadius: 3, bgcolor: 'action.hover', border: '1px dashed', borderColor: 'divider' }}>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                    p: 4, mb: 6, 
+                    borderRadius: 3, 
+                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.3), 
+                    backdropFilter: 'blur(8px)',
+                    border: '1px dashed', 
+                    borderColor: 'divider',
+                    boxShadow: 'none'
+                }}
+              >
                   <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Rate this flavor</Typography>
                   <form onSubmit={handleRatingSubmit}>
                       <Box sx={{ mb: 3 }}>
@@ -343,9 +357,18 @@ const FlavorDetail: React.FC = () => {
                                                 </Typography>
                                             </Box>
                                         </Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'action.selected', px: 1.5, py: 0.5, borderRadius: 2 }}>
+                                        <Box sx={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1), 
+                                            backdropFilter: 'blur(4px)',
+                                            px: 1.5, py: 0.5, 
+                                            borderRadius: 2,
+                                            border: '1px solid',
+                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.1)
+                                        }}>
                                             <StarIcon sx={{ fontSize: '1rem', color: 'primary.main', mr: 0.5 }} />
-                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>{rating.score}/10</Typography>
                                         </Box>
                                     </Box>
 
@@ -370,7 +393,15 @@ const FlavorDetail: React.FC = () => {
 
                             {/* Replies */}
                             {rating.replies.length > 0 && (
-                                <Box sx={{ mt: 2, bgcolor: 'action.hover', p: 2, borderRadius: 2 }}>
+                                <Box sx={{ 
+                                    mt: 2, 
+                                    bgcolor: (theme) => alpha(theme.palette.text.primary, 0.03), 
+                                    backdropFilter: 'blur(4px)',
+                                    p: 2, 
+                                    borderRadius: 2,
+                                    border: '1px solid',
+                                    borderColor: (theme) => alpha(theme.palette.text.primary, 0.05)
+                                }}>
                                     {rating.replies.map((reply: any) => (
                                         <Box key={reply.id} sx={{ mb: 1.5, '&:last-child': { mb: 0 } }}>
                                             <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>

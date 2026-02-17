@@ -1,4 +1,4 @@
-import { createTheme, type ThemeOptions } from '@mui/material/styles';
+import { createTheme, type ThemeOptions, alpha } from '@mui/material/styles';
 import { flavors } from '@catppuccin/palette';
 
 export type CatppuccinTheme = 
@@ -173,18 +173,33 @@ export const getTheme = (mode: CatppuccinTheme) => {
       fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     },
     components: {
+        MuiPaper: {
+            styleOverrides: {
+                root: {
+                    backgroundColor: alpha(palette.surface0.hex, 0.7),
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid',
+                    borderColor: alpha(palette.text.hex, 0.1),
+                    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+                }
+            }
+        },
         MuiCard: {
             styleOverrides: {
                 root: {
-                    backgroundColor: palette.surface0.hex,
-                    color: palette.text.hex,
+                    backgroundColor: alpha(palette.surface0.hex, 0.6),
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid',
+                    borderColor: alpha(palette.text.hex, 0.1),
+                    borderRadius: '16px',
                 }
             }
         },
         MuiAppBar: {
             styleOverrides: {
                 root: {
-                    backgroundColor: palette.crust.hex,
+                    backgroundColor: alpha(palette.crust.hex, 0.8),
+                    backdropFilter: 'blur(16px)',
                     color: palette.text.hex,
                 }
             }

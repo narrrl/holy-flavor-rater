@@ -12,7 +12,8 @@ import {
   Chip,
   Container,
   IconButton,
-  useMediaQuery
+  useMediaQuery,
+  alpha
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -225,8 +226,8 @@ const MainPage: React.FC = () => {
             py: { xs: 4, md: 8 }, 
             px: { xs: 2, sm: 4, md: 6 },
             background: (theme) => theme.palette.mode === 'dark' 
-                ? 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%)' 
-                : 'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 100%)',
+                ? `linear-gradient(180deg, ${alpha('#000', 0.4)} 0%, ${alpha('#000', 0)} 100%)` 
+                : `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.main, 0)} 100%)`,
             borderBottom: '1px solid',
             borderColor: 'divider',
             mb: 4
@@ -251,7 +252,18 @@ const MainPage: React.FC = () => {
                 ) : (
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
                         {feedRatings.map(rating => (
-                            <Card key={rating.id} sx={{ borderRadius: 3, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}>
+                            <Card 
+                                key={rating.id} 
+                                sx={{ 
+                                    borderRadius: 3, 
+                                    transition: 'all 0.3s ease', 
+                                    '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 24px rgba(0,0,0,0.15)' },
+                                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
+                                    backdropFilter: 'blur(10px)',
+                                    border: '1px solid',
+                                    borderColor: (theme) => alpha(theme.palette.text.primary, 0.05)
+                                }}
+                            >
                                 <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
                                         <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
@@ -306,13 +318,15 @@ const MainPage: React.FC = () => {
                 mb: 4, 
                 borderRadius: 0, 
                 background: (theme) => theme.palette.mode === 'dark' 
-                    ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' 
-                    : 'linear-gradient(135deg, #fdf6f7 0%, #f8e1e5 100%)',
+                    ? `radial-gradient(circle at top right, ${alpha(theme.palette.primary.main, 0.15)}, transparent), linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)` 
+                    : `radial-gradient(circle at top right, ${alpha(theme.palette.primary.main, 0.1)}, transparent), linear-gradient(135deg, #fdf6f7 0%, #f8e1e5 100%)`,
                 textAlign: 'center',
-                borderBottom: '1px solid rgba(255,255,255,0.1)',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
                 width: '100%',
                 boxSizing: 'border-box',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                position: 'relative'
             }}
         >
             <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' }, overflowWrap: 'break-word', px: 2 }}>
@@ -395,7 +409,15 @@ const MainPage: React.FC = () => {
                             </Box>
 
                             {featuredReview && (
-                                <Box sx={{ mt: 1, p: { xs: 2, md: 3 }, bgcolor: 'action.hover', borderRadius: 3, position: 'relative' }}>
+                                <Box sx={{ 
+                                    mt: 1, p: { xs: 2, md: 3 }, 
+                                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4), 
+                                    backdropFilter: 'blur(8px)',
+                                    borderRadius: 3, 
+                                    border: '1px solid',
+                                    borderColor: (theme) => alpha(theme.palette.text.primary, 0.05),
+                                    position: 'relative' 
+                                }}>
                                     <Typography variant="body2" sx={{ fontStyle: 'italic', mb: 1, fontSize: { xs: '0.9rem', md: '1.1rem' }, display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}>
                                         "{featuredReview.comment}"
                                     </Typography>
