@@ -43,6 +43,21 @@ const resources = {
         "reviews": "reviews",
         "rank": "Rank",
         "loading": "Loading..."
+      },
+      "about": {
+        "title": "About This Project",
+        "mission": "Holy Flavors Archive is a community-driven project dedicated to documenting and rating the vast world of Holy Energy products. Our goal is to create a definitive, high-density catalog of every flavor ever released—including legacy and limited editions.",
+        "canDoTitle": "What you can do here:",
+        "featureExplore": "Explore: Find details on any Holy Energy, Iced Tea, or Milkshake product.",
+        "featureRate": "Rate: Share your honest opinion and score flavors from 1 to 10.",
+        "featureCommunity": "Community: Follow other fans, see their latest tests, and discover new favorites together.",
+        "featureProfile": "Taste Profile: Build your own personal tiered leaderboard to share with the world.",
+        "disclaimer": "This website is a fan project and is not officially affiliated with, authorized, maintained, sponsored, or endorsed by HOLY Energy GmbH. All product names, logos, and brands are property of their respective owners.",
+        "impressumTitle": "Impressum (Legal Notice)",
+        "legalInfo": "Information according to § 5 TMG:",
+        "contact": "Contact",
+        "responsible": "Responsible for content according to § 55 Abs. 2 RStV:",
+        "disclaimerTitle": "Legal Disclaimer"
       }
     }
   },
@@ -86,6 +101,21 @@ const resources = {
         "reviews": "Bewertungen",
         "rank": "Rang",
         "loading": "Wird geladen..."
+      },
+      "about": {
+        "title": "Über dieses Projekt",
+        "mission": "Das Holy Flavors Archiv ist ein von der Community getriebenes Projekt, das sich der Dokumentation und Bewertung der riesigen Welt der Holy Energy Produkte widmet. Unser Ziel ist es, einen definitiven Katalog jeder jemals veröffentlichten Sorte zu erstellen – einschließlich Legacy- und Limited-Editionen.",
+        "canDoTitle": "Was du hier tun kannst:",
+        "featureExplore": "Entdecken: Details zu jedem Holy Energy, Eistee oder Milkshake Produkt finden.",
+        "featureRate": "Bewerten: Deine ehrliche Meinung teilen und Sorten von 1 bis 10 bewerten.",
+        "featureCommunity": "Community: Folge anderen Fans, sieh dir ihre neuesten Tests an und entdeckt gemeinsam neue Favoriten.",
+        "featureProfile": "Geschmacksprofil: Erstelle deine eigene persönliche Bestenliste, um sie mit der Welt zu teilen.",
+        "disclaimer": "Diese Website ist ein Fan-Projekt und wird nicht von der HOLY Energy GmbH offiziell unterstützt, autorisiert, gepflegt oder gesponselt. Alle Produktnamen, Logos und Marken sind Eigentum ihrer jeweiligen Inhaber.",
+        "impressumTitle": "Impressum",
+        "legalInfo": "Angaben gemäß § 5 TMG:",
+        "contact": "Kontakt",
+        "responsible": "Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:",
+        "disclaimerTitle": "Haftungsausschluss"
       }
     }
   }
