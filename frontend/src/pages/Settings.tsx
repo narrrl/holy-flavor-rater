@@ -198,6 +198,10 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                         label={t('settings.themeLabel')}
                         onChange={(e) => onThemeChange(e.target.value as CatppuccinTheme)}
                     >
+                        <ListSubheader>Holy Energy</ListSubheader>
+                        <MenuItem value="holy_dark">Holy Dark (Default)</MenuItem>
+                        <MenuItem value="holy_light">Holy Light</MenuItem>
+
                         <ListSubheader>Light Themes</ListSubheader>
                         <MenuItem value="latte">Latte</MenuItem>
                         <MenuItem value="pink">Pastel Pink</MenuItem>
