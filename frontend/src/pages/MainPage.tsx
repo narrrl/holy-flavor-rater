@@ -21,12 +21,6 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-}
-
 interface Flavor {
     id: number;
     name: string;
