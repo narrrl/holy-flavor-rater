@@ -24,7 +24,8 @@ import {
   Autocomplete,
   CircularProgress,
   ListItemAvatar,
-  ListSubheader
+  ListSubheader,
+  alpha
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
@@ -338,12 +339,18 @@ const App: React.FC = () => {
       <CssBaseline />
       <Router>
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
-          <AppBar position="fixed" elevation={0} sx={{ 
+          <AppBar 
+            position="sticky" 
+            elevation={0} 
+            sx={{ 
               borderBottom: '1px solid', 
               borderColor: 'divider',
-              bgcolor: 'background.paper',
-              color: 'text.primary'
-          }}>
+              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
+              backdropFilter: 'blur(12px)',
+              color: 'text.primary',
+              zIndex: (theme) => theme.zIndex.drawer + 1
+            }}
+          >
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
                 <Typography variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
                   <Link to="/" style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>

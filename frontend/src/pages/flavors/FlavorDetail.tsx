@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { 
   Typography, 
@@ -10,14 +10,19 @@ import {
   Button, 
   TextField,
   Avatar,
-  Alert,
   Paper,
   CircularProgress,
-  Container
+  Container,
+  Grid,
+  Chip,
+  Stack
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import StarIcon from '@mui/icons-material/Star';
 
 interface Reply {
     id: number;
@@ -54,6 +59,7 @@ interface Flavor {
 const FlavorDetail: React.FC = () => {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [flavor, setFlavor] = useState<Flavor | null>(null);
   const [loading, setLoading] = useState(true);
   const [replyInputs, setReplyInputs] = useState<{[key: number]: string}>({});
@@ -146,186 +152,237 @@ const FlavorDetail: React.FC = () => {
       }
   };
 
+  const handleGoBack = () => {
+      if (window.history.length > 1) {
+          navigate(-1);
+      } else {
+          navigate(`/category/${flavor?.category_slug}`);
+      }
+  };
+
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!flavor) return <Typography>Flavor not found</Typography>;
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
-      <Button 
-        variant="outlined" 
-        component={Link} 
-        to={`/category/${flavor.category_slug}`} 
-        startIcon={<ArrowBackIcon />}
-        sx={{ mb: 2, textTransform: 'none', borderRadius: 2 }}
-      >
-        {t('common.backTo')} {flavor.category_name}
-      </Button>
+    <Container maxWidth="xl" sx={{ px: { xs: 2, md: 6 }, py: 4 }}>
+      {/* Top Bar */}
+      <Box sx={{ mb: 4 }}>
+          <Button 
+            variant="text" 
+            onClick={handleGoBack}
+            startIcon={<ArrowBackIcon />}
+            sx={{ textTransform: 'none', color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'transparent' } }}
+          >
+            {t('common.backTo')}
+          </Button>
+      </Box>
 
-      <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, mb: 4, overflow: 'hidden', borderRadius: { xs: 2, md: 4 } }}>
-        {flavor.image_url && (
-            <Box 
+      {/* Hero Section */}
+      <Grid container spacing={6} sx={{ mb: 8 }}>
+          {/* Left: Image */}
+          <Grid size={{ xs: 12, md: 6 }}>
+              <Paper 
+                elevation={0}
                 sx={{ 
-                    width: { xs: '100%', md: 400 }, 
+                    width: '100%', 
                     aspectRatio: '1/1', 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'center', 
-                    bgcolor: 'background.default', 
-                    borderRight: { md: '1px solid' },
-                    borderBottom: { xs: '1px solid', md: 'none' },
+                    bgcolor: 'background.paper',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    border: '1px solid',
                     borderColor: 'divider',
-                    overflow: 'hidden'
+                    position: 'relative'
                 }}
-            >
-                <Box 
-                    component="img" 
-                    src={flavor.image_url} 
-                    sx={{ 
-                        width: '100%', 
-                        height: '100%', 
-                        objectFit: 'cover'
-                    }} 
-                />
-            </Box>
-        )}
-        <CardContent sx={{ flex: 1, p: { xs: 3, md: 4 } }}>
-            {!flavor.is_available && (
-                <Alert severity={flavor.is_legacy ? "warning" : "error"} sx={{ mb: 2 }}>
-                    {flavor.is_legacy ? "Unavailable (Legacy Flavor)" : "Out of Stock"}
-                </Alert>
-            )}
-            <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2rem', md: '3rem' } }}>
-                {flavor.name}
-            </Typography>
-            <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '1rem', md: '1.25rem' } }}>
-                {flavor.category_name}
-            </Typography>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 1 }}>
-                <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} size="large" max={10} />
-                <Typography variant="h5" sx={{ fontWeight: 'bold', fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
-                    {(flavor.average_rating || 0).toFixed(1)} / 10
-                </Typography>
-            </Box>
+              >
+                  {!flavor.is_available && (
+                        <Chip 
+                            label={flavor.is_legacy ? "Unavailable" : "Out of Stock"} 
+                            color={flavor.is_legacy ? "warning" : "error"}
+                            sx={{ position: 'absolute', top: 16, right: 16, fontWeight: 'bold' }}
+                        />
+                  )}
+                  {flavor.image_url ? (
+                      <Box 
+                        component="img" 
+                        src={flavor.image_url} 
+                        sx={{ 
+                            width: '80%', 
+                            height: '80%', 
+                            objectFit: 'contain',
+                            filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.15))'
+                        }} 
+                      />
+                  ) : (
+                      <Typography color="text.secondary">No Image</Typography>
+                  )}
+              </Paper>
+          </Grid>
 
-            <Typography variant="body1" sx={{ mb: 4, lineHeight: 1.8, fontSize: { xs: '0.95rem', md: '1rem' } }}>
-                {flavor.description}
-            </Typography>
+          {/* Right: Info */}
+          <Grid size={{ xs: 12, md: 6 }} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Box sx={{ mb: 2 }}>
+                  <Chip label={flavor.category_name} size="small" sx={{ mb: 2, fontWeight: 'bold', bgcolor: 'action.hover' }} />
+                  <Typography variant="h2" sx={{ fontWeight: '800', lineHeight: 1.1, mb: 2 }}>
+                      {flavor.name}
+                  </Typography>
+                  
+                  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'primary.main', color: 'primary.contrastText', px: 1.5, py: 0.5, borderRadius: 2 }}>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{(flavor.average_rating || 0).toFixed(1)}</Typography>
+                          <Typography variant="caption" sx={{ opacity: 0.8, ml: 0.5 }}>/ 10</Typography>
+                      </Box>
+                      <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} />
+                      <Typography variant="body2" color="text.secondary">
+                          {flavor.ratings.length} {t('common.reviews')}
+                      </Typography>
+                  </Stack>
 
-            {flavor.shop_url && (
-                <Button variant="contained" size="large" component="a" href={flavor.shop_url} target="_blank" fullWidth sx={{ maxWidth: { md: 200 }, borderRadius: 2 }}>
-                    {t('common.buyNow')}
-                </Button>
-            )}
-        </CardContent>
-      </Card>
+                  <Typography variant="body1" sx={{ fontSize: '1.1rem', lineHeight: 1.8, color: 'text.secondary', mb: 4 }}>
+                      {flavor.description}
+                  </Typography>
 
-      {/* New Rating Form */}
-      {currentUser && flavor.user_rating === null && (
-          <Paper sx={{ p: { xs: 3, md: 4 }, mb: 4, borderRadius: 2 }}>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>Rate this flavor</Typography>
-              <form onSubmit={handleRatingSubmit}>
-                  <Box sx={{ mb: 3 }}>
-                      <Typography component="legend" gutterBottom>Score (1-10)</Typography>
-                      <MuiRating max={10} value={newScore} onChange={(_, val) => setNewScore(val)} size="large" />
-                  </Box>
-                  <TextField
-                      fullWidth
-                      multiline
-                      rows={3}
-                      label="Your Comment (Optional)"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      sx={{ 
-                          mb: 3,
-                          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
-                      }}
-                      InputLabelProps={{ shrink: true }}
-                  />
-                  <Button variant="contained" type="submit" disabled={!newScore} fullWidth sx={{ maxWidth: { md: 200 }, borderRadius: 2 }}>
-                      Submit Rating
-                  </Button>
-              </form>
-          </Paper>
-      )}
+                  {flavor.shop_url && (
+                      <Button 
+                        variant="contained" 
+                        size="large" 
+                        component="a" 
+                        href={flavor.shop_url} 
+                        target="_blank" 
+                        startIcon={<ShoppingCartIcon />}
+                        sx={{ 
+                            borderRadius: 3, 
+                            px: 4, 
+                            py: 1.5, 
+                            fontSize: '1rem', 
+                            fontWeight: 'bold',
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.15)' 
+                        }}
+                      >
+                          {t('common.buyNow')}
+                      </Button>
+                  )}
+              </Box>
+          </Grid>
+      </Grid>
 
-      <Typography variant="h4" gutterBottom sx={{ mt: 6, mb: 3, fontWeight: 'bold', fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-          {t('home.communityVoice')}
-      </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {flavor.ratings.length === 0 ? (
-            <Typography color="text.secondary">{t('dashboard.noRatings')}</Typography>
-        ) : (
-            flavor.ratings.map((rating: Rating) => (
-                <Card key={rating.id} variant="outlined" sx={{ borderRadius: 2 }}>
-                    <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                        {editMode === rating.id ? (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <MuiRating max={10} value={editScore} onChange={(_, val) => setEditScore(val || 0)} size="large" />
-                                <TextField 
-                                    multiline 
-                                    fullWidth 
-                                    rows={3} 
-                                    value={editComment} 
-                                    onChange={(e) => setEditComment(e.target.value)}
-                                    label="Your Comment"
-                                    sx={{ 
-                                        '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
-                                    }}
-                                    InputLabelProps={{ shrink: true }}
-                                />
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>Save</Button>
-                                    <Button onClick={() => setEditMode(null)}>Cancel</Button>
-                                </Box>
-                            </Box>
-                        ) : (
-                            <>
-                                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                                    <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                        <Avatar src={rating.user_avatar || undefined} sx={{ width: 40, height: 40, mr: 2, mt: 0.5, '&:hover': { opacity: 0.8 } }}>
-                                            {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
-                                        </Avatar>
-                                    </Link>
-                                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
-                                            <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', '&:hover': { color: 'primary.main' } }}>{rating.user}</Typography>
-                                            </Link>
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <MuiRating value={rating.score} readOnly size="small" max={10} />
-                                                <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                                            </Box>
-                                        </Box>
-                                        <Typography variant="caption" color="text.secondary" display="block">
-                                            {new Date(rating.created_at).toLocaleDateString()}
-                                        </Typography>
+      {/* Reviews Section */}
+      <Container maxWidth="md" disableGutters>
+          <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{t('home.communityVoice')}</Typography>
+          </Box>
+
+          {/* New Rating Form */}
+          {currentUser && flavor.user_rating === null && (
+              <Paper variant="outlined" sx={{ p: 4, mb: 6, borderRadius: 3, bgcolor: 'action.hover', border: '1px dashed', borderColor: 'divider' }}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Rate this flavor</Typography>
+                  <form onSubmit={handleRatingSubmit}>
+                      <Box sx={{ mb: 3 }}>
+                          <Typography component="legend" gutterBottom color="text.secondary">Score</Typography>
+                          <MuiRating max={10} value={newScore} onChange={(_, val) => setNewScore(val)} size="large" />
+                      </Box>
+                      <TextField
+                          fullWidth
+                          multiline
+                          rows={3}
+                          placeholder="Share your thoughts..."
+                          value={newComment}
+                          onChange={(e) => setNewComment(e.target.value)}
+                          sx={{ mb: 3, bgcolor: 'background.paper' }}
+                      />
+                      <Button variant="contained" type="submit" disabled={!newScore} sx={{ borderRadius: 2 }}>
+                          Submit Review
+                      </Button>
+                  </form>
+              </Paper>
+          )}
+
+          <Stack spacing={3}>
+            {flavor.ratings.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 8, bgcolor: 'action.hover', borderRadius: 4 }}>
+                    <Typography color="text.secondary">{t('dashboard.noRatings')}</Typography>
+                </Box>
+            ) : (
+                flavor.ratings.map((rating: Rating) => (
+                    <Card key={rating.id} variant="outlined" sx={{ borderRadius: 3, overflow: 'visible' }}>
+                        <CardContent sx={{ p: 3 }}>
+                            {editMode === rating.id ? (
+                                // Edit Mode
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <MuiRating max={10} value={editScore} onChange={(_, val) => setEditScore(val || 0)} size="large" />
+                                    <TextField 
+                                        multiline 
+                                        fullWidth 
+                                        rows={3} 
+                                        value={editComment} 
+                                        onChange={(e) => setEditComment(e.target.value)}
+                                    />
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>Save</Button>
+                                        <Button onClick={() => setEditMode(null)}>Cancel</Button>
                                     </Box>
                                 </Box>
-                                {rating.comment && (
-                                    <Typography variant="body1" sx={{ mb: 2, pl: { md: 7 }, overflowWrap: 'break-word', lineHeight: 1.6 }}>
-                                        {rating.comment}
-                                    </Typography>
-                                )}
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                                    {currentUser === rating.user && (
-                                        <>
-                                            <Button size="small" onClick={() => startEdit(rating)}>Edit</Button>
-                                            <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)}>Delete</Button>
-                                        </>
-                                    )}
-                                </Box>
-                            </>
-                        )}
+                            ) : (
+                                // View Mode
+                                <>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none' }}>
+                                                <Avatar src={rating.user_avatar || undefined} sx={{ width: 48, height: 48, border: '2px solid', borderColor: 'divider' }}>
+                                                    {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                                                </Avatar>
+                                            </Link>
+                                            <Box>
+                                                <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.user}</Typography>
+                                                </Link>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {new Date(rating.created_at).toLocaleDateString()}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'action.selected', px: 1.5, py: 0.5, borderRadius: 2 }}>
+                                            <StarIcon sx={{ fontSize: '1rem', color: 'primary.main', mr: 0.5 }} />
+                                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
+                                        </Box>
+                                    </Box>
 
-                        <Box sx={{ mt: 2, ml: { xs: 2, md: 7 }, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
-                            {rating.replies.map((reply: any) => (
-                                <Box key={reply.id} sx={{ mb: 2 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{reply.user}</Typography>
-                                    <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>{reply.text}</Typography>
-                                    <Typography variant="caption" color="text.secondary">{new Date(reply.created_at).toLocaleDateString()}</Typography>
+                                    {rating.comment && (
+                                        <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
+                                            {rating.comment}
+                                        </Typography>
+                                    )}
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        {/* Reply Actions or Metadata */}
+                                        <Box /> 
+                                        {currentUser === rating.user && (
+                                            <Box>
+                                                <Button size="small" onClick={() => startEdit(rating)} sx={{ minWidth: 0, mr: 1 }}>Edit</Button>
+                                                <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)} sx={{ minWidth: 0 }}>Delete</Button>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </>
+                            )}
+
+                            {/* Replies */}
+                            {rating.replies.length > 0 && (
+                                <Box sx={{ mt: 2, bgcolor: 'action.hover', p: 2, borderRadius: 2 }}>
+                                    {rating.replies.map((reply: any) => (
+                                        <Box key={reply.id} sx={{ mb: 1.5, '&:last-child': { mb: 0 } }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                                {reply.user} 
+                                                {reply.user === rating.user && <VerifiedIcon sx={{ fontSize: '0.8rem', color: 'primary.main', ml: 0.5, verticalAlign: 'middle' }} />}
+                                            </Typography>
+                                            <Typography variant="body2">{reply.text}</Typography>
+                                        </Box>
+                                    ))}
                                 </Box>
-                            ))}
+                            )}
+                            
                             {currentUser && (
                                 <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                                     <TextField 
@@ -334,16 +391,17 @@ const FlavorDetail: React.FC = () => {
                                         fullWidth 
                                         value={replyInputs[rating.id] || ''} 
                                         onChange={(e) => setReplyInputs({ ...replyInputs, [rating.id]: e.target.value })} 
+                                        sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
                                     />
                                     <Button variant="contained" size="small" disabled={!replyInputs[rating.id]} onClick={() => handleReplySubmit(rating.id)}>Reply</Button>
                                 </Box>
                             )}
-                        </Box>
-                    </CardContent>
-                </Card>
-            ))
-        )}
-      </Box>
+                        </CardContent>
+                    </Card>
+                ))
+            )}
+          </Stack>
+      </Container>
     </Container>
   );
 };
