@@ -2,7 +2,7 @@ from django.core.mail import send_mail
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from django.db.models import Avg
+from django.db.models import Avg, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
@@ -515,7 +515,7 @@ class UserViewSet(viewsets.ModelViewSet):
             .select_related('category') \
             .annotate(
                 average_rating=Avg('ratings__score'),
-                followed_average_rating=Avg('ratings__score', filter=models.Q(ratings__user__in=followed_users))
+                followed_average_rating=Avg('ratings__score', filter=Q(ratings__user__in=followed_users))
             ).order_by('category__name', 'name')
             
         rated_flavors = user.ratings.select_related('flavor', 'flavor__category') \
