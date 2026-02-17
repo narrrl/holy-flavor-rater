@@ -12,6 +12,27 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true, // Allow external access
       allowedHosts: allowedHosts,
-    }
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (id.includes('@mui')) {
+                return 'vendor-mui';
+              }
+              if (id.includes('react')) {
+                return 'vendor-react';
+              }
+              if (id.includes('axios') || id.includes('i18next')) {
+                return 'vendor-utils';
+              }
+              return 'vendor';
+            }
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1000, // Increase limit slightly as well
+    },
   }
 })
