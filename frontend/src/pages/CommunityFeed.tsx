@@ -32,6 +32,7 @@ import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import RichText from '../components/RichText';
 import { formatDate } from '../utils/date';
+import { useTranslation } from 'react-i18next';
 
 interface Reply {
     id: number;
@@ -76,7 +77,8 @@ interface Notification {
 }
 
 const CommunityFeed: React.FC = () => {
-  useTitle('Community Feed');
+  const { t } = useTranslation();
+  useTitle(t('community.title'));
   const navigate = useNavigate();
   const [ratings, setRatings] = useState<FeedRating[]>([]);
   const [following, setFollowing] = useState<FollowedUser[]>([]);
@@ -175,9 +177,9 @@ const CommunityFeed: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 6 }}>
-          <Typography variant="h3" sx={{ fontWeight: '800', mb: 1 }}>Community Activity</Typography>
+          <Typography variant="h3" sx={{ fontWeight: '800', mb: 1 }}>{t('community.title')}</Typography>
           <Typography variant="h6" color="text.secondary">
-              Stay updated with your circle's latest ratings and discussions.
+              {t('community.subtitle')}
           </Typography>
       </Box>
 
@@ -194,12 +196,12 @@ const CommunityFeed: React.FC = () => {
                     border: '1px dashed', 
                     borderColor: 'divider' 
                 }}>
-                    <Typography variant="h6" gutterBottom color="text.secondary">Your feed is a bit empty...</Typography>
+                    <Typography variant="h6" gutterBottom color="text.secondary">{t('community.quietFeed')}</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Follow more people to see their flavor ratings here!
+                        {t('community.followMore')}
                     </Typography>
                     <Button variant="contained" component={Link} to="/" sx={{ borderRadius: 2 }}>
-                        Explore Flavors
+                        {t('home.exploreFlavors')}
                     </Button>
                 </Box>
             ) : (
@@ -254,14 +256,14 @@ const CommunityFeed: React.FC = () => {
                                 <Box sx={{ display: 'flex', gap: 3 }}>
                                     <Box sx={{ flex: 1 }}>
                                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                            Rated <MuiLink component={Link} to={`/flavor/${rating.flavor}`} sx={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}>{rating.flavor_name}</MuiLink>
+                                            {t('community.rated')} <MuiLink component={Link} to={`/flavor/${rating.flavor}`} sx={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}>{rating.flavor_name}</MuiLink>
                                         </Typography>
                                         {rating.comment ? (
                                             <Typography variant="body1" sx={{ lineHeight: 1.6, fontStyle: 'italic', color: 'text.primary' }}>
                                                 <RichText text={rating.comment} />
                                             </Typography>
                                         ) : (
-                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>No review text.</Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('dashboard.noRatings')}</Typography>
                                         )}
                                     </Box>
                                     <Link to={`/flavor/${rating.flavor}`} style={{ flexShrink: 0 }}>
@@ -280,7 +282,7 @@ const CommunityFeed: React.FC = () => {
                                     onClick={() => handleReplyToggle(rating.id)}
                                     sx={{ textTransform: 'none', color: 'text.secondary' }}
                                 >
-                                    {rating.replies.length > 0 ? `${rating.replies.length} Replies` : 'Reply'}
+                                    {rating.replies.length > 0 ? `${rating.replies.length} ${t('common.replies')}` : t('common.reply')}
                                 </Button>
 
                                 <Collapse in={expandedReplies[rating.id]}>
@@ -296,7 +298,7 @@ const CommunityFeed: React.FC = () => {
                                         ))}
                                         <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                                             <TextField 
-                                                fullWidth size="small" placeholder="Add a reply..." 
+                                                fullWidth size="small" placeholder={t('community.writeReply')} 
                                                 value={replyInputs[rating.id] || ''} 
                                                 onChange={(e) => setReplyInputs(prev => ({ ...prev, [rating.id]: e.target.value }))}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(rating.id)}
@@ -327,11 +329,11 @@ const CommunityFeed: React.FC = () => {
                   <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
                       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
                           <NotificationsIcon color="primary" fontSize="small" />
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Recent Notifications</Typography>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('community.notifications')}</Typography>
                       </Box>
                       <List disablePadding>
                           {notifications.length === 0 ? (
-                              <Box sx={{ p: 3, textAlign: 'center' }}><Typography variant="body2" color="text.secondary">No notifications.</Typography></Box>
+                              <Box sx={{ p: 3, textAlign: 'center' }}><Typography variant="body2" color="text.secondary">{t('community.noNotifications')}</Typography></Box>
                           ) : (
                               notifications.map(n => (
                                   <ListItemButton key={n.id} onClick={() => n.flavor_id && navigate(`/flavor/${n.flavor_id}`)} sx={{ py: 1.5 }}>
@@ -341,7 +343,7 @@ const CommunityFeed: React.FC = () => {
                                       <ListItemText 
                                         primary={
                                             <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? 'replied' : 'mentioned you'}
+                                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? t('community.notifReply') : t('community.notifMention')}
                                             </Typography>
                                         }
                                         secondary={formatTimestamp(n.created_at)}
@@ -357,11 +359,11 @@ const CommunityFeed: React.FC = () => {
                   <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
                       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
                           <PeopleIcon color="primary" fontSize="small" />
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Following</Typography>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('nav.following')}</Typography>
                       </Box>
                       <Box sx={{ p: 1.5 }}>
                            <TextField
-                                fullWidth size="small" placeholder="Search friends..."
+                                fullWidth size="small" placeholder={t('community.searchFriends')}
                                 value={followingSearch}
                                 onChange={(e) => setFollowingSearch(e.target.value)}
                                 InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> }}
@@ -381,7 +383,7 @@ const CommunityFeed: React.FC = () => {
                   <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
                       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
                           <WhatshotIcon color="error" fontSize="small" />
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Circle's Top Rated</Typography>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('community.topRated')}</Typography>
                       </Box>
                       <List disablePadding>
                           {topFollowed.map((flavor, idx) => (
