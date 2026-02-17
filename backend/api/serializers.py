@@ -1,15 +1,16 @@
 from rest_framework import serializers
-from .models import User, Flavor, Category, Rating, Reply
+from .models import User, Flavor, Category, Rating, Reply, Notification
 
 class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
     following_count = serializers.IntegerField(source='following.count', read_only=True)
     followers_count = serializers.IntegerField(source='followers.count', read_only=True)
     is_following = serializers.SerializerMethodField()
+    unread_notifications_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'theme', 'language', 'avatar', 'following_count', 'followers_count', 'is_following']
+        fields = ['id', 'username', 'email', 'theme', 'language', 'avatar', 'following_count', 'followers_count', 'is_following', 'unread_notifications_count']
 
     def get_avatar(self, obj):
         if obj.avatar:
@@ -24,6 +25,41 @@ class UserSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return request.user.following.filter(pk=obj.pk).exists()
         return False
+
+    def get_unread_notifications_count(self, obj):
+        return obj.notifications.filter(is_read=False).count()
+
+class NotificationSerializer(serializers.ModelSerializer):
+    actor_username = serializers.CharField(source='actor.username', read_only=True)
+    actor_avatar = serializers.SerializerMethodField()
+    flavor_name = serializers.SerializerMethodField()
+    flavor_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'actor_username', 'actor_avatar', 'notification_type', 'rating', 'reply', 'is_read', 'created_at', 'flavor_name', 'flavor_id']
+
+    def get_actor_avatar(self, obj):
+        if obj.actor.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.actor.avatar.url)
+            return obj.actor.avatar.url
+        return None
+
+    def get_flavor_name(self, obj):
+        if obj.rating:
+            return obj.rating.flavor.name
+        if obj.reply:
+            return obj.reply.rating.flavor.name
+        return None
+
+    def get_flavor_id(self, obj):
+        if obj.rating:
+            return obj.rating.flavor.id
+        if obj.reply:
+            return obj.reply.rating.flavor.id
+        return None
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

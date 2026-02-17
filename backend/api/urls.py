@@ -7,6 +7,8 @@ router.register('users', views.UserViewSet)
 router.register('flavors', views.FlavorViewSet)
 router.register('categories', views.CategoryViewSet)
 router.register('ratings', views.RatingViewSet)
+router.register('replies', views.ReplyViewSet)
+router.register('notifications', views.NotificationViewSet, basename='notification')
 
 urlpatterns = [
     path('', include(router.urls)),
