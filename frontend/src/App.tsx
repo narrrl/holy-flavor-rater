@@ -317,11 +317,13 @@ const App: React.FC = () => {
             </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding>
-            <ListItemButton component={Link} to="/community" onClick={() => setDrawerOpen(false)}>
-                <ListItemText primary={t('nav.community')} />
-            </ListItemButton>
-        </ListItem>
+        {user && (
+            <ListItem disablePadding>
+                <ListItemButton component={Link} to="/community" onClick={() => setDrawerOpen(false)}>
+                    <ListItemText primary={t('nav.community')} />
+                </ListItemButton>
+            </ListItem>
+        )}
 
         <ListItemButton onClick={() => setCatOpen(!catOpen)}>
             <ListItemText primary={t('nav.categories')} />
@@ -444,14 +446,16 @@ const App: React.FC = () => {
                 </Typography>
 
                 <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 4 }}>
-                    <Button 
-                        color="inherit" 
-                        component={Link}
-                        to="/community"
-                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
-                    >
-                        {t('nav.community')}
-                    </Button>
+                    {user && (
+                        <Button 
+                            color="inherit" 
+                            component={Link}
+                            to="/community"
+                            sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
+                        >
+                            {t('nav.community')}
+                        </Button>
+                    )}
                     <Button 
                         color="inherit" 
                         endIcon={<ArrowDropDownIcon />}

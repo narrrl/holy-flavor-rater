@@ -27,6 +27,7 @@ import CommentIcon from '@mui/icons-material/Comment';
 import { formatDate } from '../../utils/date';
 import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
+import RatingBadge from '../../components/RatingBadge';
 
 interface Reply {
     id: number;
@@ -193,34 +194,6 @@ const FlavorDetail: React.FC = () => {
       }
   };
 
-  const RatingBadge = ({ score, size = 'medium' }: { score: number, size?: 'small' | 'medium' | 'large' }) => {
-    const isLarge = size === 'large';
-    const isSmall = size === 'small';
-    
-    return (
-        <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-            color: 'primary.main',
-            px: isLarge ? 3 : (isSmall ? 1 : 2), 
-            py: isLarge ? 1 : 0.5, 
-            borderRadius: isLarge ? 3 : 2,
-            minWidth: isLarge ? 80 : 50,
-            border: '1px solid',
-            borderColor: (theme) => alpha(theme.palette.primary.main, 0.2)
-        }}>
-            <Typography variant={isLarge ? "h4" : (isSmall ? "subtitle2" : "h6")} sx={{ fontWeight: '900', lineHeight: 1 }}>
-                {score}
-            </Typography>
-            <Typography variant="caption" sx={{ fontSize: isLarge ? '0.75rem' : '0.6rem', fontWeight: 'bold', opacity: 0.8 }}>
-                / 10
-            </Typography>
-        </Box>
-    );
-  };
-
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!flavor) return <Typography>Flavor not found</Typography>;
 
@@ -245,7 +218,7 @@ const FlavorDetail: React.FC = () => {
                 }
             }}
           >
-            {t('common.backToHome').replace('Home', 'Back')}
+            {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
           </Button>
       </Box>
 
@@ -311,13 +284,10 @@ const FlavorDetail: React.FC = () => {
                           </Typography>
                           
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                              <RatingBadge score={Number((flavor.average_rating || 0).toFixed(1))} size="large" />
-                              <Box>
-                                  <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} size="small" />
-                                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                                      {flavor.ratings.length} {t('common.reviews')}
-                                  </Typography>
-                              </Box>
+                              <RatingBadge score={flavor.average_rating || 0} size="large" />
+                              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                                  {flavor.ratings.length} {t('common.reviews')}
+                              </Typography>
                           </Box>
 
                           <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}>

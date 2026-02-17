@@ -27,6 +27,7 @@ import SendIcon from '@mui/icons-material/Send';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PeopleIcon from '@mui/icons-material/People';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -34,6 +35,7 @@ import RichText from '../components/RichText';
 import { formatDate } from '../utils/date';
 import { useTranslation } from 'react-i18next';
 import MentionTextField from '../components/MentionTextField';
+import RatingBadge from '../components/RatingBadge';
 
 interface Reply {
     id: number;
@@ -99,6 +101,14 @@ const CommunityFeed: React.FC = () => {
   const filteredFollowing = following.filter(user => 
     user.username.toLowerCase().includes(followingSearch.toLowerCase())
   );
+
+  const handleGoBack = () => {
+      if (window.history.length > 1) {
+          navigate(-1);
+      } else {
+          navigate('/');
+      }
+  };
 
   const fetchFeedData = async (pageNum: number) => {
     setLoading(true);
@@ -177,6 +187,28 @@ const CommunityFeed: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+          <Button 
+            variant="outlined" 
+            onClick={handleGoBack}
+            startIcon={<ArrowBackIcon />}
+            sx={{ 
+                borderRadius: 2, 
+                textTransform: 'none', 
+                fontWeight: 'bold',
+                color: 'text.secondary',
+                borderColor: 'divider',
+                '&:hover': {
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    bgcolor: 'transparent'
+                }
+            }}
+          >
+            {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
+          </Button>
+      </Box>
+
       <Box sx={{ mb: 6 }}>
           <Typography variant="h3" sx={{ fontWeight: '800', mb: 1 }}>{t('community.title')}</Typography>
           <Typography variant="h6" color="text.secondary">
@@ -239,18 +271,7 @@ const CommunityFeed: React.FC = () => {
                                             </Typography>
                                         </Box>
                                     </Box>
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        alignItems: 'center', 
-                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                                        color: 'primary.main',
-                                        px: 2, py: 0.5, 
-                                        borderRadius: 2
-                                    }}>
-                                        <Typography variant="h5" sx={{ fontWeight: '900', lineHeight: 1 }}>{rating.score}</Typography>
-                                        <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 'bold' }}>/ 10</Typography>
-                                    </Box>
+                                    <RatingBadge score={rating.score} />
                                 </Box>
 
                                 {/* Flavor and Comment */}
@@ -397,10 +418,9 @@ const CommunityFeed: React.FC = () => {
                                   <Avatar src={flavor.image_url} variant="rounded" sx={{ width: 32, height: 32, mr: 2, bgcolor: 'transparent' }} imgProps={{ sx: { objectFit: 'contain' } }} />
                                   <ListItemText 
                                     primary={flavor.name} 
-                                    secondary={`${(flavor.average_rating || 0).toFixed(1)} / 10`}
                                     primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold', noWrap: true }}
-                                    secondaryTypographyProps={{ variant: 'caption', color: 'primary.main', fontWeight: 'bold' }}
                                   />
+                                  <RatingBadge score={flavor.average_rating || 0} size="small" />
                               </ListItemButton>
                           ))}
                       </List>

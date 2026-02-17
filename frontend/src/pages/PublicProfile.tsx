@@ -19,6 +19,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
+import { useTranslation } from 'react-i18next';
 
 interface Rating {
     id: number;
@@ -43,6 +44,7 @@ interface ProfileData {
 }
 
 const PublicProfile: React.FC = () => {
+  const { t } = useTranslation();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<ProfileData | null>(null);
@@ -144,7 +146,7 @@ const PublicProfile: React.FC = () => {
             }
         }}
       >
-        Back
+        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
       </Button>
 
       {/* Profile Header */}

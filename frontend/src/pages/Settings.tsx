@@ -17,7 +17,7 @@ import {
   Grid
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useTranslation } from 'react-i18next';
 import { useTitle } from '../hooks/useTitle';
@@ -30,6 +30,7 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   useTitle(t('nav.settings'));
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -43,6 +44,14 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const [deletionCode, setDeletionCode] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  const handleGoBack = () => {
+      if (window.history.length > 1) {
+          navigate(-1);
+      } else {
+          navigate('/');
+      }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -162,12 +171,23 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Button 
         variant="outlined" 
-        component={Link} 
-        to="/" 
+        onClick={handleGoBack}
         startIcon={<ArrowBackIcon />}
-        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+        sx={{ 
+            mb: 4, 
+            borderRadius: 2, 
+            textTransform: 'none', 
+            fontWeight: 'bold',
+            color: 'text.secondary',
+            borderColor: 'divider',
+            '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                bgcolor: 'transparent'
+            }
+        }}
       >
-        {t('common.backToHome')}
+        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
       </Button>
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 6 }}>

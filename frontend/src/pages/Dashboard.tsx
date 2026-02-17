@@ -107,7 +107,7 @@ const Dashboard: React.FC = () => {
             }
         }}
       >
-        {t('common.backToHome').replace('Home', 'Back')}
+        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
       </Button>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6, flexWrap: 'wrap', gap: 2 }}>
