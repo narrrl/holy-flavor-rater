@@ -13,7 +13,15 @@ const resources = {
         "settings": "Settings",
         "logout": "Logout",
         "login": "Login / Signup",
-        "following": "Following"
+        "following": "Following",
+        "categories": "Categories"
+      },
+      "categories": {
+        "energy": "Energy",
+        "hydration": "Hydration",
+        "iced-tea": "Iced Tea",
+        "milkshake": "Milkshake",
+        "packs-and-other": "Packs & Other"
       },
       "dashboard": {
         "welcome": "Welcome back, {{username}}!",
@@ -114,7 +122,15 @@ const resources = {
         "settings": "Einstellungen",
         "logout": "Abmelden",
         "login": "Anmelden / Registrieren",
-        "following": "Folge ich"
+        "following": "Folge ich",
+        "categories": "Kategorien"
+      },
+      "categories": {
+        "energy": "Energy",
+        "hydration": "Hydration",
+        "iced-tea": "Eistee",
+        "milkshake": "Milkshake",
+        "packs-and-other": "Bundles & Mehr"
       },
       "dashboard": {
         "welcome": "Willkommen zurück, {{username}}!",
