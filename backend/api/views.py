@@ -223,7 +223,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
             
-        ratings = user.ratings.select_related('flavor', 'flavor__category').exclude(flavor__category__slug='packs-and-other').order_by('-score')
+        ratings = user.ratings.select_related('flavor', 'flavor__category').order_by('-score')
         
         return Response({
             'id': user.id,
@@ -426,12 +426,10 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Annotate with community average rating so it's available for sorting/display
         missing_flavors = Flavor.objects.exclude(id__in=rated_ids) \
-            .exclude(category__slug='packs-and-other') \
             .select_related('category') \
             .annotate(average_rating=Avg('ratings__score'))
             
-        rated_flavors = user.ratings.select_related('flavor', 'flavor__category') \
-            .exclude(flavor__category__slug='packs-and-other')
+        rated_flavors = user.ratings.select_related('flavor', 'flavor__category')
         
         return Response({
             'user': UserSerializer(user).data,

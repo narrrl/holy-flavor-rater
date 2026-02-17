@@ -70,13 +70,16 @@ const GlobalSearch = () => {
             try {
                 // Fetch unified results: flavors, categories, and users
                 const res = await api.get('flavors/search/');
-                setOptions(res.data);
+                // Filter to only flavors
+                const results = (Array.isArray(res.data) ? res.data : (res.data.results || []))
+                    .filter((item: any) => item.type === 'flavor');
+                setOptions(results);
             } catch (err) {
                 console.error('Failed to fetch search options');
             }
         };
         fetchSearchOptions();
-    }, []); // Only fetch once to avoid excessive API calls
+    }, []); 
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -108,8 +111,6 @@ const GlobalSearch = () => {
                 onChange={(_, newValue) => {
                     if (newValue && typeof newValue !== 'string') {
                         if (newValue.type === 'flavor') navigate(`/flavor/${newValue.id}`);
-                        if (newValue.type === 'category') navigate(`/category/${newValue.slug}`);
-                        if (newValue.type === 'user') navigate(`/profile/${newValue.slug}`);
                     }
                 }}
                 onKeyDown={(e) => {
