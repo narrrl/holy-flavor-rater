@@ -53,7 +53,6 @@ interface Review {
 
 const MainPage: React.FC = () => {
   const isMobileSize = useMediaQuery('(max-width:600px)');
-  const [categories, setCategories] = useState<Category[]>([]);
   const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
   const [newestFlavors, setNewestFlavors] = useState<Flavor[]>([]);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
@@ -76,7 +75,6 @@ const MainPage: React.FC = () => {
             setAllFlavors(Array.isArray(res.data) ? res.data : (res.data.results || []));
         } else {
             const requests: any[] = [
-                api.get('categories/'),
                 api.get('flavors/top/'),
                 api.get('ratings/recent/'),
                 api.get('flavors/newest/')
@@ -88,13 +86,12 @@ const MainPage: React.FC = () => {
 
             const results = await Promise.all(requests);
             
-            setCategories(Array.isArray(results[0].data) ? results[0].data : (results[0].data.results || []));
-            setTopFlavors(Array.isArray(results[1].data) ? results[1].data : (results[1].data.results || []));
-            setRecentReviews(Array.isArray(results[2].data) ? results[2].data : (results[2].data.results || []));
-            setNewestFlavors(Array.isArray(results[3].data) ? results[3].data : (results[3].data.results || []));
+            setTopFlavors(Array.isArray(results[0].data) ? results[0].data : (results[0].data.results || []));
+            setRecentReviews(Array.isArray(results[1].data) ? results[1].data : (results[1].data.results || []));
+            setNewestFlavors(Array.isArray(results[2].data) ? results[2].data : (results[2].data.results || []));
             
-            if (isLoggedIn && results[4]) {
-                const feedData = Array.isArray(results[4].data) ? results[4].data : (results[4].data.results || []);
+            if (isLoggedIn && results[3]) {
+                const feedData = Array.isArray(results[3].data) ? results[3].data : (results[3].data.results || []);
                 setFeedRatings(feedData.slice(0, 6)); // Show top 6 on home
             }
         }

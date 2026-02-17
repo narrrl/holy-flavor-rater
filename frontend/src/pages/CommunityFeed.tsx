@@ -16,8 +16,7 @@ import {
   ListItemAvatar,
   ListItemText,
   ListItemButton,
-  Pagination,
-  Paper as MuiPaper
+  Pagination
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import { Link } from 'react-router-dom';
