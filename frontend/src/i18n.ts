@@ -152,8 +152,8 @@ const resources = {
       },
       "cookieBanner": {
         "title": "Cookie Settings",
-        "description": "We use cookies to ensure you get the best experience on our website. Would you like to switch to Holy Dark mode? It's easier on the eyes!",
-        "accept": "Accept Cookies",
+        "description": "We use essential technical cookies to manage your login sessions, store your preferred theme and language settings, and ensure the security of your account. These cookies are strictly necessary for the site to function properly. Would you like to switch to Holy Dark mode before you start? It's easier on the eyes!",
+        "accept": "Accept and Continue",
         "switchToDark": "Switch to Holy Dark",
         "switchToLight": "Stay on Holy Light"
       }
@@ -308,8 +308,8 @@ const resources = {
       },
       "cookieBanner": {
         "title": "Cookie-Einstellungen",
-        "description": "Wir verwenden Cookies, um sicherzustellen, dass Sie das beste Erlebnis auf unserer Website erhalten. Möchten Sie zum Holy Dark Modus wechseln? Er ist schonender für die Augen!",
-        "accept": "Cookies akzeptieren",
+        "description": "Wir verwenden technisch notwendige Cookies, um Ihre Login-Sitzungen zu verwalten, Ihre bevorzugten Design- und Spracheinstellungen zu speichern und die Sicherheit Ihres Kontos zu gewährleisten. Diese Cookies sind zwingend erforderlich, damit die Website ordnungsgemäß funktioniert. Möchten Sie zum Holy Dark Modus wechseln, bevor Sie beginnen? Er ist schonender für die Augen!",
+        "accept": "Akzeptieren und Fortfahren",
         "switchToDark": "Zu Holy Dark wechseln",
         "switchToLight": "Bei Holy Light bleiben"
       }

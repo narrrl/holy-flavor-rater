@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    Paper, 
     Typography, 
     Button, 
-    Stack, 
     alpha,
-    Slide
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogActions,
+    Box
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import type { CatppuccinTheme } from '../theme';
@@ -36,55 +38,70 @@ const CookieBanner: React.FC<CookieBannerProps> = ({ onThemeChange, currentTheme
         onThemeChange(newTheme);
     };
 
-    if (!open) return null;
-
     return (
-        <Slide direction="up" in={open} mountOnEnter unmountOnExit>
-            <Paper 
-                elevation={10} 
-                sx={{ 
-                    position: 'fixed', 
-                    bottom: { xs: 16, sm: 24 }, 
-                    left: { xs: 16, sm: 24 }, 
-                    right: { xs: 16, sm: 24 }, 
-                    maxWidth: 600, 
-                    margin: '0 auto',
-                    zIndex: 3000,
-                    p: 3,
+        <Dialog 
+            open={open} 
+            onClose={() => {}} // Disable closing by clicking backdrop
+            disableEscapeKeyDown
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+                sx: {
                     borderRadius: 4,
                     border: '1px solid',
                     borderColor: 'primary.main',
-                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.95),
+                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.98),
                     backdropFilter: 'blur(10px)',
-                }}
-            >
-                <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    {t('cookieBanner.title')} 🍪
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
+                    boxShadow: (theme) => `0 20px 50px ${alpha(theme.palette.primary.main, 0.2)}`,
+                }
+            }}
+        >
+            <DialogTitle sx={{ fontWeight: 'bold', fontSize: '1.5rem', pt: 3 }}>
+                {t('cookieBanner.title')} 🍪
+            </DialogTitle>
+            <DialogContent>
+                <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.7 }}>
                     {t('cookieBanner.description')}
                 </Typography>
-                
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="flex-end">
-                    <Button 
-                        variant="outlined" 
-                        color="primary" 
-                        onClick={handleToggleTheme}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
-                    >
-                        {currentTheme === 'holy_light' ? t('cookieBanner.switchToDark') : t('cookieBanner.switchToLight')}
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        color="primary" 
-                        onClick={handleAccept}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold', px: 4 }}
-                    >
-                        {t('cookieBanner.accept')}
-                    </Button>
-                </Stack>
-            </Paper>
-        </Slide>
+                <Box sx={{ 
+                    p: 2, 
+                    borderRadius: 2, 
+                    bgcolor: 'action.hover', 
+                    border: '1px solid', 
+                    borderColor: 'divider',
+                    mt: 2
+                }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', display: 'block', mb: 1, textTransform: 'uppercase' }}>
+                        Technical Details:
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        • Session ID: Required for login & authentication.<br />
+                        • CSRF Token: Protects your account from malicious attacks.<br />
+                        • Preference Store: Remembers your theme and language choices.
+                    </Typography>
+                </Box>
+            </DialogContent>
+            <DialogActions sx={{ p: 3, gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <Button 
+                    fullWidth
+                    variant="outlined" 
+                    color="primary" 
+                    onClick={handleToggleTheme}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold', m: '0 !important' }}
+                >
+                    {currentTheme === 'holy_light' ? t('cookieBanner.switchToDark') : t('cookieBanner.switchToLight')}
+                </Button>
+                <Button 
+                    fullWidth
+                    variant="contained" 
+                    color="primary" 
+                    onClick={handleAccept}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold', px: 4, m: '0 !important' }}
+                >
+                    {t('cookieBanner.accept')}
+                </Button>
+            </DialogActions>
+        </Dialog>
     );
 };
 
