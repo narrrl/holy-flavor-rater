@@ -7,22 +7,21 @@ import {
   CircularProgress,
   Button,
   Avatar,
-  Rating as MuiRating,
   Paper,
   Chip,
   Container,
   IconButton,
-  useMediaQuery,
   alpha
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import StarIcon from '@mui/icons-material/Star';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
+import RatingBadge from '../components/RatingBadge';
 
 interface Flavor {
     id: number;
@@ -50,7 +49,6 @@ interface Review {
 
 const MainPage: React.FC = () => {
   const { t } = useTranslation();
-  const isMobileSize = useMediaQuery('(max-width:600px)');
   const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
   const [newestFlavors, setNewestFlavors] = useState<Flavor[]>([]);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
@@ -202,8 +200,7 @@ const MainPage: React.FC = () => {
                                       <Typography variant="h6" sx={{ fontSize: '1rem' }}>{flavor.name}</Typography>
                                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>{flavor.category_name}</Typography>
                                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                          <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} max={10} size="small" />
-                                          <Typography variant="caption" sx={{ ml: 1 }}>({(flavor.average_rating || 0).toFixed(1)})</Typography>
+                                          <RatingBadge score={flavor.average_rating || 0} size="small" />
                                       </Box>
                                   </CardContent>
                               </Box>
@@ -362,7 +359,7 @@ const MainPage: React.FC = () => {
                 <Box sx={{ flex: { xs: '1 1 100%', xl: '1 1 65%' }, minWidth: 0 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <StarIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
+                            <EmojiEventsIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
                             <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{t('home.hallOfFame')}</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>
@@ -409,10 +406,10 @@ const MainPage: React.FC = () => {
                                 {currentTop.name}
                             </Typography>
                             
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, md: 3 }, flexWrap: 'wrap' }}>
-                                <MuiRating value={currentTop.average_rating || 0} readOnly precision={0.5} max={10} size={isMobileSize ? "medium" : "large"} />
-                                <Typography variant="h5" sx={{ ml: { xs: 0, sm: 2 }, mt: { xs: 1, sm: 0 }, fontWeight: 'bold', fontSize: { xs: '1.25rem', md: '1.5rem' } }}>
-                                    {(currentTop.average_rating || 0).toFixed(1)} / 10
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 2, md: 3 }, flexWrap: 'wrap', gap: 2 }}>
+                                <RatingBadge score={currentTop.average_rating || 0} size="large" />
+                                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                                    {currentTop.ratings.length} {t('common.reviews')}
                                 </Typography>
                             </Box>
 
@@ -497,14 +494,7 @@ const MainPage: React.FC = () => {
                                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem', '&:hover': { color: 'primary.main' } }}>{review.user}</Typography>
                                     </Link>
                                     <Box sx={{ flexGrow: 1 }} />
-                                    {/* Compact rating for sidebar and tablets */}
-                                    <Box sx={{ display: { xs: 'flex', xl: 'none' }, alignItems: 'center', gap: 0.5 }}>
-                                        <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
-                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{review.score}/10</Typography>
-                                    </Box>
-                                    <Box sx={{ display: { xs: 'none', xl: 'flex' }, alignItems: 'center' }}>
-                                        <MuiRating value={review.score} readOnly size="small" max={10} />
-                                    </Box>
+                                    <RatingBadge score={review.score} size="small" />
                                 </Box>
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                                     {formatDate(review.created_at)} • on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit', fontWeight: 'bold' }}>{review.flavor_name}</Link>

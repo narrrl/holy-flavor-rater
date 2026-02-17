@@ -4,15 +4,16 @@ import {
   Card, 
   CardContent, 
   Box, 
-  Rating as MuiRating, 
   TextField, 
   Button, 
   Accordion, 
   AccordionSummary, 
-  AccordionDetails 
+  AccordionDetails,
+  Rating as MuiRating
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import api from '../api';
+import RatingBadge from '../components/RatingBadge';
 
 interface Rating {
     id: number;
@@ -143,8 +144,7 @@ const FlavorList: React.FC = () => {
                     )}
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Typography variant="body2" sx={{ mr: 1 }}>Avg:</Typography>
-                      <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} max={10} size="small" />
-                      <Typography variant="body2" sx={{ ml: 1 }}>({(flavor.average_rating || 0).toFixed(1)})</Typography>
+                      <RatingBadge score={flavor.average_rating || 0} size="small" />
                     </Box>
 
                     {flavor.ratings && flavor.ratings.length > 0 && (
@@ -175,7 +175,7 @@ const FlavorList: React.FC = () => {
                             <MuiRating 
                               max={10} 
                               value={ratingInput[flavor.id]?.score || 0} 
-                              onChange={(_, val) => setRatingInput({...ratingInput, [flavor.id]: {...(ratingInput[flavor.id] || {comment: ''}), score: val || 0}})}
+                              onChange={(_: any, val: number | null) => setRatingInput({...ratingInput, [flavor.id]: {...(ratingInput[flavor.id] || {comment: ''}), score: val || 0}})}
                             />
                             <TextField 
                               label="Comment (Optional)" 

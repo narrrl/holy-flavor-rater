@@ -5,7 +5,6 @@ import {
   Box, 
   Card, 
   CardContent, 
-  Rating as MuiRating,
   CircularProgress,
   Container,
   Button
@@ -13,6 +12,8 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
+import RatingBadge from '../../components/RatingBadge';
+import { useTranslation } from 'react-i18next';
 
 interface Rating {
     id: number;
@@ -37,6 +38,7 @@ interface Flavor {
 }
 
 const CategoryFlavors: React.FC = () => {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [flavors, setFlavors] = useState<Flavor[]>([]);
@@ -95,7 +97,7 @@ const CategoryFlavors: React.FC = () => {
                 }
             }}
           >
-            Back
+            {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
           </Button>
       </Box>
 
@@ -152,8 +154,7 @@ const CategoryFlavors: React.FC = () => {
                     <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 1 }}>{flavor.name}</Typography>
                     
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <MuiRating value={flavor.average_rating || 0} readOnly precision={0.5} max={10} size="small" />
-                        <Typography variant="caption" sx={{ ml: 1 }}>({(flavor.average_rating || 0).toFixed(1)})</Typography>
+                        <RatingBadge score={flavor.average_rating || 0} size="small" />
                     </Box>
                     <Typography variant="caption" color="text.secondary">{flavor.ratings.length} reviews</Typography>
                 </CardContent>

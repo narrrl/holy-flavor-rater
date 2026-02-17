@@ -88,9 +88,10 @@ const resources = {
       },
       "common": {
         "search": "Search...",
+        "back": "Back",
+        "backTo": "Back to {{page}}",
         "backToArchive": "Back to Archive",
         "backToHome": "Back to Home",
-        "backTo": "Back to",
         "buyNow": "Buy Now",
         "reviews": "reviews",
         "rank": "Rank",
@@ -218,9 +219,10 @@ const resources = {
       },
       "common": {
         "search": "Suchen...",
+        "back": "Zurück",
+        "backTo": "Zurück zu {{page}}",
         "backToArchive": "Zurück zum Archiv",
         "backToHome": "Zurück zur Startseite",
-        "backTo": "Zurück zu",
         "buyNow": "Jetzt kaufen",
         "reviews": "Bewertungen",
         "rank": "Rang",
