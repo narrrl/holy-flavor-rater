@@ -217,7 +217,7 @@ const MainPage: React.FC = () => {
             borderColor: 'divider',
             mb: 4
         }}>
-            <Container maxWidth="lg">
+            <Container maxWidth={false} sx={{ px: { xs: 0, sm: 2, md: 4 } }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 4, flexWrap: 'wrap', gap: 2 }}>
                     <Box>
                         <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '2rem', md: '3rem' } }}>{t('home.activity')}</Typography>

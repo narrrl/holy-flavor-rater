@@ -268,7 +268,7 @@ const App: React.FC = () => {
         </ListItem>
         
         <ListItemButton onClick={() => setCatOpen(!catOpen)}>
-            <ListItemText primary="Categories" />
+            <ListItemText primary={t('nav.categories')} />
             {catOpen ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
         <Collapse in={catOpen} timeout="auto" unmountOnExit>
@@ -281,7 +281,7 @@ const App: React.FC = () => {
                         onClick={() => setDrawerOpen(false)}
                         sx={{ pl: 4 }}
                     >
-                        <ListItemText primary={cat.name} />
+                        <ListItemText primary={t(`categories.${cat.slug}`, { defaultValue: cat.name })} />
                     </ListItemButton>
                 ))}
             </List>
@@ -380,7 +380,7 @@ const App: React.FC = () => {
                         onClick={(e) => setCatAnchorEl(e.currentTarget)}
                         sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem' }}
                     >
-                        Categories
+                        {t('nav.categories')}
                     </Button>
                     <Menu
                         anchorEl={catAnchorEl}
@@ -396,7 +396,7 @@ const App: React.FC = () => {
                                 to={`/category/${cat.slug}`}
                                 onClick={() => setCatAnchorEl(null)}
                             >
-                                {cat.name}
+                                {t(`categories.${cat.slug}`, { defaultValue: cat.name })}
                             </MenuItem>
                         ))}
                     </Menu>
