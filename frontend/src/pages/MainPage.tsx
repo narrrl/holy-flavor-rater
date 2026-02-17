@@ -15,6 +15,7 @@ import {
   useMediaQuery
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import StarIcon from '@mui/icons-material/Star';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -46,6 +47,7 @@ interface Review {
 }
 
 const MainPage: React.FC = () => {
+  const { t } = useTranslation();
   const isMobileSize = useMediaQuery('(max-width:600px)');
   const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
   const [newestFlavors, setNewestFlavors] = useState<Flavor[]>([]);
@@ -218,19 +220,19 @@ const MainPage: React.FC = () => {
             <Container maxWidth="lg">
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', mb: 4, flexWrap: 'wrap', gap: 2 }}>
                     <Box>
-                        <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '2rem', md: '3rem' } }}>Community Activity</Typography>
-                        <Typography variant="body1" color="text.secondary">Latest reviews from people you follow</Typography>
+                        <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '2rem', md: '3rem' } }}>{t('home.activity')}</Typography>
+                        <Typography variant="body1" color="text.secondary">{t('home.activitySubtitle')}</Typography>
                     </Box>
                     <Button component={Link} to="/community" variant="outlined" sx={{ borderRadius: 2, textTransform: 'none' }}>
-                        View Full Feed
+                        {t('home.viewFullFeed')}
                     </Button>
                 </Box>
 
                 {feedRatings.length === 0 ? (
                     <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4, bgcolor: 'action.hover', border: '2px dashed', borderColor: 'divider', elevation: 0 }}>
-                        <Typography variant="h6">Your feed is a bit quiet</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Follow more users to see their activity here!</Typography>
-                        <Button variant="contained" component={Link} to="/" size="small" sx={{ borderRadius: 2 }}>Explore Flavors</Button>
+                        <Typography variant="h6">{t('home.quietFeed')}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{t('home.followMore')}</Typography>
+                        <Button variant="contained" component={Link} to="/" size="small" sx={{ borderRadius: 2 }}>{t('home.exploreFlavors')}</Button>
                     </Paper>
                 ) : (
                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
@@ -300,17 +302,17 @@ const MainPage: React.FC = () => {
             }}
         >
             <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' }, overflowWrap: 'break-word', px: 2 }}>
-                The Ultimate Holy Archive
+                {t('hero.title')}
             </Typography>
             <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 800, mx: 'auto', px: 2 }}>
-                Browse every flavor ever released, discover new favorites, and share your ratings with the community.
+                {t('hero.subtitle')}
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap', px: 2 }}>
                 <Button variant="contained" size="large" component={Link} to="/login" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
-                    Join Community
+                    {t('hero.join')}
                 </Button>
                 <Button variant="outlined" size="large" component={Link} to="/about" sx={{ px: 4, py: 1.5, borderRadius: 2 }}>
-                    What is this for?
+                    {t('hero.whatIsThis')}
                 </Button>
             </Box>
         </Paper>
@@ -325,7 +327,7 @@ const MainPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <StarIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
-                            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Hall of Fame</Typography>
+                            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{t('home.hallOfFame')}</Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 1 }}>
                             <IconButton onClick={handlePrev} sx={{ border: '1px solid', borderColor: 'divider' }}><ChevronLeftIcon /></IconButton>
@@ -362,8 +364,9 @@ const MainPage: React.FC = () => {
                                 loading="lazy"
                             />
                         </Box>
-                        <CardContent sx={{ flex: 1, p: { xs: 3, sm: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <Chip label={`Rank #${activeIndex + 1}`} color="primary" size="small" sx={{ width: 'fit-content', mb: 1, fontWeight: 'bold' }} />
+                                            <CardContent sx={{ flex: 1, p: { xs: 3, sm: 4, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                                <Chip label={`${t('common.rank')} #${activeIndex + 1}`} color="primary" size="small" sx={{ width: 'fit-content', mb: 1, fontWeight: 'bold' }} />
+                        
                             <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold', fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' } }}>
                                 {currentTop.name}
                             </Typography>
@@ -395,7 +398,7 @@ const MainPage: React.FC = () => {
                                 to={`/flavor/${currentTop.id}`}
                                 sx={{ mt: { xs: 3, md: 4 }, width: { xs: '100%', sm: 'fit-content' }, px: 4, py: 1.5, borderRadius: 2 }}
                             >
-                                View All Reviews
+                                {t('home.viewAllReviews')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -423,7 +426,7 @@ const MainPage: React.FC = () => {
             {/* Recent Reviews - SIDE BY SIDE */}
             {recentReviews.length > 0 && (
                 <Box sx={{ flex: { xs: '1 1 100%', xl: '1 1 35%' }, minWidth: 0 }}>
-                    <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>Community Voice</Typography>
+                    <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>{t('home.communityVoice')}</Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {recentReviews.slice(0, 5).map(review => (
                             <Paper 
@@ -457,7 +460,7 @@ const MainPage: React.FC = () => {
                             </Paper>
                         ))}
                         <Button component={Link} to="/community" variant="text" size="small" sx={{ alignSelf: 'center', mt: 1 }}>
-                            View more reviews
+                            {t('home.viewMoreReviews')}
                         </Button>
                     </Box>
                 </Box>
@@ -467,7 +470,7 @@ const MainPage: React.FC = () => {
         {/* Newest Arrivals */}
         {newestFlavors.length > 0 && (
             <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>New Arrivals</Typography>
+                <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>{t('home.newArrivals')}</Typography>
                 <Box sx={{ 
                     display: 'grid', 
                     gridTemplateColumns: {

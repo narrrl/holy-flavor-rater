@@ -242,14 +242,23 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @action(detail=False, methods=['patch'])
-    def update_theme(self, request):
+    def update_preferences(self, request):
         user = request.user
         theme = request.data.get('theme')
+        language = request.data.get('language')
+        
+        updated = False
         if theme in dict(User.THEME_CHOICES):
             user.theme = theme
+            updated = True
+        if language in dict(User.LANGUAGE_CHOICES):
+            user.language = language
+            updated = True
+            
+        if updated:
             user.save()
-            return Response({'status': 'theme updated', 'theme': theme})
-        return Response({'error': 'Invalid theme'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'status': 'preferences updated', 'theme': user.theme, 'language': user.language})
+        return Response({'error': 'No valid updates provided'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
     def update_avatar(self, request):
@@ -379,6 +388,36 @@ class UserViewSet(viewsets.ModelViewSet):
         user.email_confirmation_code = None
         user.save()
         return Response({'status': 'Password reset successful!'})
+
+    @action(detail=False, methods=['post'])
+    @method_decorator(ratelimit(key='user', rate='3/h', method='POST', block=True))
+    def request_account_deletion(self, request):
+        import secrets
+        import string
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
+        
+        user = request.user
+        user.email_confirmation_code = code
+        user.save()
+        
+        send_mail(
+            'Confirm Account Deletion - Holy Flavors Archive',
+            f'Hi {user.username},\n\nYou requested to delete your account. This action is permanent.\n\nYour deletion code is: {code}',
+            'noreply@holyflavors.com',
+            [user.email],
+            fail_silently=False,
+        )
+        return Response({'status': 'Code sent to your email'})
+
+    @action(detail=False, methods=['post'])
+    def confirm_account_deletion(self, request):
+        user = request.user
+        code = request.data.get('code')
+        if not user.email_confirmation_code or code != user.email_confirmation_code:
+            return Response({'error': 'Invalid or expired code'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user.delete()
+        return Response({'status': 'Account deleted'})
 
     @action(detail=False, methods=['get'])
     def dashboard(self, request):

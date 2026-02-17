@@ -33,6 +33,9 @@ import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import { getTheme, type CatppuccinTheme } from './theme';
 import api from './api';
+import './i18n';
+import { useTranslation } from 'react-i18next';
+import Footer from './components/Footer';
 
 // Code splitting
 const MainPage = lazy(() => import('./pages/MainPage'));
@@ -42,6 +45,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PublicProfile = lazy(() => import('./pages/PublicProfile'));
 const CommunityFeed = lazy(() => import('./pages/CommunityFeed'));
 const About = lazy(() => import('./pages/About'));
+const Privacy = lazy(() => import('./pages/Privacy'));
 const Login = lazy(() => import('./pages/Login'));
 const Settings = lazy(() => import('./pages/Settings'));
 
@@ -159,6 +163,7 @@ const GlobalSearch = () => {
 };
 
 const App: React.FC = () => {
+  const { i18n, t } = useTranslation();
   const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'mocha');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [catAnchorEl, setCatAnchorEl] = useState<null | HTMLElement>(null);
@@ -181,6 +186,7 @@ const App: React.FC = () => {
         if (userRes.data && userRes.data.username) {
             setUser(userRes.data);
             if (userRes.data.theme) setThemeName(userRes.data.theme);
+            if (userRes.data.language) i18n.changeLanguage(userRes.data.language);
             
             // Also fetch following list for the mobile sidebar
             try {
@@ -223,6 +229,7 @@ const App: React.FC = () => {
     localStorage.removeItem('token');
     setUser(null);
     setFollowing([]);
+    i18n.changeLanguage(navigator.language.split('-')[0] || 'en');
     window.location.href = '/';
   };
 
@@ -243,19 +250,19 @@ const App: React.FC = () => {
       <List>
         <ListItem disablePadding>
             <ListItemButton component={Link} to="/" onClick={() => setDrawerOpen(false)}>
-                <ListItemText primary="Home" />
+                <ListItemText primary={t('nav.home')} />
             </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
             <ListItemButton component={Link} to="/community" onClick={() => setDrawerOpen(false)}>
-                <ListItemText primary="Community" />
+                <ListItemText primary={t('nav.community')} />
             </ListItemButton>
         </ListItem>
 
         <ListItem disablePadding>
             <ListItemButton component={Link} to="/about" onClick={() => setDrawerOpen(false)}>
-                <ListItemText primary="About" />
+                <ListItemText primary={t('nav.about')} />
             </ListItemButton>
         </ListItem>
         
@@ -285,12 +292,12 @@ const App: React.FC = () => {
             <>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to="/dashboard" onClick={() => setDrawerOpen(false)}>
-                        <ListItemText primary="Dashboard" />
+                        <ListItemText primary={t('nav.dashboard')} />
                     </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to="/settings" onClick={() => setDrawerOpen(false)}>
-                        <ListItemText primary="Account Settings" />
+                        <ListItemText primary={t('nav.settings')} />
                     </ListItemButton>
                 </ListItem>
 
@@ -315,14 +322,14 @@ const App: React.FC = () => {
 
                 <ListItem disablePadding>
                     <ListItemButton onClick={handleLogout}>
-                        <ListItemText primary="Logout" sx={{ color: 'error.main' }} />
+                        <ListItemText primary={t('nav.logout')} sx={{ color: 'error.main' }} />
                     </ListItemButton>
                 </ListItem>
             </>
         ) : (
             <ListItem disablePadding>
                 <ListItemButton component={Link} to="/login" onClick={() => setDrawerOpen(false)}>
-                    <ListItemText primary="Login / Signup" />
+                    <ListItemText primary={t('nav.login')} />
                 </ListItemButton>
             </ListItem>
         )}
@@ -356,7 +363,7 @@ const App: React.FC = () => {
                         to="/community"
                         sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
                     >
-                        Community
+                        {t('nav.community')}
                     </Button>
                     <Button 
                         color="inherit" 
@@ -364,7 +371,7 @@ const App: React.FC = () => {
                         to="/about"
                         sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
                     >
-                        About
+                        {t('nav.about')}
                     </Button>
                     <Button 
                         color="inherit" 
@@ -457,6 +464,7 @@ const App: React.FC = () => {
                     <Route path="/profile/:username" element={<PublicProfile />} />
                     <Route path="/community" element={<CommunityFeed />} />
                     <Route path="/about" element={<About />} />
+                    <Route path="/privacy" element={<Privacy />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
                     <Route path="/login" element={<Login />} />
@@ -464,6 +472,7 @@ const App: React.FC = () => {
                 </Routes>
             </Suspense>
           </Box>
+          <Footer />
         </Box>
       </Router>
     </ThemeProvider>

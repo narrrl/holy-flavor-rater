@@ -19,7 +19,12 @@ class User(AbstractUser):
         ('cyberpunk', 'Cyberpunk'),
         ('forest', 'Forest Dark'),
     ]
+    LANGUAGE_CHOICES = [
+        ('en', 'English'),
+        ('de', 'Deutsch'),
+    ]
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default='mocha')
+    language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='en')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     pending_email = models.EmailField(max_length=254, blank=True, null=True)
     email_confirmation_code = models.CharField(max_length=6, blank=True, null=True)
