@@ -57,6 +57,9 @@ const About: React.FC = () => {
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Kontakt:</Typography>
             <Typography variant="body2">
                 E-Mail: {import.meta.env.VITE_IMPRESSUM_EMAIL || '[Your Support Email Address]'}<br />
+                {import.meta.env.VITE_IMPRESSUM_PHONE && (
+                    <>Telefon: {import.meta.env.VITE_IMPRESSUM_PHONE}<br /></>
+                )}
                 Internet: holy.narl.io
             </Typography>
         </Box>
