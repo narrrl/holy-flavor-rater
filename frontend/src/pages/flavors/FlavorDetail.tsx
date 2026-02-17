@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Typography, 
   Box, 
@@ -51,6 +52,7 @@ interface Flavor {
 }
 
 const FlavorDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const [flavor, setFlavor] = useState<Flavor | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ const FlavorDetail: React.FC = () => {
     fetchFlavor();
   }, [id]);
 
-  useTitle(flavor?.name || 'Flavor Detail');
+  useTitle(flavor?.name || t('common.loading'));
 
   const handleRatingSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -156,7 +158,7 @@ const FlavorDetail: React.FC = () => {
         startIcon={<ArrowBackIcon />}
         sx={{ mb: 2, textTransform: 'none', borderRadius: 2 }}
       >
-        Back to {flavor.category_name}
+        {t('common.backTo')} {flavor.category_name}
       </Button>
 
       <Card sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, mb: 4, overflow: 'hidden', borderRadius: { xs: 2, md: 4 } }}>
@@ -212,7 +214,7 @@ const FlavorDetail: React.FC = () => {
 
             {flavor.shop_url && (
                 <Button variant="contained" size="large" component="a" href={flavor.shop_url} target="_blank" fullWidth sx={{ maxWidth: { md: 200 }, borderRadius: 2 }}>
-                    Buy Now
+                    {t('common.buyNow')}
                 </Button>
             )}
         </CardContent>
@@ -248,11 +250,11 @@ const FlavorDetail: React.FC = () => {
       )}
 
       <Typography variant="h4" gutterBottom sx={{ mt: 6, mb: 3, fontWeight: 'bold', fontSize: { xs: '1.75rem', md: '2.125rem' } }}>
-          Community Reviews
+          {t('home.communityVoice')}
       </Typography>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {flavor.ratings.length === 0 ? (
-            <Typography color="text.secondary">No reviews yet. Be the first to rate it!</Typography>
+            <Typography color="text.secondary">{t('dashboard.noRatings')}</Typography>
         ) : (
             flavor.ratings.map((rating: Rating) => (
                 <Card key={rating.id} variant="outlined" sx={{ borderRadius: 2 }}>

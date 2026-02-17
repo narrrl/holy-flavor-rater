@@ -12,7 +12,50 @@ const resources = {
         "dashboard": "Dashboard",
         "settings": "Settings",
         "logout": "Logout",
-        "login": "Login / Signup"
+        "login": "Login / Signup",
+        "following": "Following"
+      },
+      "dashboard": {
+        "welcome": "Welcome back, {{username}}!",
+        "shareProfile": "Share Profile:",
+        "copySuccess": "Link copied to clipboard!",
+        "myRatings": "My Ratings",
+        "missing": "Missing",
+        "noRatings": "You haven't rated any flavors yet.",
+        "exploreFlavors": "Go explore flavors",
+        "allRated": "Amazing! You've rated everything! 🏆"
+      },
+      "settings": {
+        "subtitle": "Manage your account and preferences",
+        "appearanceTitle": "Appearance & Language",
+        "themeLabel": "Theme",
+        "langLabel": "Language",
+        "avatarTitle": "Profile Picture",
+        "avatarButton": "Upload New Avatar",
+        "avatarHint": "Max size: 2MB. JPG, PNG or WEBP.",
+        "avatarSuccess": "Avatar updated successfully!",
+        "infoTitle": "Profile Information",
+        "usernameLabel": "Username",
+        "emailLabel": "Email",
+        "emailHint": "Change will require confirmation",
+        "updateButton": "Update Profile",
+        "updateSuccess": "Profile updated successfully!",
+        "confirmEmailTitle": "Confirm Email Change",
+        "confirmEmailHint": "Enter the 6-digit code sent to {{email}}",
+        "confirmButton": "Verify & Update Email",
+        "passwordTitle": "Change Password",
+        "oldPasswordLabel": "Old Password",
+        "newPasswordLabel": "New Password",
+        "passwordButton": "Change Password",
+        "passwordSuccess": "Password changed successfully!",
+        "dangerTitle": "Danger Zone",
+        "dangerDesc": "Permanently delete your account and all associated data. This action is irreversible.",
+        "deleteButton": "Delete My Account",
+        "deletionCodeLabel": "Deletion Code",
+        "deletionCodeHint": "Enter verification code:",
+        "confirmDeleteButton": "Confirm Permanent Deletion",
+        "cancelButton": "Cancel",
+        "codeSent": "Verification code sent to your email."
       },
       "hero": {
         "title": "The Ultimate Holy Archive",
@@ -43,6 +86,21 @@ const resources = {
         "reviews": "reviews",
         "rank": "Rank",
         "loading": "Loading..."
+      },
+      "about": {
+        "title": "About This Project",
+        "mission": "Holy Flavors Archive is a community-driven project dedicated to documenting and rating the vast world of Holy Energy products. Our goal is to create a definitive, high-density catalog of every flavor ever released—including legacy and limited editions.",
+        "canDoTitle": "What you can do here:",
+        "featureExplore": "Explore: Find details on any Holy Energy, Iced Tea, or Milkshake product.",
+        "featureRate": "Rate: Share your honest opinion and score flavors from 1 to 10.",
+        "featureCommunity": "Community: Follow other fans, see their latest tests, and discover new favorites together.",
+        "featureProfile": "Taste Profile: Build your own personal tiered leaderboard to share with the world.",
+        "disclaimer": "This website is a fan project and is not officially affiliated with, authorized, maintained, sponsored, or endorsed by HOLY Energy GmbH. All product names, logos, and brands are property of their respective owners.",
+        "impressumTitle": "Impressum (Legal Notice)",
+        "legalInfo": "Information according to § 5 TMG:",
+        "contact": "Contact",
+        "responsible": "Responsible for content according to § 55 Abs. 2 RStV:",
+        "disclaimerTitle": "Legal Disclaimer"
       }
     }
   },
@@ -55,7 +113,50 @@ const resources = {
         "dashboard": "Dashboard",
         "settings": "Einstellungen",
         "logout": "Abmelden",
-        "login": "Anmelden / Registrieren"
+        "login": "Anmelden / Registrieren",
+        "following": "Folge ich"
+      },
+      "dashboard": {
+        "welcome": "Willkommen zurück, {{username}}!",
+        "shareProfile": "Profil teilen:",
+        "copySuccess": "Link in die Zwischenablage kopiert!",
+        "myRatings": "Meine Bewertungen",
+        "missing": "Fehlend",
+        "noRatings": "Du hast noch keine Sorten bewertet.",
+        "exploreFlavors": "Sorten entdecken",
+        "allRated": "Wahnsinn! Du hast alles bewertet! 🏆"
+      },
+      "settings": {
+        "subtitle": "Verwalte dein Konto und deine Einstellungen",
+        "appearanceTitle": "Erscheinungsbild & Sprache",
+        "themeLabel": "Design",
+        "langLabel": "Sprache",
+        "avatarTitle": "Profilbild",
+        "avatarButton": "Neues Bild hochladen",
+        "avatarHint": "Max. Größe: 2MB. JPG, PNG oder WEBP.",
+        "avatarSuccess": "Profilbild erfolgreich aktualisiert!",
+        "infoTitle": "Profil-Informationen",
+        "usernameLabel": "Benutzername",
+        "emailLabel": "E-Mail",
+        "emailHint": "Änderung erfordert Bestätigung",
+        "updateButton": "Profil aktualisieren",
+        "updateSuccess": "Profil erfolgreich aktualisiert!",
+        "confirmEmailTitle": "E-Mail-Änderung bestätigen",
+        "confirmEmailHint": "Gib den 6-stelligen Code ein, der an {{email}} gesendet wurde",
+        "confirmButton": "E-Mail verifizieren & aktualisieren",
+        "passwordTitle": "Passwort ändern",
+        "oldPasswordLabel": "Altes Passwort",
+        "newPasswordLabel": "Neues Passwort",
+        "passwordButton": "Passwort ändern",
+        "passwordSuccess": "Passwort erfolgreich geändert!",
+        "dangerTitle": "Gefahrenzone",
+        "dangerDesc": "Lösche dein Konto und alle damit verbundenen Daten dauerhaft. Dies kann nicht rückgängig gemacht werden.",
+        "deleteButton": "Mein Konto löschen",
+        "deletionCodeLabel": "Löschcode",
+        "deletionCodeHint": "Bestätigungscode eingeben:",
+        "confirmDeleteButton": "Dauerhafte Löschung bestätigen",
+        "cancelButton": "Abbrechen",
+        "codeSent": "Bestätigungscode an deine E-Mail gesendet."
       },
       "hero": {
         "title": "Das ultimative Holy-Archiv",
@@ -86,6 +187,21 @@ const resources = {
         "reviews": "Bewertungen",
         "rank": "Rang",
         "loading": "Wird geladen..."
+      },
+      "about": {
+        "title": "Über dieses Projekt",
+        "mission": "Das Holy Flavors Archiv ist ein von der Community getriebenes Projekt, das sich der Dokumentation und Bewertung der riesigen Welt der Holy Energy Produkte widmet. Unser Ziel ist es, einen definitiven Katalog jeder jemals veröffentlichten Sorte zu erstellen – einschließlich Legacy- und Limited-Editionen.",
+        "canDoTitle": "Was du hier tun kannst:",
+        "featureExplore": "Entdecken: Details zu jedem Holy Energy, Eistee oder Milkshake Produkt finden.",
+        "featureRate": "Bewerten: Deine ehrliche Meinung teilen und Sorten von 1 bis 10 bewerten.",
+        "featureCommunity": "Community: Folge anderen Fans, sieh dir ihre neuesten Tests an und entdeckt gemeinsam neue Favoriten.",
+        "featureProfile": "Geschmacksprofil: Erstelle deine eigene persönliche Bestenliste, um sie mit der Welt zu teilen.",
+        "disclaimer": "Diese Website ist ein Fan-Projekt und wird nicht von der HOLY Energy GmbH offiziell unterstützt, autorisiert, gepflegt oder gesponselt. Alle Produktnamen, Logos und Marken sind Eigentum ihrer jeweiligen Inhaber.",
+        "impressumTitle": "Impressum",
+        "legalInfo": "Angaben gemäß § 5 TMG:",
+        "contact": "Kontakt",
+        "responsible": "Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:",
+        "disclaimerTitle": "Haftungsausschluss"
       }
     }
   }

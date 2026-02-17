@@ -13,7 +13,8 @@ import {
   Select,
   MenuItem,
   ListSubheader,
-  Divider
+  Divider,
+  Grid
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
@@ -78,7 +79,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
               headers: { 'Content-Type': 'multipart/form-data' }
           });
           setAvatar(res.data.avatar);
-          setMessage({ type: 'success', text: 'Avatar updated successfully!' });
+          setMessage({ type: 'success', text: t('settings.avatarSuccess') });
       } catch (err: any) {
           setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to upload avatar' });
       }
@@ -100,9 +101,9 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
       const res = await api.patch('users/update_profile/', { username, email });
       if (res.data.message) {
         setPendingConfirmation(true);
-        setMessage({ type: 'success', text: `Profile updated.${res.data.message}` });
+        setMessage({ type: 'success', text: `${t('settings.updateSuccess')} ${res.data.message}` });
       } else {
-        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        setMessage({ type: 'success', text: t('settings.updateSuccess') });
         setCurrentEmail(email);
       }
     } catch (err: any) {
@@ -114,7 +115,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     e.preventDefault();
     try {
       const res = await api.post('users/confirm_email/', { code: confirmationCode });
-      setMessage({ type: 'success', text: 'Email confirmed and updated!' });
+      setMessage({ type: 'success', text: t('settings.updateSuccess') });
       setCurrentEmail(res.data.email);
       setPendingConfirmation(false);
       setConfirmationCode('');
@@ -127,7 +128,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     e.preventDefault();
     try {
       await api.post('users/change_password/', { old_password: oldPassword, new_password: newPassword });
-      setMessage({ type: 'success', text: 'Password changed successfully!' });
+      setMessage({ type: 'success', text: t('settings.passwordSuccess') });
       setOldPassword('');
       setNewPassword('');
     } catch (err: any) {
@@ -139,7 +140,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
       try {
           await api.post('users/request_account_deletion/');
           setIsDeleting(true);
-          setMessage({ type: 'success', text: 'Verification code sent to your email.' });
+          setMessage({ type: 'success', text: t('settings.codeSent') });
       } catch (err: any) {
           setMessage({ type: 'error', text: 'Failed to request deletion.' });
       }
@@ -158,7 +159,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Button 
         variant="outlined" 
         component={Link} 
@@ -166,202 +167,199 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
         startIcon={<ArrowBackIcon />}
         sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
       >
-        Back to Home
+        {t('common.backToHome')}
       </Button>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 4, mt: 4 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 6 }}>
           <Avatar src={avatar || undefined} sx={{ width: 80, height: 80, border: '3px solid', borderColor: 'primary.main' }}>
               {!avatar && username.charAt(0).toUpperCase()}
           </Avatar>
           <Box>
               <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{username}</Typography>
-              <Typography variant="body2" color="text.secondary">Manage your account and preferences</Typography>
+              <Typography variant="body2" color="text.secondary">{t('settings.subtitle')}</Typography>
           </Box>
       </Box>
       
       {message && (
-        <Alert severity={message.type} sx={{ mb: 3 }} onClose={() => setMessage(null)}>
+        <Alert severity={message.type} sx={{ mb: 4 }} onClose={() => setMessage(null)}>
           {message.text}
         </Alert>
       )}
 
-      <Paper sx={{ 
-          p: 3, mb: 4,
-          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
-      }}>
-        <Typography variant="h6" gutterBottom>Appearance & Language</Typography>
-        <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Theme</InputLabel>
-                <Select
-                    value={themeName}
-                    label="Theme"
-                    onChange={(e) => onThemeChange(e.target.value as CatppuccinTheme)}
-                >
-                    <ListSubheader>Light Themes</ListSubheader>
-                    <MenuItem value="latte">Latte</MenuItem>
-                    <MenuItem value="pink">Pastel Pink</MenuItem>
-                    <MenuItem value="solarized_light">Solarized Light</MenuItem>
-                    <MenuItem value="one_light">One Light</MenuItem>
-                    <MenuItem value="paper">Paper White</MenuItem>
-                    
-                    <Divider />
-                    
-                    <ListSubheader>Dark Themes</ListSubheader>
-                    <MenuItem value="mocha">Mocha (Default)</MenuItem>
-                    <MenuItem value="frappe">Frappé</MenuItem>
-                    <MenuItem value="macchiato">Macchiato</MenuItem>
-                    <MenuItem value="atom">Atom One Dark</MenuItem>
-                    <MenuItem value="dracula">Dracula</MenuItem>
-                    <MenuItem value="gruvbox">Gruvbox Dark</MenuItem>
-                    <MenuItem value="nord">Nord</MenuItem>
-                    <MenuItem value="cyberpunk">Cyberpunk</MenuItem>
-                    <MenuItem value="forest">Forest Dark</MenuItem>
-                </Select>
-            </FormControl>
+      <Grid container spacing={4}>
+          {/* Left Column: Visuals & Language */}
+          <Grid size={{ xs: 12, md: 5 }}>
+              <Paper sx={{ p: 3, mb: 4, borderRadius: 3, '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 } }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>{t('settings.appearanceTitle')}</Typography>
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>{t('settings.themeLabel')}</InputLabel>
+                    <Select
+                        value={themeName}
+                        label={t('settings.themeLabel')}
+                        onChange={(e) => onThemeChange(e.target.value as CatppuccinTheme)}
+                    >
+                        <ListSubheader>Light Themes</ListSubheader>
+                        <MenuItem value="latte">Latte</MenuItem>
+                        <MenuItem value="pink">Pastel Pink</MenuItem>
+                        <MenuItem value="solarized_light">Solarized Light</MenuItem>
+                        <MenuItem value="one_light">One Light</MenuItem>
+                        <MenuItem value="paper">Paper White</MenuItem>
+                        
+                        <Divider />
+                        
+                        <ListSubheader>Dark Themes</ListSubheader>
+                        <MenuItem value="mocha">Mocha (Default)</MenuItem>
+                        <MenuItem value="frappe">Frappé</MenuItem>
+                        <MenuItem value="macchiato">Macchiato</MenuItem>
+                        <MenuItem value="atom">Atom One Dark</MenuItem>
+                        <MenuItem value="dracula">Dracula</MenuItem>
+                        <MenuItem value="gruvbox">Gruvbox Dark</MenuItem>
+                        <MenuItem value="nord">Nord</MenuItem>
+                        <MenuItem value="cyberpunk">Cyberpunk</MenuItem>
+                        <MenuItem value="forest">Forest Dark</MenuItem>
+                    </Select>
+                </FormControl>
 
-            <FormControl fullWidth margin="normal">
-                <InputLabel>Language</InputLabel>
-                <Select
-                    value={language}
-                    label="Language"
-                    onChange={(e) => handleLanguageChange(e.target.value)}
-                >
-                    <MenuItem value="en">English</MenuItem>
-                    <MenuItem value="de">Deutsch</MenuItem>
-                </Select>
-            </FormControl>
-        </Box>
-      </Paper>
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>{t('settings.langLabel')}</InputLabel>
+                    <Select
+                        value={language}
+                        label={t('settings.langLabel')}
+                        onChange={(e) => handleLanguageChange(e.target.value)}
+                    >
+                        <MenuItem value="en">English</MenuItem>
+                        <MenuItem value="de">Deutsch</MenuItem>
+                    </Select>
+                </FormControl>
+              </Paper>
 
-      <Paper sx={{ 
-          p: 3, mb: 4,
-          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
-      }}>
-        <Typography variant="h6" gutterBottom>Profile Picture</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
-            <Avatar src={avatar || undefined} sx={{ width: 100, height: 100 }}>
-                {!avatar && username.charAt(0).toUpperCase()}
-            </Avatar>
-            <Box>
-                <Button variant="outlined" component="label">
-                    Upload New Avatar
-                    <input type="file" hidden accept="image/*" onChange={handleAvatarUpload} />
-                </Button>
-                <Typography variant="caption" display="block" sx={{ mt: 1 }} color="text.secondary">
-                    Max size: 2MB. JPG, PNG or WEBP.
-                </Typography>
-            </Box>
-        </Box>
-      </Paper>
-
-      <Paper sx={{ 
-          p: 3, mb: 4,
-          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
-      }}>
-        <Typography variant="h6" gutterBottom>Profile Information</Typography>
-        <form onSubmit={handleUpdateProfile}>
-          <TextField
-            fullWidth
-            label="Username"
-            margin="normal"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-          <TextField
-            fullWidth
-            label="Email"
-            margin="normal"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            helperText={email !== currentEmail ? "Change will require confirmation" : ""}
-          />
-          <Button variant="contained" type="submit" sx={{ mt: 2 }}>
-            Update Profile
-          </Button>
-        </form>
-
-        {pendingConfirmation && (
-          <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid rgba(0,0,0,0.1)' }}>
-            <Typography variant="h6" color="primary" gutterBottom>Confirm Email Change</Typography>
-            <Typography variant="body2" sx={{ mb: 2 }}>Enter the 6-digit code sent to {email}</Typography>
-            <form onSubmit={handleConfirmEmail}>
-              <TextField
-                fullWidth
-                label="Confirmation Code"
-                margin="normal"
-                value={confirmationCode}
-                onChange={(e) => setConfirmationCode(e.target.value)}
-              />
-              <Button variant="contained" type="submit" sx={{ mt: 1 }} color="secondary">
-                Verify & Update Email
-              </Button>
-            </form>
-          </Box>
-        )}
-      </Paper>
-
-      <Paper sx={{ 
-          p: 3,
-          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
-      }}>
-        <Typography variant="h6" gutterBottom>Change Password</Typography>
-        <form onSubmit={handleChangePassword}>
-          <TextField
-            fullWidth
-            label="Old Password"
-            type="password"
-            margin="normal"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-          />
-          <TextField
-            fullWidth
-            label="New Password"
-            type="password"
-            margin="normal"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <Button variant="contained" type="submit" sx={{ mt: 2 }} color="warning">
-            Change Password
-          </Button>
-        </form>
-      </Paper>
-
-      <Paper sx={{ 
-          p: 3, mt: 4,
-          '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 }
-      }}>
-        <Typography variant="h6" gutterBottom color="error" sx={{ fontWeight: 'bold' }}>Danger Zone</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Permanently delete your account and all associated data. This action is irreversible.
-        </Typography>
-        
-        {!isDeleting ? (
-            <Button variant="outlined" color="error" onClick={handleRequestDeletion}>
-                Delete My Account
-            </Button>
-        ) : (
-            <form onSubmit={handleConfirmDeletion}>
-                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>Enter verification code:</Typography>
-                <TextField
-                    fullWidth
-                    size="small"
-                    label="Deletion Code"
-                    value={deletionCode}
-                    onChange={(e) => setDeletionCode(e.target.value)}
-                    sx={{ mb: 2 }}
-                />
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="contained" color="error" type="submit" disabled={!deletionCode}>
-                        Confirm Permanent Deletion
-                    </Button>
-                    <Button onClick={() => setIsDeleting(false)}>Cancel</Button>
+              <Paper sx={{ p: 3, borderRadius: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>{t('settings.avatarTitle')}</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, my: 2 }}>
+                    <Avatar src={avatar || undefined} sx={{ width: 100, height: 100 }}>
+                        {!avatar && username.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box>
+                        <Button variant="outlined" component="label" size="small">
+                            {t('settings.avatarButton')}
+                            <input type="file" hidden accept="image/*" onChange={handleAvatarUpload} />
+                        </Button>
+                        <Typography variant="caption" display="block" sx={{ mt: 1 }} color="text.secondary">
+                            {t('settings.avatarHint')}
+                        </Typography>
+                    </Box>
                 </Box>
-            </form>
-        )}
-      </Paper>
+              </Paper>
+          </Grid>
+
+          {/* Right Column: Account Info & Security */}
+          <Grid size={{ xs: 12, md: 7 }}>
+              <Paper sx={{ p: 3, mb: 4, borderRadius: 3, '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 } }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>{t('settings.infoTitle')}</Typography>
+                <form onSubmit={handleUpdateProfile}>
+                  <TextField
+                    fullWidth
+                    label={t('settings.usernameLabel')}
+                    margin="normal"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    fullWidth
+                    label={t('settings.emailLabel')}
+                    margin="normal"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    helperText={email !== currentEmail ? t('settings.emailHint') : ""}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <Button variant="contained" type="submit" sx={{ mt: 2, borderRadius: 2 }}>
+                    {t('settings.updateButton')}
+                  </Button>
+                </form>
+
+                {pendingConfirmation && (
+                  <Box sx={{ mt: 4, pt: 3, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="h6" color="primary" gutterBottom>{t('settings.confirmEmailTitle')}</Typography>
+                    <Typography variant="body2" sx={{ mb: 2 }}>{t('settings.confirmEmailHint', { email })}</Typography>
+                    <form onSubmit={handleConfirmEmail}>
+                      <TextField
+                        fullWidth
+                        label={t('settings.deletionCodeLabel')}
+                        margin="normal"
+                        value={confirmationCode}
+                        onChange={(e) => setConfirmationCode(e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                      <Button variant="contained" type="submit" sx={{ mt: 1, borderRadius: 2 }} color="secondary">
+                        {t('settings.confirmButton')}
+                      </Button>
+                    </form>
+                  </Box>
+                )}
+              </Paper>
+
+              <Paper sx={{ p: 3, mb: 4, borderRadius: 3, '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 } }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>{t('settings.passwordTitle')}</Typography>
+                <form onSubmit={handleChangePassword}>
+                  <TextField
+                    fullWidth
+                    label={t('settings.oldPasswordLabel')}
+                    type="password"
+                    margin="normal"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <TextField
+                    fullWidth
+                    label={t('settings.newPasswordLabel')}
+                    type="password"
+                    margin="normal"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                  <Button variant="contained" type="submit" sx={{ mt: 2, borderRadius: 2 }} color="warning">
+                    {t('settings.passwordButton')}
+                  </Button>
+                </form>
+              </Paper>
+
+              <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'error.main', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,0,0,0.05)' : 'rgba(255,0,0,0.02)', '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 } }}>
+                <Typography variant="h6" gutterBottom color="error" sx={{ fontWeight: 'bold' }}>{t('settings.dangerTitle')}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {t('settings.dangerDesc')}
+                </Typography>
+                
+                {!isDeleting ? (
+                    <Button variant="outlined" color="error" onClick={handleRequestDeletion} sx={{ borderRadius: 2 }}>
+                        {t('settings.deleteButton')}
+                    </Button>
+                ) : (
+                    <form onSubmit={handleConfirmDeletion}>
+                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2 }}>{t('settings.deletionCodeHint')}</Typography>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label={t('settings.deletionCodeLabel')}
+                            value={deletionCode}
+                            onChange={(e) => setDeletionCode(e.target.value)}
+                            sx={{ mb: 2 }}
+                            InputLabelProps={{ shrink: true }}
+                        />
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button variant="contained" color="error" type="submit" disabled={!deletionCode} sx={{ borderRadius: 2 }}>
+                                {t('settings.confirmDeleteButton')}
+                            </Button>
+                            <Button onClick={() => setIsDeleting(false)} sx={{ borderRadius: 2 }}>{t('settings.cancelButton')}</Button>
+                        </Box>
+                    </form>
+                )}
+              </Paper>
+          </Grid>
+      </Grid>
     </Container>
   );
 };
