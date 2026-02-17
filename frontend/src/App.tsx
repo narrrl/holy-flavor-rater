@@ -261,12 +261,6 @@ const App: React.FC = () => {
             </ListItemButton>
         </ListItem>
 
-        <ListItem disablePadding>
-            <ListItemButton component={Link} to="/about" onClick={() => setDrawerOpen(false)}>
-                <ListItemText primary={t('nav.about')} />
-            </ListItemButton>
-        </ListItem>
-        
         <ListItemButton onClick={() => setCatOpen(!catOpen)}>
             <ListItemText primary={t('nav.categories')} />
             {catOpen ? <ExpandLess /> : <ExpandMore />}
@@ -365,14 +359,6 @@ const App: React.FC = () => {
                         sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
                     >
                         {t('nav.community')}
-                    </Button>
-                    <Button 
-                        color="inherit" 
-                        component={Link}
-                        to="/about"
-                        sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem', mr: 2 }}
-                    >
-                        {t('nav.about')}
                     </Button>
                     <Button 
                         color="inherit" 
