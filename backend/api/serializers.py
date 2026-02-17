@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'theme', 'avatar', 'following_count', 'followers_count', 'is_following']
+        fields = ['id', 'username', 'email', 'theme', 'language', 'avatar', 'following_count', 'followers_count', 'is_following']
 
     def get_avatar(self, obj):
         if obj.avatar:
