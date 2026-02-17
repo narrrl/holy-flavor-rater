@@ -113,16 +113,14 @@ const Support: React.FC = () => {
         <Container maxWidth="md" sx={{ py: 4 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
                 <Typography variant="h3" sx={{ fontWeight: 'bold' }}>{t('support.title')}</Typography>
-                {!currentUser?.is_superuser && (
-                    <Button 
-                        variant="contained" 
-                        startIcon={<AddIcon />} 
-                        onClick={() => setShowCreate(!showCreate)}
-                        sx={{ borderRadius: 2 }}
-                    >
-                        {t('support.createTicket')}
-                    </Button>
-                )}
+                <Button 
+                    variant="contained" 
+                    startIcon={<AddIcon />} 
+                    onClick={() => setShowCreate(!showCreate)}
+                    sx={{ borderRadius: 2 }}
+                >
+                    {t('support.createTicket')}
+                </Button>
             </Stack>
 
             <Collapse in={showCreate}>

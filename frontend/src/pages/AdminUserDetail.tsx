@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Container, Typography, Box, Card, CardContent, Button, 
     Stack, alpha, CircularProgress, Chip, Paper, List, ListItem, ListItemText,
-    Avatar, Grid
+    Avatar, Grid, TextField
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -12,6 +12,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
+import MentionTextField from '../components/MentionTextField';
+import RichText from '../components/RichText';
 
 interface AdminUser {
     id: number;
@@ -31,6 +33,15 @@ const AdminUserDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const [user, setUser] = useState<AdminUser | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Edit state for Ratings
+    const [editingRatingId, setEditingRatingId] = useState<number | null>(null);
+    const [editScore, setEditScore] = useState(0);
+    const [editComment, setEditComment] = useState('');
+
+    // Edit state for Replies
+    const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
+    const [editReplyText, setEditReplyText] = useState('');
 
     const fetchUser = async () => {
         try {
@@ -58,12 +69,28 @@ const AdminUserDetail: React.FC = () => {
         } catch (err) { alert('Action failed'); }
     };
 
+    const handleUpdateRating = async (ratingId: number) => {
+        try {
+            await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
+            setEditingRatingId(null);
+            fetchUser();
+        } catch (err) { alert('Update failed'); }
+    };
+
     const handleDeleteRating = async (ratingId: number) => {
         if (!confirm('Delete this rating?')) return;
         try {
             await api.delete(`ratings/${ratingId}/`);
             fetchUser();
         } catch (err) { alert('Delete failed'); }
+    };
+
+    const handleUpdateReply = async (replyId: number) => {
+        try {
+            await api.patch(`replies/${replyId}/`, { text: editReplyText });
+            setEditingReplyId(null);
+            fetchUser();
+        } catch (err) { alert('Update failed'); }
     };
 
     const handleDeleteReply = async (replyId: number) => {
@@ -165,29 +192,69 @@ const AdminUserDetail: React.FC = () => {
                         {user.ratings.map(rating => (
                             <Card key={rating.id} variant="outlined" sx={{ borderRadius: 3 }}>
                                 <CardContent>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{rating.flavor_name}</Typography>
-                                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                                            <Chip label={`${rating.score}/10`} size="small" color="primary" />
-                                            <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)}>Delete</Button>
+                                    {editingRatingId === rating.id ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                            <Stack direction="row" spacing={2} alignItems="center">
+                                                <Typography variant="body2">Score:</Typography>
+                                                <TextField 
+                                                    type="number" size="small" 
+                                                    slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
+                                                    value={editScore} onChange={(e) => setEditScore(Number(e.target.value))} 
+                                                    sx={{ width: 80 }}
+                                                />
+                                            </Stack>
+                                            <MentionTextField 
+                                                multiline rows={3} value={editComment} 
+                                                onChange={setEditComment} 
+                                            />
+                                            <Stack direction="row" spacing={1}>
+                                                <Button variant="contained" size="small" onClick={() => handleUpdateRating(rating.id)}>{t('common.save')}</Button>
+                                                <Button variant="outlined" size="small" onClick={() => setEditingRatingId(null)}>{t('common.cancel')}</Button>
+                                            </Stack>
                                         </Box>
-                                    </Stack>
-                                    <Typography variant="body2" color="text.secondary" paragraph>
-                                        {rating.comment || <i>No comment</i>}
-                                    </Typography>
-                                    
-                                    {rating.replies.length > 0 && (
-                                        <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
-                                            {rating.replies.map((reply: any) => (
-                                                <Box key={reply.id} sx={{ mb: 1 }}>
-                                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{reply.user}</Typography>
-                                                        <Button size="small" color="error" sx={{ minWidth: 0, p: 0 }} onClick={() => handleDeleteReply(reply.id)}>Delete</Button>
-                                                    </Stack>
-                                                    <Typography variant="caption" display="block">{reply.text}</Typography>
+                                    ) : (
+                                        <>
+                                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{rating.flavor_name}</Typography>
+                                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                                    <Chip label={`${rating.score}/10`} size="small" color="primary" />
+                                                    <Button size="small" onClick={() => { setEditingRatingId(rating.id); setEditScore(rating.score); setEditComment(rating.comment || ''); }}>Edit</Button>
+                                                    <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)}>Delete</Button>
                                                 </Box>
-                                            ))}
-                                        </Box>
+                                            </Stack>
+                                            <Typography variant="body2" color="text.primary" paragraph sx={{ bgcolor: 'action.hover', p: 1.5, borderRadius: 2 }}>
+                                                {rating.comment ? <RichText text={rating.comment} /> : <i>No comment</i>}
+                                            </Typography>
+                                            
+                                            {rating.replies.length > 0 && (
+                                                <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
+                                                    {rating.replies.map((reply: any) => (
+                                                        <Box key={reply.id} sx={{ mb: 1.5 }}>
+                                                            {editingReplyId === reply.id ? (
+                                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                                                    <MentionTextField value={editReplyText} onChange={setEditReplyText} />
+                                                                    <Stack direction="row" spacing={1}>
+                                                                        <Button variant="contained" size="small" onClick={() => handleUpdateReply(reply.id)}>{t('common.save')}</Button>
+                                                                        <Button variant="outlined" size="small" onClick={() => setEditingReplyId(null)}>{t('common.cancel')}</Button>
+                                                                    </Stack>
+                                                                </Box>
+                                                            ) : (
+                                                                <>
+                                                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                                                        <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{reply.user}</Typography>
+                                                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                                            <Button size="small" sx={{ minWidth: 0, p: 0, fontSize: '0.7rem' }} onClick={() => { setEditingReplyId(reply.id); setEditReplyText(reply.text); }}>Edit</Button>
+                                                                            <Button size="small" color="error" sx={{ minWidth: 0, p: 0, fontSize: '0.7rem' }} onClick={() => handleDeleteReply(reply.id)}>Delete</Button>
+                                                                        </Box>
+                                                                    </Stack>
+                                                                    <Typography variant="caption" display="block"><RichText text={reply.text} /></Typography>
+                                                                </>
+                                                            )}
+                                                        </Box>
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </>
                                     )}
                                 </CardContent>
                             </Card>

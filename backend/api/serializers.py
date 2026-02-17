@@ -126,7 +126,17 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'username', 'subject', 'description', 'status', 'created_at', 'updated_at', 'messages']
         read_only_fields = ['status', 'user']
 
-class AdminUserSerializer(serializers.ModelSerializer):
+class AdminUserListSerializer(serializers.ModelSerializer):
+    ips = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'is_active', 'is_superuser', 'date_joined', 'last_login', 'ips']
+
+    def get_ips(self, obj):
+        return [ip.ip_address for ip in obj.ips.all()[:3]]
+
+class AdminUserDetailSerializer(serializers.ModelSerializer):
     ips = serializers.SerializerMethodField()
     ratings = RatingSerializer(many=True, read_only=True)
     
