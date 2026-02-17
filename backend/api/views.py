@@ -26,18 +26,46 @@ class FlavorViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def search(self, request):
-        # Unpaginated list of all flavors for the search autocomplete
+        # Global unpaginated search for autocomplete
+        results = []
+        
+        # 1. Flavors
         flavors = Flavor.objects.select_related('category').order_by('name').distinct()
-        data = [
-            {
+        for f in flavors:
+            results.append({
                 'id': f.id,
                 'name': f.name,
+                'type': 'flavor',
+                'subtitle': f.category.name,
                 'image_url': request.build_absolute_uri(f.image.url) if f.image else f.image_url,
-                'category_name': f.category.name
-            }
-            for f in flavors
-        ]
-        return Response(data)
+                'slug': None
+            })
+            
+        # 2. Categories
+        categories = Category.objects.all().order_by('name')
+        for c in categories:
+            results.append({
+                'id': c.id,
+                'name': c.name,
+                'type': 'category',
+                'subtitle': 'Category',
+                'image_url': None,
+                'slug': c.slug
+            })
+            
+        # 3. Users
+        users = User.objects.filter(is_active=True).order_by('username')
+        for u in users:
+            results.append({
+                'id': u.id,
+                'name': u.username,
+                'type': 'user',
+                'subtitle': 'Community Member',
+                'image_url': request.build_absolute_uri(u.avatar.url) if u.avatar else None,
+                'slug': u.username
+            })
+
+        return Response(results)
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def top(self, request):
