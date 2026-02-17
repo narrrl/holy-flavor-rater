@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   Typography, 
   Box, 
@@ -38,9 +38,18 @@ interface Flavor {
 
 const CategoryFlavors: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const [flavors, setFlavors] = useState<Flavor[]>([]);
   const [categoryName, setCategoryName] = useState('');
   const [loading, setLoading] = useState(true);
+
+  const handleGoBack = () => {
+      if (window.history.length > 1) {
+          navigate(-1);
+      } else {
+          navigate('/');
+      }
+  };
 
   useEffect(() => {
     const fetchFlavors = async () => {
@@ -71,12 +80,22 @@ const CategoryFlavors: React.FC = () => {
           <Typography variant="h4" gutterBottom>{categoryName || 'Flavors'}</Typography>
           <Button 
             variant="outlined" 
-            component={Link} 
-            to="/" 
+            onClick={handleGoBack}
             startIcon={<ArrowBackIcon />}
-            sx={{ textTransform: 'none', borderRadius: 2 }}
+            sx={{ 
+                borderRadius: 2, 
+                textTransform: 'none', 
+                fontWeight: 'bold',
+                color: 'text.secondary',
+                borderColor: 'divider',
+                '&:hover': {
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    bgcolor: 'transparent'
+                }
+            }}
           >
-            Back to all categories
+            Back
           </Button>
       </Box>
 

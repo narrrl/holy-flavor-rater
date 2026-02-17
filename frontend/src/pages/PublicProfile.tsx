@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Typography, 
   Box, 
@@ -44,10 +44,19 @@ interface ProfileData {
 
 const PublicProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+
+  const handleGoBack = () => {
+      if (window.history.length > 1) {
+          navigate(-1);
+      } else {
+          navigate('/');
+      }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -119,12 +128,23 @@ const PublicProfile: React.FC = () => {
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Button 
         variant="outlined" 
-        component={Link} 
-        to="/" 
+        onClick={handleGoBack}
         startIcon={<ArrowBackIcon />}
-        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+        sx={{ 
+            mb: 4, 
+            borderRadius: 2, 
+            textTransform: 'none', 
+            fontWeight: 'bold',
+            color: 'text.secondary',
+            borderColor: 'divider',
+            '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                bgcolor: 'transparent'
+            }
+        }}
       >
-        Back to Home
+        Back
       </Button>
 
       {/* Profile Header */}
