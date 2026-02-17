@@ -41,6 +41,8 @@ services:
     restart: unless-stopped
     networks:
       - narl
+    extra_hosts:
+          - "host.docker.internal:host-gateway"
     env_file:
       - .env
     depends_on:
