@@ -79,28 +79,37 @@ const GlobalSearch = () => {
     const { t } = useTranslation();
     const [query, setQuery] = useState('');
     const [options, setOptions] = useState<SearchResult[]>([]);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Debounced search
     useEffect(() => {
-        const fetchSearchOptions = async () => {
+        if (!query.trim()) {
+            setOptions([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setLoading(true);
             try {
-                // Fetch unified results: flavors, categories, and users
-                const res = await api.get('flavors/search/');
-                // Filter to only flavors
-                const results = (Array.isArray(res.data) ? res.data : (res.data.results || []))
-                    .filter((item: any) => item.type === 'flavor');
+                const res = await api.get(`flavors/search/?q=${encodeURIComponent(query)}`);
+                const results = Array.isArray(res.data) ? res.data : (res.data.results || []);
                 setOptions(results);
             } catch (err) {
-                console.error('Failed to fetch search options');
+                console.error('Search failed');
+            } finally {
+                setLoading(false);
             }
-        };
-        fetchSearchOptions();
-    }, []); 
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [query]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        setQuery(params.get('q') || '');
+        const q = params.get('q');
+        if (q) setQuery(q);
     }, [location.search]);
 
     const handleSearch = (e: React.FormEvent) => {
@@ -118,7 +127,9 @@ const GlobalSearch = () => {
                 fullWidth
                 freeSolo
                 size="small"
+                loading={loading}
                 options={options}
+                filterOptions={(x) => x} // Disable local filtering as we do it on server
                 getOptionLabel={(option) => {
                     if (typeof option === 'string') return option;
                     return option.name || '';
@@ -155,6 +166,12 @@ const GlobalSearch = () => {
                                     <SearchIcon sx={{ color: 'inherit', opacity: 0.7 }} />
                                 </InputAdornment>
                             ),
+                            endAdornment: (
+                                <React.Fragment>
+                                    {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                                    {params.InputProps.endAdornment}
+                                </React.Fragment>
+                            ),
                         }}
                     />
                 )}
@@ -162,15 +179,13 @@ const GlobalSearch = () => {
                     const { key, ...optionProps } = props as any;
                     return (
                         <Box component="li" key={key} {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            {option.image_url ? (
-                                <Avatar src={option.image_url} sx={{ width: 32, height: 32, borderRadius: 1 }} />
-                            ) : (
-                                <Avatar sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: 'primary.main', fontSize: '0.8rem' }}>
-                                    {option.name.charAt(0).toUpperCase()}
-                                </Avatar>
-                            )}
+                            <Box 
+                                component="img"
+                                src={option.image_url || undefined}
+                                sx={{ width: 32, height: 32, borderRadius: 1, objectFit: 'contain', bgcolor: 'action.hover', p: 0.5 }}
+                            />
                             <Box>
-                                <Typography variant="body2">{option.name}</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{option.name}</Typography>
                                 <Typography variant="caption" color="text.secondary">{option.subtitle}</Typography>
                             </Box>
                         </Box>
