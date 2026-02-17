@@ -149,6 +149,13 @@ const resources = {
         "liabilityContentDesc": "As a service provider, we are responsible for our own content on these pages in accordance with general laws according to § 7 Para. 1 TMG. According to §§ 8 to 10 TMG, however, we as service providers are not obliged to monitor transmitted or stored third-party information.",
         "copyrightTitle": "Copyright:",
         "copyrightDesc": "The content and works created by the site operators on these pages are subject to German copyright law. The reproduction, processing, distribution and any kind of exploitation outside the limits of copyright law require the written consent of the respective author."
+      },
+      "cookieBanner": {
+        "title": "Cookie Settings",
+        "description": "We use cookies to ensure you get the best experience on our website. Would you like to switch to Holy Dark mode? It's easier on the eyes!",
+        "accept": "Accept Cookies",
+        "switchToDark": "Switch to Holy Dark",
+        "switchToLight": "Stay on Holy Light"
       }
     }
   },
@@ -298,6 +305,13 @@ const resources = {
         "liabilityContentDesc": "Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.",
         "copyrightTitle": "Urheberrecht:",
         "copyrightDesc": "Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors."
+      },
+      "cookieBanner": {
+        "title": "Cookie-Einstellungen",
+        "description": "Wir verwenden Cookies, um sicherzustellen, dass Sie das beste Erlebnis auf unserer Website erhalten. Möchten Sie zum Holy Dark Modus wechseln? Er ist schonender für die Augen!",
+        "accept": "Cookies akzeptieren",
+        "switchToDark": "Zu Holy Dark wechseln",
+        "switchToLight": "Bei Holy Light bleiben"
       }
     }
   }
