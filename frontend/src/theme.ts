@@ -2,17 +2,38 @@ import { createTheme, type ThemeOptions } from '@mui/material/styles';
 import { flavors } from '@catppuccin/palette';
 
 export type CatppuccinTheme = 
+    | 'holy_light' | 'holy_dark'
     | 'latte' | 'pink' | 'solarized_light' | 'one_light' | 'paper'
     | 'frappe' | 'macchiato' | 'mocha' | 'atom' | 'dracula' | 'gruvbox' | 'nord' | 'cyberpunk' | 'forest';
 
 export const isLightTheme = (mode: CatppuccinTheme): boolean => {
-    return ['latte', 'pink', 'solarized_light', 'one_light', 'paper'].includes(mode);
+    return ['holy_light', 'latte', 'pink', 'solarized_light', 'one_light', 'paper'].includes(mode);
 };
 
 export const getTheme = (mode: CatppuccinTheme) => {
   let palette: any;
 
-  if (mode === 'pink') {
+  if (mode === 'holy_light') {
+      palette = {
+          base: { hex: '#ffffff' }, 
+          surface0: { hex: '#f8f9fa' }, 
+          crust: { hex: '#e9ecef' }, 
+          text: { hex: '#1a1a1a' }, 
+          subtext0: { hex: '#6c757d' },
+          mauve: { hex: '#8a2be2' }, // Holy Purple
+          pink: { hex: '#ff00ff' }, // Holy Pink/Magenta
+      };
+  } else if (mode === 'holy_dark') {
+      palette = {
+          base: { hex: '#0f0f0f' }, 
+          surface0: { hex: '#1a1a1a' }, 
+          crust: { hex: '#000000' }, 
+          text: { hex: '#ffffff' }, 
+          subtext0: { hex: '#a0a0a0' },
+          mauve: { hex: '#9d4edd' }, // Brighter Purple for Dark
+          pink: { hex: '#ff4dff' }, // Brighter Pink for Dark
+      };
+  } else if (mode === 'pink') {
       palette = {
           base: { hex: '#fdf6f7' }, 
           surface0: { hex: '#f8e1e5' }, 
@@ -117,8 +138,16 @@ export const getTheme = (mode: CatppuccinTheme) => {
       if (flavor) {
           palette = flavor.colors;
       } else {
-          palette = flavors['mocha'].colors;
-          mode = 'mocha';
+          palette = {
+              base: { hex: '#0f0f0f' }, 
+              surface0: { hex: '#1a1a1a' }, 
+              crust: { hex: '#000000' }, 
+              text: { hex: '#ffffff' }, 
+              subtext0: { hex: '#a0a0a0' },
+              mauve: { hex: '#9d4edd' },
+              pink: { hex: '#ff4dff' },
+          };
+          mode = 'holy_dark';
       }
   }
   
