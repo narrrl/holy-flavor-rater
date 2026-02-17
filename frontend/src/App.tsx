@@ -285,22 +285,29 @@ const App: React.FC = () => {
             <>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to={`/profile/${user.username}`} onClick={() => setDrawerOpen(false)}>
-                        <ListItemAvatar>
-                            <Avatar src={user.avatar || undefined} sx={{ width: 32, height: 32, border: '1px solid', borderColor: 'primary.main' }}>
-                                {user.username.charAt(0).toUpperCase()}
-                            </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText primary={t('nav.profile')} secondary={user.username} />
+                        <ListItemText 
+                            primary={t('nav.profile')} 
+                            secondary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                    <Avatar src={user.avatar || undefined} sx={{ width: 20, height: 20 }}>
+                                        {user.username.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {user.username}
+                                    </Typography>
+                                </Box>
+                            } 
+                        />
                     </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to="/dashboard" onClick={() => setDrawerOpen(false)}>
-                        <ListItemText primary={t('nav.dashboard')} sx={{ pl: 7 }} />
+                        <ListItemText primary={t('nav.dashboard')} />
                     </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to="/settings" onClick={() => setDrawerOpen(false)}>
-                        <ListItemText primary={t('nav.settings')} sx={{ pl: 7 }} />
+                        <ListItemText primary={t('nav.settings')} />
                     </ListItemButton>
                 </ListItem>
 
@@ -419,6 +426,7 @@ const App: React.FC = () => {
                           elevation={3}
                           sx={{ mt: 1 }}
                         >
+                          <MenuItem component={Link} to={`/profile/${user.username}`} onClick={() => setAnchorEl(null)}>{t('nav.profile')}</MenuItem>
                           <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>{t('nav.dashboard')}</MenuItem>
                           <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>{t('nav.settings')}</MenuItem>
                           <Divider />
