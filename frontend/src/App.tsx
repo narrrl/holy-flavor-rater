@@ -600,7 +600,6 @@ const App: React.FC = () => {
                 </Box>
             </Toolbar>
           </AppBar>
-          <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }} />
 
           <Drawer
             anchor="right"
