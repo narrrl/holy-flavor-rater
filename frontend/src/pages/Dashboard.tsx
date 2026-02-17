@@ -17,6 +17,7 @@ import {
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 
@@ -29,7 +30,8 @@ interface DashboardData {
 }
 
 const Dashboard: React.FC = () => {
-  useTitle('Dashboard');
+  const { t } = useTranslation();
+  useTitle(t('nav.dashboard'));
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -38,7 +40,7 @@ const Dashboard: React.FC = () => {
 
   const copyToClipboard = () => {
       navigator.clipboard.writeText(shareUrl);
-      alert('Link copied to clipboard!');
+      alert(t('dashboard.copySuccess'));
   };
 
   useEffect(() => {
@@ -78,7 +80,7 @@ const Dashboard: React.FC = () => {
         startIcon={<ArrowBackIcon />}
         sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
       >
-        Back to Home
+        {t('common.backToHome')}
       </Button>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6, flexWrap: 'wrap', gap: 2 }}>
@@ -87,12 +89,12 @@ const Dashboard: React.FC = () => {
                   {!data.user.avatar && data.user.username.charAt(0).toUpperCase()}
               </Avatar>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>Dashboard</Typography>
-                <Typography variant="body2" color="text.secondary">Welcome back, {data.user.username}!</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{t('nav.dashboard')}</Typography>
+                <Typography variant="body2" color="text.secondary">{t('dashboard.welcome', { username: data.user.username })}</Typography>
               </Box>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'background.paper', p: 1, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="caption" sx={{ ml: 1, mr: 2, display: { xs: 'none', md: 'block' } }}>Share Profile:</Typography>
+              <Typography variant="caption" sx={{ ml: 1, mr: 2, display: { xs: 'none', md: 'block' } }}>{t('dashboard.shareProfile')}</Typography>
               <TextField 
                 size="small" 
                 variant="standard"
@@ -108,8 +110,8 @@ const Dashboard: React.FC = () => {
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} textColor="primary" indicatorColor="primary">
-          <Tab label={`My Ratings (${data.rated_count})`} sx={{ fontWeight: 'bold' }} />
-          <Tab label={`Missing (${data.missing_count})`} sx={{ fontWeight: 'bold' }} />
+          <Tab label={`${t('dashboard.myRatings')} (${data.rated_count})`} sx={{ fontWeight: 'bold' }} />
+          <Tab label={`${t('dashboard.missing')} (${data.missing_count})`} sx={{ fontWeight: 'bold' }} />
         </Tabs>
       </Box>
 
@@ -117,8 +119,8 @@ const Dashboard: React.FC = () => {
         <Box>
           {Object.keys(ratedGrouped).length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography color="text.secondary">You haven't rated any flavors yet.</Typography>
-                <Button component={Link} to="/" sx={{ mt: 2 }}>Go explore flavors</Button>
+                <Typography color="text.secondary">{t('dashboard.noRatings')}</Typography>
+                <Button component={Link} to="/" sx={{ mt: 2 }}>{t('dashboard.exploreFlavors')}</Button>
             </Box>
           ) : (
             Object.entries(ratedGrouped).map(([category, items]: [string, any]) => (
@@ -189,7 +191,7 @@ const Dashboard: React.FC = () => {
         <Box>
           {Object.keys(missingGrouped).length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
-                <Typography variant="h5" color="primary">Amazing! You've rated everything! 🏆</Typography>
+                <Typography variant="h5" color="primary">{t('dashboard.allRated')}</Typography>
             </Box>
           ) : (
             Object.entries(missingGrouped).map(([category, flavors]: [string, any]) => (

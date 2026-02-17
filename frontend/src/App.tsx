@@ -59,6 +59,7 @@ interface SearchResult {
 }
 
 const GlobalSearch = () => {
+    const { t } = useTranslation();
     const [query, setQuery] = useState('');
     const [options, setOptions] = useState<SearchResult[]>([]);
     const navigate = useNavigate();
@@ -120,7 +121,7 @@ const GlobalSearch = () => {
                     <TextField
                         {...params}
                         fullWidth
-                        placeholder="Search..."
+                        placeholder={t('common.search')}
                         sx={{ 
                             bgcolor: 'action.hover', 
                             borderRadius: 2,
@@ -304,7 +305,7 @@ const App: React.FC = () => {
                 {following.length > 0 && (
                     <>
                         <Divider sx={{ my: 1 }} />
-                        <ListSubheader sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px' }}>Following</ListSubheader>
+                        <ListSubheader sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px' }}>{t('nav.following')}</ListSubheader>
                         {following.map(f => (
                             <ListItem key={f.id} disablePadding>
                                 <ListItemButton component={Link} to={`/profile/${f.username}`} onClick={() => setDrawerOpen(false)}>
@@ -419,10 +420,10 @@ const App: React.FC = () => {
                           elevation={3}
                           sx={{ mt: 1 }}
                         >
-                          <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>Dashboard</MenuItem>
-                          <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>Settings</MenuItem>
+                          <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>{t('nav.dashboard')}</MenuItem>
+                          <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>{t('nav.settings')}</MenuItem>
                           <Divider />
-                          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>Logout</MenuItem>
+                          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>{t('nav.logout')}</MenuItem>
                         </Menu>
                       </Box>
                     ) : (
