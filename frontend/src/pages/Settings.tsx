@@ -212,7 +212,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                         <Divider />
                         
                         <ListSubheader>Dark Themes</ListSubheader>
-                        <MenuItem value="mocha">Mocha (Default)</MenuItem>
+                        <MenuItem value="mocha">Mocha</MenuItem>
                         <MenuItem value="frappe">Frappé</MenuItem>
                         <MenuItem value="macchiato">Macchiato</MenuItem>
                         <MenuItem value="atom">Atom One Dark</MenuItem>
