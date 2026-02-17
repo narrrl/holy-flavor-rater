@@ -242,12 +242,6 @@ const App: React.FC = () => {
           <Avatar src={user?.avatar || undefined} sx={{ width: 40, height: 40, border: '2px solid', borderColor: 'primary.main' }}>
               {user?.username ? user.username.charAt(0).toUpperCase() : '?'}
           </Avatar>
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              <Link to="/" onClick={() => setDrawerOpen(false)} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Box component="img" src="/favicon.svg" sx={{ width: 24, height: 24 }} />
-                  Holy Flavors Archive
-              </Link>
-          </Typography>
       </Box>
       <Divider />
       <List>
