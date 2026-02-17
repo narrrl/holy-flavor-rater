@@ -60,16 +60,23 @@ const Dashboard: React.FC = () => {
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
   if (!data) return <Typography>Please login to view dashboard.</Typography>;
 
-  const groupBy = (array: any[]) => {
-    return array.reduce((result, currentValue) => {
+  const groupAndSort = (array: any[], sortKey: string) => {
+    const grouped = array.reduce((result, currentValue) => {
       const groupKey = currentValue.category_name || currentValue.flavor?.category_name || 'Other';
       (result[groupKey] = result[groupKey] || []).push(currentValue);
       return result;
     }, {});
+
+    // Sort items within each group
+    Object.keys(grouped).forEach(key => {
+        grouped[key].sort((a: any, b: any) => (b[sortKey] || 0) - (a[sortKey] || 0));
+    });
+
+    return grouped;
   };
 
-  const ratedGrouped = groupBy(data.my_ratings);
-  const missingGrouped = groupBy(data.missing_flavors);
+  const ratedGrouped = groupAndSort(data.my_ratings, 'score');
+  const missingGrouped = groupAndSort(data.missing_flavors, 'average_rating');
 
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
@@ -209,33 +216,48 @@ const Dashboard: React.FC = () => {
                     gap: 2 
                 }}>
                   {flavors.map((flavor: any) => (
-                    <Card key={flavor.id} sx={{ 
-                        transition: 'all 0.3s ease',
-                        '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
-                    }}>
-                      <Link to={`/flavor/${flavor.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        <Box sx={{ aspectRatio: '1/1', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'divider' }}>
-                            <Box 
-                                component="img" 
-                                src={flavor.image_url || undefined} 
-                                sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                loading="lazy"
-                            />
-                        </Box>
-                        <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                          <Typography variant="caption" sx={{ 
-                              fontWeight: 'bold', 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 1,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                              fontSize: '0.75rem'
-                          }}>
-                            {flavor.name}
-                          </Typography>
-                        </CardContent>
-                      </Link>
-                    </Card>
+                    <Tooltip key={flavor.id} title={`${flavor.name} - Community Avg: ${(flavor.average_rating || 0).toFixed(1)}/10`} arrow>
+                        <Card key={flavor.id} sx={{ 
+                            transition: 'all 0.3s ease',
+                            '&:hover': { transform: 'translateY(-4px)', boxShadow: 4 }
+                        }}>
+                        <Link to={`/flavor/${flavor.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                            <Box sx={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'divider' }}>
+                                <Box 
+                                    component="img" 
+                                    src={flavor.image_url || undefined} 
+                                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    loading="lazy"
+                                />
+                                <Box sx={{ 
+                                    position: 'absolute', 
+                                    bottom: 0, 
+                                    left: 0, 
+                                    right: 0, 
+                                    bgcolor: 'rgba(0,0,0,0.5)', 
+                                    color: 'white', 
+                                    p: 0.5, 
+                                    textAlign: 'center',
+                                    backdropFilter: 'blur(2px)'
+                                }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{(flavor.average_rating || 0).toFixed(1)}/10</Typography>
+                                </Box>
+                            </Box>
+                            <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                            <Typography variant="caption" sx={{ 
+                                fontWeight: 'bold', 
+                                display: '-webkit-box',
+                                WebkitLineClamp: 1,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                fontSize: '0.75rem'
+                            }}>
+                                {flavor.name}
+                            </Typography>
+                            </CardContent>
+                        </Link>
+                        </Card>
+                    </Tooltip>
                   ))}
                 </Box>
               </Box>
