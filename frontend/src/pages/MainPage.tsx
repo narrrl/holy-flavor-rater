@@ -22,6 +22,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
+import { formatDate } from '../utils/date';
 
 interface Flavor {
     id: number;
@@ -275,7 +276,7 @@ const MainPage: React.FC = () => {
                                         <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>rated</Typography>
                                         <Box sx={{ flexGrow: 1 }} />
                                         <Typography variant="caption" color="text.secondary">
-                                            {new Date(rating.created_at).toLocaleDateString()}
+                                            {formatDate(rating.created_at)}
                                         </Typography>
                                     </Box>
                                     <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
@@ -499,7 +500,7 @@ const MainPage: React.FC = () => {
                                     </Box>
                                 </Box>
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-                                    {new Date(review.created_at).toLocaleDateString()} • on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit', fontWeight: 'bold' }}>{review.flavor_name}</Link>
+                                    {formatDate(review.created_at)} • on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit', fontWeight: 'bold' }}>{review.flavor_name}</Link>
                                 </Typography>
                                 <Typography variant="body2" sx={{ fontStyle: 'italic', fontSize: '0.85rem', display: '-webkit-box', overflow: 'hidden', WebkitBoxOrient: 'vertical', WebkitLineClamp: 2 }}>
                                     "{review.comment}"

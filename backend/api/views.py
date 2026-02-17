@@ -97,6 +97,16 @@ class FlavorViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(newest_flavors, many=True)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    def followed_top(self, request):
+        followed_users = request.user.following.all()
+        top_flavors = Flavor.objects.filter(ratings__user__in=followed_users) \
+            .annotate(average_rating=Avg('ratings__score')) \
+            .order_by('-average_rating') \
+            .distinct()[:10]
+        serializer = self.get_serializer(top_flavors, many=True)
+        return Response(serializer.data)
+
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer

@@ -25,6 +25,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import StarIcon from '@mui/icons-material/Star';
+import { formatDate } from '../../utils/date';
 
 interface Reply {
     id: number;
@@ -406,7 +407,7 @@ const FlavorDetail: React.FC = () => {
                                                     <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{rating.user}</Typography>
                                                 </Link>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {new Date(rating.created_at).toLocaleDateString()}
+                                                    {formatDate(rating.created_at)}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -466,7 +467,7 @@ const FlavorDetail: React.FC = () => {
                                                 </Link>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                                        {new Date(reply.created_at).toLocaleDateString()} {new Date(reply.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        {formatDate(reply.created_at)}
                                                     </Typography>
                                                     {currentUser === reply.user && editingReplyId !== reply.id && (
                                                         <Box sx={{ display: 'flex' }}>
