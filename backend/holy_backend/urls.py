@@ -5,12 +5,16 @@ from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
+from django.views.generic.base import TemplateView
 import os
 
 # Clean the admin path
 admin_url = os.environ.get('ADMIN_URL', 'admin').strip('/')
 
 urlpatterns = [
+    # Robots.txt
+    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    
     # Ensure admin ends with a slash for Django's redirection logic
     path(f'{admin_url}/', admin.site.urls),
     path('api/', include('api.urls')),

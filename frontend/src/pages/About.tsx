@@ -47,16 +47,19 @@ const About: React.FC = () => {
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>Impressum</Typography>
         <Typography variant="body2" sx={{ lineHeight: 2 }}>
             <strong>Angaben gemäß § 5 TMG:</strong><br />
-            [Your Name or Project Name]<br />
-            [Your Street Address]<br />
-            [Postal Code and City]<br />
+            {import.meta.env.VITE_IMPRESSUM_NAME || '[Your Name or Project Name]'}<br />
+            {import.meta.env.VITE_IMPRESSUM_STREET || '[Your Street Address]'}<br />
+            {import.meta.env.VITE_IMPRESSUM_CITY || '[Postal Code and City]'}<br />
             Germany
         </Typography>
 
         <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Kontakt:</Typography>
             <Typography variant="body2">
-                E-Mail: [Your Support Email Address]<br />
+                E-Mail: {import.meta.env.VITE_IMPRESSUM_EMAIL || '[Your Support Email Address]'}<br />
+                {import.meta.env.VITE_IMPRESSUM_PHONE && (
+                    <>Telefon: {import.meta.env.VITE_IMPRESSUM_PHONE}<br /></>
+                )}
                 Internet: holy.narl.io
             </Typography>
         </Box>
@@ -64,9 +67,9 @@ const About: React.FC = () => {
         <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:</Typography>
             <Typography variant="body2">
-                [Your Name]<br />
-                [Your Street Address]<br />
-                [Postal Code and City]
+                {import.meta.env.VITE_IMPRESSUM_NAME || '[Your Name]'}<br />
+                {import.meta.env.VITE_IMPRESSUM_STREET || '[Your Street Address]'}<br />
+                {import.meta.env.VITE_IMPRESSUM_CITY || '[Postal Code and City]'}
             </Typography>
         </Box>
 

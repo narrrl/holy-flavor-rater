@@ -30,6 +30,11 @@ services:
       context: ./frontend
       args:
         - VITE_API_URL=https://holy.narl.io/api/
+        - VITE_IMPRESSUM_NAME=${VITE_IMPRESSUM_NAME}
+        - VITE_IMPRESSUM_STREET=${VITE_IMPRESSUM_STREET}
+        - VITE_IMPRESSUM_CITY=${VITE_IMPRESSUM_CITY}
+        - VITE_IMPRESSUM_EMAIL=${VITE_IMPRESSUM_EMAIL}
+        - VITE_IMPRESSUM_PHONE=${VITE_IMPRESSUM_PHONE}
     container_name: holy-frontend
     restart: unless-stopped
     networks:
