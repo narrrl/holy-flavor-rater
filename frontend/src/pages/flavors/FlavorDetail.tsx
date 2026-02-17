@@ -388,8 +388,8 @@ const FlavorDetail: React.FC = () => {
                                         onChange={(e) => setEditComment(e.target.value)}
                                     />
                                     <Box sx={{ display: 'flex', gap: 1 }}>
-                                        <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>Save</Button>
-                                        <Button onClick={() => setEditMode(null)}>Cancel</Button>
+                                        <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>{t('common.save')}</Button>
+                                        <Button onClick={() => setEditMode(null)}>{t('common.cancel')}</Button>
                                     </Box>
                                 </Box>
                             ) : (
@@ -437,8 +437,8 @@ const FlavorDetail: React.FC = () => {
                                         <Box /> 
                                         {currentUser === rating.user && (
                                             <Box>
-                                                <Button size="small" onClick={() => startEdit(rating)} sx={{ minWidth: 0, mr: 1 }}>Edit</Button>
-                                                <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)} sx={{ minWidth: 0 }}>Delete</Button>
+                                                <Button size="small" onClick={() => startEdit(rating)} sx={{ minWidth: 0, mr: 1 }}>{t('common.edit')}</Button>
+                                                <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)} sx={{ minWidth: 0 }}>{t('common.delete')}</Button>
                                             </Box>
                                         )}
                                     </Box>
@@ -471,8 +471,8 @@ const FlavorDetail: React.FC = () => {
                                                     </Typography>
                                                     {currentUser === reply.user && editingReplyId !== reply.id && (
                                                         <Box sx={{ display: 'flex' }}>
-                                                            <Button size="small" sx={{ minWidth: 0, p: 0.5, fontSize: '0.7rem' }} onClick={() => { setEditingReplyId(reply.id); setEditReplyText(reply.text); }}>Edit</Button>
-                                                            <Button size="small" color="error" sx={{ minWidth: 0, p: 0.5, fontSize: '0.7rem' }} onClick={() => handleDeleteReply(reply.id)}>Delete</Button>
+                                                            <Button size="small" sx={{ minWidth: 0, p: 0.5, fontSize: '0.7rem' }} onClick={() => { setEditingReplyId(reply.id); setEditReplyText(reply.text); }}>{t('common.edit')}</Button>
+                                                            <Button size="small" color="error" sx={{ minWidth: 0, p: 0.5, fontSize: '0.7rem' }} onClick={() => handleDeleteReply(reply.id)}>{t('common.delete')}</Button>
                                                         </Box>
                                                     )}
                                                 </Box>
@@ -487,8 +487,8 @@ const FlavorDetail: React.FC = () => {
                                                         onChange={(e) => setEditReplyText(e.target.value)}
                                                     />
                                                     <Box sx={{ display: 'flex', gap: 1 }}>
-                                                        <Button variant="contained" size="small" onClick={() => handleUpdateReply(reply.id)}>Save</Button>
-                                                        <Button size="small" onClick={() => setEditingReplyId(null)}>Cancel</Button>
+                                                        <Button variant="contained" size="small" onClick={() => handleUpdateReply(reply.id)}>{t('common.save')}</Button>
+                                                        <Button size="small" onClick={() => setEditingReplyId(null)}>{t('common.cancel')}</Button>
                                                     </Box>
                                                 </Box>
                                             ) : (
@@ -505,13 +505,13 @@ const FlavorDetail: React.FC = () => {
                                 <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                                     <TextField 
                                         size="small" 
-                                        placeholder="Write a reply..." 
+                                        placeholder={t('community.writeReply')} 
                                         fullWidth 
                                         value={replyInputs[rating.id] || ''} 
                                         onChange={(e) => setReplyInputs({ ...replyInputs, [rating.id]: e.target.value })} 
                                         sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
                                     />
-                                    <Button variant="contained" size="small" disabled={!replyInputs[rating.id]} onClick={() => handleReplySubmit(rating.id)}>Reply</Button>
+                                    <Button variant="contained" size="small" disabled={!replyInputs[rating.id]} onClick={() => handleReplySubmit(rating.id)}>{t('common.reply')}</Button>
                                 </Box>
                             )}
                         </CardContent>

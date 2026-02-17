@@ -251,56 +251,63 @@ const MainPage: React.FC = () => {
                         <Button variant="contained" component={Link} to="/" size="small" sx={{ borderRadius: 2 }}>{t('home.exploreFlavors')}</Button>
                     </Paper>
                 ) : (
-                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 3 }}>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
                         {feedRatings.map(rating => (
                             <Card 
                                 key={rating.id} 
+                                component={Link}
+                                to={`/flavor/${rating.flavor}`}
                                 sx={{ 
                                     borderRadius: 3, 
-                                    transition: 'all 0.3s ease', 
-                                    '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 12px 24px rgba(0,0,0,0.15)' },
+                                    textDecoration: 'none',
+                                    transition: 'all 0.2s ease', 
+                                    '&:hover': { transform: 'translateY(-2px)', borderColor: 'primary.main', boxShadow: '0 8px 16px rgba(0,0,0,0.1)' },
                                     bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
                                     backdropFilter: 'blur(10px)',
                                     border: '1px solid',
-                                    borderColor: (theme) => alpha(theme.palette.text.primary, 0.05)
+                                    borderColor: 'divider',
+                                    color: 'inherit',
+                                    display: 'flex',
+                                    flexDirection: 'column'
                                 }}
                             >
-                                <CardContent sx={{ p: { xs: 1.5, sm: 2 } }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                                        <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center' }}>
-                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 24, height: 24, mr: 1 }}>
+                                <CardContent sx={{ p: 2, flex: 1, '&:last-child': { pb: 2 } }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 22, height: 22, mr: 1 }}>
                                                 {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
                                             </Avatar>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>{rating.user}</Typography>
-                                        </Link>
-                                        <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>rated</Typography>
-                                        <Box sx={{ flexGrow: 1 }} />
-                                        <Typography variant="caption" color="text.secondary">
-                                            {formatDate(rating.created_at)}
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {rating.user}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', ml: 1, whiteSpace: 'nowrap' }}>
+                                            {t('home.rated')} {formatDate(rating.created_at)}
                                         </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                    
+                                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                         <Box 
                                             component="img" 
                                             src={rating.flavor_image || undefined} 
-                                            sx={{ width: 50, height: 50, borderRadius: 1, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} 
+                                            sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: 'contain', bgcolor: 'action.hover', p: 0.5, border: '1px solid', borderColor: 'divider' }} 
                                         />
                                         <Box sx={{ minWidth: 0, flex: 1 }}>
-                                            <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                <Typography variant="body2" sx={{ fontWeight: 'bold', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: '0.85rem', mb: 0.5 }}>
-                                                    {rating.flavor_name}
+                                            <Typography variant="body2" sx={{ fontWeight: 'bold', lineHeight: 1.2, mb: 0.5, fontSize: '0.85rem', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                {rating.flavor_name}
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <Typography variant="caption" sx={{ 
+                                                    fontWeight: '900', 
+                                                    color: 'primary.main', 
+                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                                                    px: 1,
+                                                    py: 0.2,
+                                                    borderRadius: 1,
+                                                    fontSize: '0.75rem'
+                                                }}>
+                                                    {rating.score} / 10
                                                 </Typography>
-                                            </Link>
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                {/* Compact rating for anything below Large desktop to prevent cutoffs */}
-                                                <Box sx={{ display: { xs: 'flex', lg: 'none' }, alignItems: 'center', gap: 0.5 }}>
-                                                    <StarIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
-                                                    <Typography variant="caption" sx={{ fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                                                </Box>
-                                                <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center' }}>
-                                                    <MuiRating value={rating.score} readOnly size="small" max={10} />
-                                                    <Typography variant="caption" sx={{ ml: 1, fontWeight: 'bold' }}>{rating.score}/10</Typography>
-                                                </Box>
                                             </Box>
                                         </Box>
                                     </Box>

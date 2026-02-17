@@ -94,7 +94,27 @@ const resources = {
         "buyNow": "Buy Now",
         "reviews": "reviews",
         "rank": "Rank",
-        "loading": "Loading..."
+        "loading": "Loading...",
+        "replies": "Replies",
+        "reply": "Reply",
+        "edit": "Edit",
+        "delete": "Delete",
+        "save": "Save",
+        "cancel": "Cancel"
+      },
+      "community": {
+        "title": "Community Activity",
+        "subtitle": "Stay updated with your circle's latest ratings and discussions.",
+        "quietFeed": "Your feed is a bit empty...",
+        "followMore": "Follow more people to see their flavor ratings here!",
+        "topRated": "Circle's Top Rated",
+        "notifications": "Recent Notifications",
+        "notifReply": "replied",
+        "notifMention": "mentioned you",
+        "noNotifications": "No notifications.",
+        "searchFriends": "Search friends...",
+        "writeReply": "Add a reply...",
+        "rated": "rated"
       },
       "about": {
         "title": "About This Project",
@@ -204,7 +224,27 @@ const resources = {
         "buyNow": "Jetzt kaufen",
         "reviews": "Bewertungen",
         "rank": "Rang",
-        "loading": "Wird geladen..."
+        "loading": "Wird geladen...",
+        "replies": "Antworten",
+        "reply": "Antworten",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "save": "Speichern",
+        "cancel": "Abbrechen"
+      },
+      "community": {
+        "title": "Community-Aktivität",
+        "subtitle": "Bleib auf dem Laufenden mit den neuesten Bewertungen und Diskussionen deines Kreises.",
+        "quietFeed": "Dein Feed ist noch etwas leer...",
+        "followMore": "Folge mehr Personen, um deren Bewertungen hier zu sehen!",
+        "topRated": "Top-Bewertungen deines Kreises",
+        "notifications": "Neueste Benachrichtigungen",
+        "notifReply": "hat geantwortet",
+        "notifMention": "hat dich erwähnt",
+        "noNotifications": "Keine Benachrichtigungen.",
+        "searchFriends": "Freunde suchen...",
+        "writeReply": "Eine Antwort hinzufügen...",
+        "rated": "bewertete"
       },
       "about": {
         "title": "Über dieses Projekt",
