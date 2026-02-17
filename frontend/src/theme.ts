@@ -139,15 +139,15 @@ export const getTheme = (mode: CatppuccinTheme) => {
           palette = flavor.colors;
       } else {
           palette = {
-              base: { hex: '#0f0f0f' }, 
-              surface0: { hex: '#1a1a1a' }, 
-              crust: { hex: '#000000' }, 
-              text: { hex: '#ffffff' }, 
-              subtext0: { hex: '#a0a0a0' },
-              mauve: { hex: '#9d4edd' },
-              pink: { hex: '#ff4dff' },
+              base: { hex: '#ffffff' }, 
+              surface0: { hex: '#f8f9fa' }, 
+              crust: { hex: '#e9ecef' }, 
+              text: { hex: '#1a1a1a' }, 
+              subtext0: { hex: '#6c757d' },
+              mauve: { hex: '#8a2be2' },
+              pink: { hex: '#ff00ff' },
           };
-          mode = 'holy_dark';
+          mode = 'holy_light';
       }
   }
   
