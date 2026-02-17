@@ -108,13 +108,14 @@ class FlavorSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     category_slug = serializers.CharField(source='category.slug', read_only=True)
     average_rating = serializers.FloatField(read_only=True)
+    followed_average_rating = serializers.FloatField(read_only=True)
     user_rating = serializers.SerializerMethodField()
     ratings = RatingSerializer(many=True, read_only=True)
     image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Flavor
-        fields = ['id', 'name', 'category', 'category_name', 'category_slug', 'description', 'average_rating', 'user_rating', 'ratings', 'image_url', 'is_available', 'is_legacy', 'shop_url']
+        fields = ['id', 'name', 'category', 'category_name', 'category_slug', 'description', 'average_rating', 'followed_average_rating', 'user_rating', 'ratings', 'image_url', 'is_available', 'is_legacy', 'shop_url']
 
     def get_image_url(self, obj):
         if obj.image:
