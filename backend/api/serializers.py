@@ -1,101 +1,5 @@
 from rest_framework import serializers
-from .models import User, Flavor, Category, Rating, Reply, Notification
-
-class UserSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField()
-    following_count = serializers.IntegerField(source='following.count', read_only=True)
-    followers_count = serializers.IntegerField(source='followers.count', read_only=True)
-    is_following = serializers.SerializerMethodField()
-    unread_notifications_count = serializers.SerializerMethodField()
-    is_superuser = serializers.BooleanField(read_only=True)
-
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'theme', 'language', 'avatar', 'following_count', 'followers_count', 'is_following', 'unread_notifications_count', 'is_superuser']
-
-    def get_avatar(self, obj):
-        if obj.avatar:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.avatar.url)
-            return obj.avatar.url
-        return None
-
-    def get_is_following(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return request.user.following.filter(pk=obj.pk).exists()
-        return False
-
-    def get_unread_notifications_count(self, obj):
-        return obj.notifications.filter(is_read=False).count()
-
-class UserIPSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Notification # Temporary placeholder to avoid import issues before I finish the file
-        fields = []
-
-class TicketMessageSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    is_admin = serializers.BooleanField(source='user.is_superuser', read_only=True)
-
-    class Meta:
-        from .models import TicketMessage
-        model = TicketMessage
-        fields = ['id', 'username', 'text', 'created_at', 'is_admin']
-
-class TicketSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    messages = TicketMessageSerializer(many=True, read_only=True)
-
-    class Meta:
-        from .models import Ticket
-        model = Ticket
-        fields = ['id', 'user', 'username', 'subject', 'description', 'status', 'created_at', 'updated_at', 'messages']
-        read_only_fields = ['status', 'user']
-
-class AdminUserSerializer(serializers.ModelSerializer):
-    ips = serializers.SerializerMethodField()
-    ratings = RatingSerializer(many=True, read_only=True)
-    
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'email', 'is_active', 'is_superuser', 'date_joined', 'last_login', 'ips', 'ratings']
-
-    def get_ips(self, obj):
-        return [ip.ip_address for ip in obj.ips.all()]
-
-class NotificationSerializer(serializers.ModelSerializer):
-    actor_username = serializers.CharField(source='actor.username', read_only=True)
-    actor_avatar = serializers.SerializerMethodField()
-    flavor_name = serializers.SerializerMethodField()
-    flavor_id = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Notification
-        fields = ['id', 'actor_username', 'actor_avatar', 'notification_type', 'rating', 'reply', 'is_read', 'created_at', 'flavor_name', 'flavor_id']
-
-    def get_actor_avatar(self, obj):
-        if obj.actor.avatar:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.actor.avatar.url)
-            return obj.actor.avatar.url
-        return None
-
-    def get_flavor_name(self, obj):
-        if obj.rating:
-            return obj.rating.flavor.name
-        if obj.reply:
-            return obj.reply.rating.flavor.name
-        return None
-
-    def get_flavor_id(self, obj):
-        if obj.rating:
-            return obj.rating.flavor.id
-        if obj.reply:
-            return obj.reply.rating.flavor.id
-        return None
+from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -169,4 +73,98 @@ class FlavorSerializer(serializers.ModelSerializer):
                 return rating.score
             except Rating.DoesNotExist:
                 return None
+        return None
+
+class UserSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+    following_count = serializers.IntegerField(source='following.count', read_only=True)
+    followers_count = serializers.IntegerField(source='followers.count', read_only=True)
+    is_following = serializers.SerializerMethodField()
+    unread_notifications_count = serializers.SerializerMethodField()
+    is_superuser = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'theme', 'language', 'avatar', 'following_count', 'followers_count', 'is_following', 'unread_notifications_count', 'is_superuser']
+
+    def get_avatar(self, obj):
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
+
+    def get_is_following(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.following.filter(pk=obj.pk).exists()
+        return False
+
+    def get_unread_notifications_count(self, obj):
+        return obj.notifications.filter(is_read=False).count()
+
+class UserIPSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserIP
+        fields = ['id', 'ip_address', 'last_login']
+
+class TicketMessageSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    is_admin = serializers.BooleanField(source='user.is_superuser', read_only=True)
+
+    class Meta:
+        model = TicketMessage
+        fields = ['id', 'username', 'text', 'created_at', 'is_admin']
+
+class TicketSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    messages = TicketMessageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = ['id', 'user', 'username', 'subject', 'description', 'status', 'created_at', 'updated_at', 'messages']
+        read_only_fields = ['status', 'user']
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    ips = serializers.SerializerMethodField()
+    ratings = RatingSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'is_active', 'is_superuser', 'date_joined', 'last_login', 'ips', 'ratings']
+
+    def get_ips(self, obj):
+        return [ip.ip_address for ip in obj.ips.all()]
+
+class NotificationSerializer(serializers.ModelSerializer):
+    actor_username = serializers.CharField(source='actor.username', read_only=True)
+    actor_avatar = serializers.SerializerMethodField()
+    flavor_name = serializers.SerializerMethodField()
+    flavor_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'actor_username', 'actor_avatar', 'notification_type', 'rating', 'reply', 'is_read', 'created_at', 'flavor_name', 'flavor_id']
+
+    def get_actor_avatar(self, obj):
+        if obj.actor.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.actor.avatar.url)
+            return obj.actor.avatar.url
+        return None
+
+    def get_flavor_name(self, obj):
+        if obj.rating:
+            return obj.rating.flavor.name
+        if obj.reply:
+            return obj.reply.rating.flavor.name
+        return None
+
+    def get_flavor_id(self, obj):
+        if obj.rating:
+            return obj.rating.flavor.id
+        if obj.reply:
+            return obj.reply.rating.flavor.id
         return None
