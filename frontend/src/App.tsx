@@ -218,7 +218,7 @@ const App: React.FC = () => {
     localStorage.setItem('theme', newTheme);
     if (user) {
         try {
-            await api.patch('users/update_theme/', { theme: newTheme });
+            await api.patch('users/update_preferences/', { theme: newTheme });
         } catch (err) {
             console.error('Failed to update theme on server');
         }
