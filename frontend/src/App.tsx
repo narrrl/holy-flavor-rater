@@ -41,6 +41,7 @@ import './i18n';
 import { useTranslation } from 'react-i18next';
 import Footer from './components/Footer';
 import { formatDate } from './utils/date';
+import CookieBanner from './components/CookieBanner';
 
 // Code splitting
 const MainPage = lazy(() => import('./pages/MainPage'));
@@ -627,6 +628,7 @@ const App: React.FC = () => {
           </Box>
           <Footer />
         </Box>
+        <CookieBanner onThemeChange={handleThemeChange} currentTheme={themeName} />
       </Router>
     </ThemeProvider>
   );
