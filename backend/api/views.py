@@ -197,6 +197,7 @@ class ReplyViewSet(viewsets.ModelViewSet):
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
 
     def get_queryset(self):
         return self.request.user.notifications.select_related('actor', 'rating__flavor', 'reply__rating__flavor').order_by('-created_at')
