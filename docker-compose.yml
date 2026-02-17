@@ -8,6 +8,8 @@ services:
     networks:
       - narl
       - internal
+    extra_hosts:
+          - "host.docker.internal:host-gateway"
     env_file:
       - .env
     volumes:
