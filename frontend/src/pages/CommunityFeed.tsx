@@ -33,6 +33,7 @@ import { useTitle } from '../hooks/useTitle';
 import RichText from '../components/RichText';
 import { formatDate } from '../utils/date';
 import { useTranslation } from 'react-i18next';
+import MentionTextField from '../components/MentionTextField';
 
 interface Reply {
     id: number;
@@ -297,11 +298,15 @@ const CommunityFeed: React.FC = () => {
                                             </Box>
                                         ))}
                                         <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                                            <TextField 
-                                                fullWidth size="small" placeholder={t('community.writeReply')} 
+                                            <MentionTextField 
+                                                placeholder={t('community.writeReply')} 
                                                 value={replyInputs[rating.id] || ''} 
-                                                onChange={(e) => setReplyInputs(prev => ({ ...prev, [rating.id]: e.target.value }))}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(rating.id)}
+                                                onChange={(val) => setReplyInputs(prev => ({ ...prev, [rating.id]: val }))}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                                        handleReplySubmit(rating.id);
+                                                    }
+                                                }}
                                             />
                                             <IconButton color="primary" onClick={() => handleReplySubmit(rating.id)} disabled={!replyInputs[rating.id]}>
                                                 <SendIcon />

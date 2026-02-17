@@ -8,7 +8,6 @@ import {
   CardContent, 
   Rating as MuiRating, 
   Button, 
-  TextField,
   Avatar,
   Paper,
   CircularProgress,
@@ -26,6 +25,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import StarIcon from '@mui/icons-material/Star';
 import { formatDate } from '../../utils/date';
+import MentionTextField from '../../components/MentionTextField';
 
 interface Reply {
     id: number;
@@ -351,16 +351,14 @@ const FlavorDetail: React.FC = () => {
                           <Typography component="legend" gutterBottom color="text.secondary">Score</Typography>
                           <MuiRating max={10} value={newScore} onChange={(_, val) => setNewScore(val)} size="large" />
                       </Box>
-                      <TextField
-                          fullWidth
+                      <MentionTextField
                           multiline
                           rows={3}
                           placeholder="Share your thoughts..."
                           value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          sx={{ mb: 3, bgcolor: 'background.paper' }}
+                          onChange={(val) => setNewComment(val)}
                       />
-                      <Button variant="contained" type="submit" disabled={!newScore} sx={{ borderRadius: 2 }}>
+                      <Button variant="contained" type="submit" disabled={!newScore} sx={{ mt: 3, borderRadius: 2 }}>
                           Submit Review
                       </Button>
                   </form>
@@ -380,12 +378,11 @@ const FlavorDetail: React.FC = () => {
                                 // Edit Mode
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     <MuiRating max={10} value={editScore} onChange={(_, val) => setEditScore(val || 0)} size="large" />
-                                    <TextField 
+                                    <MentionTextField 
                                         multiline 
-                                        fullWidth 
                                         rows={3} 
                                         value={editComment} 
-                                        onChange={(e) => setEditComment(e.target.value)}
+                                        onChange={(val) => setEditComment(val)}
                                     />
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>{t('common.save')}</Button>
@@ -479,12 +476,10 @@ const FlavorDetail: React.FC = () => {
                                             </Box>
                                             {editingReplyId === reply.id ? (
                                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
-                                                    <TextField 
-                                                        size="small" 
-                                                        fullWidth 
+                                                    <MentionTextField 
                                                         multiline 
                                                         value={editReplyText} 
-                                                        onChange={(e) => setEditReplyText(e.target.value)}
+                                                        onChange={(val) => setEditReplyText(val)}
                                                     />
                                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                                         <Button variant="contained" size="small" onClick={() => handleUpdateReply(reply.id)}>{t('common.save')}</Button>
@@ -503,15 +498,17 @@ const FlavorDetail: React.FC = () => {
                             
                             {currentUser && (
                                 <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                                    <TextField 
-                                        size="small" 
+                                    <MentionTextField 
                                         placeholder={t('community.writeReply')} 
-                                        fullWidth 
                                         value={replyInputs[rating.id] || ''} 
-                                        onChange={(e) => setReplyInputs({ ...replyInputs, [rating.id]: e.target.value })} 
-                                        sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.paper' } }}
+                                        onChange={(val) => setReplyInputs({ ...replyInputs, [rating.id]: val })} 
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey) {
+                                                handleReplySubmit(rating.id);
+                                            }
+                                        }}
                                     />
-                                    <Button variant="contained" size="small" disabled={!replyInputs[rating.id]} onClick={() => handleReplySubmit(rating.id)}>{t('common.reply')}</Button>
+                                    <Button variant="contained" size="small" disabled={!replyInputs[rating.id]} onClick={() => handleReplySubmit(rating.id)} sx={{ height: 40, alignSelf: 'flex-start' }}>{t('common.reply')}</Button>
                                 </Box>
                             )}
                         </CardContent>
