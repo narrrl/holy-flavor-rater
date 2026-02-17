@@ -143,7 +143,12 @@ const resources = {
         "legalInfo": "Information according to § 5 TMG:",
         "contact": "Contact",
         "responsible": "Responsible for content according to § 55 Abs. 2 RStV:",
-        "disclaimerTitle": "Legal Disclaimer"
+        "disclaimerTitle": "Legal Disclaimer",
+        "region": "Germany",
+        "liabilityContentTitle": "Liability for Content:",
+        "liabilityContentDesc": "As a service provider, we are responsible for our own content on these pages in accordance with general laws according to § 7 Para. 1 TMG. According to §§ 8 to 10 TMG, however, we as service providers are not obliged to monitor transmitted or stored third-party information.",
+        "copyrightTitle": "Copyright:",
+        "copyrightDesc": "The content and works created by the site operators on these pages are subject to German copyright law. The reproduction, processing, distribution and any kind of exploitation outside the limits of copyright law require the written consent of the respective author."
       }
     }
   },
@@ -287,7 +292,12 @@ const resources = {
         "legalInfo": "Angaben gemäß § 5 TMG:",
         "contact": "Kontakt",
         "responsible": "Verantwortlich für den Inhalt nach § 55 Abs. 2 RStV:",
-        "disclaimerTitle": "Haftungsausschluss"
+        "disclaimerTitle": "Haftungsausschluss",
+        "region": "Deutschland",
+        "liabilityContentTitle": "Haftung für Inhalte:",
+        "liabilityContentDesc": "Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.",
+        "copyrightTitle": "Urheberrecht:",
+        "copyrightDesc": "Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors."
       }
     }
   }

@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Typography, Box, Container, Paper, Button, ToggleButton, ToggleButtonGroup, useMediaQuery } from '@mui/material';
 import { Link } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTitle } from '../hooks/useTitle';
+import { useTranslation } from 'react-i18next';
 
 const Privacy: React.FC = () => {
-  useTitle('Privacy Policy / Datenschutzerklärung');
-  const [lang, setLang] = useState<'de' | 'en'>('de');
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language.startsWith('de') ? 'de' : 'en';
+  useTitle(lang === 'de' ? 'Datenschutzerklärung' : 'Privacy Policy');
   const isMobile = useMediaQuery('(max-width:600px)');
+
+  const handleLangChange = (_: any, newLang: string | null) => {
+      if (newLang) {
+          i18n.changeLanguage(newLang);
+      }
+  };
 
   return (
     <Container maxWidth="md" sx={{ py: { xs: 4, md: 8 }, px: { xs: 2, sm: 3 } }}>
@@ -19,13 +27,13 @@ const Privacy: React.FC = () => {
             startIcon={<ArrowBackIcon />}
             sx={{ textTransform: 'none', borderRadius: 2 }}
           >
-            {lang === 'de' ? 'Zurück' : 'Back'}
+            {t('common.back')}
           </Button>
 
           <ToggleButtonGroup
             value={lang}
             exclusive
-            onChange={(_, v) => v && setLang(v)}
+            onChange={handleLangChange}
             size="small"
           >
             <ToggleButton value="de">Deutsch</ToggleButton>

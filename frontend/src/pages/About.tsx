@@ -50,7 +50,7 @@ const About: React.FC = () => {
             {import.meta.env.VITE_IMPRESSUM_NAME || '[Your Name or Project Name]'}<br />
             {import.meta.env.VITE_IMPRESSUM_STREET || '[Your Street Address]'}<br />
             {import.meta.env.VITE_IMPRESSUM_CITY || '[Postal Code and City]'}<br />
-            Germany
+            {t('about.region')}
         </Typography>
 
         <Box sx={{ mt: 3 }}>
@@ -76,14 +76,10 @@ const About: React.FC = () => {
         <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>{t('about.disclaimerTitle')}</Typography>
             <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 2, lineHeight: 1.6 }}>
-                <strong>Haftung für Inhalte:</strong> Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte 
-                auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter 
-                jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen.
+                <strong>{t('about.liabilityContentTitle')}</strong> {t('about.liabilityContentDesc')}
             </Typography>
             <Typography variant="caption" color="text.secondary" component="p" sx={{ lineHeight: 1.6 }}>
-                <strong>Urheberrecht:</strong> Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten 
-                unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der 
-                Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors.
+                <strong>{t('about.copyrightTitle')}</strong> {t('about.copyrightDesc')}
             </Typography>
         </Box>
       </Paper>
