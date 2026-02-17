@@ -32,7 +32,13 @@ const resources = {
         "missing": "Missing",
         "noRatings": "You haven't rated any flavors yet.",
         "exploreFlavors": "Go explore flavors",
-        "allRated": "Amazing! You've rated everything! 🏆"
+        "allRated": "Amazing! You've rated everything! 🏆",
+        "myReviews": "My Reviews",
+        "exploreNew": "Explore New",
+        "editingReview": "Editing review for {{flavor}}",
+        "newScore": "New Score:",
+        "searchMissing": "Search flavors you haven't rated...",
+        "circleAvg": "Average rating from people you follow"
       },
       "settings": {
         "subtitle": "Manage your account and preferences",
@@ -163,7 +169,13 @@ const resources = {
         "missing": "Fehlend",
         "noRatings": "Du hast noch keine Sorten bewertet.",
         "exploreFlavors": "Sorten entdecken",
-        "allRated": "Wahnsinn! Du hast alles bewertet! 🏆"
+        "allRated": "Wahnsinn! Du hast alles bewertet! 🏆",
+        "myReviews": "Meine Rezensionen",
+        "exploreNew": "Neu entdecken",
+        "editingReview": "Rezension bearbeiten für {{flavor}}",
+        "newScore": "Neue Bewertung:",
+        "searchMissing": "Suche nach Sorten, die du noch nicht bewertet hast...",
+        "circleAvg": "Durchschnittsbewertung der Personen, denen du folgst"
       },
       "settings": {
         "subtitle": "Verwalte dein Konto und deine Einstellungen",

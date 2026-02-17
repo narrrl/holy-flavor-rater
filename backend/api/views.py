@@ -508,13 +508,19 @@ class UserViewSet(viewsets.ModelViewSet):
     def dashboard(self, request):
         user = request.user
         rated_ids = user.ratings.values_list('flavor_id', flat=True)
+        followed_users = user.following.all()
         
-        # Annotate with community average rating so it's available for sorting/display
+        # Missing flavors with community avg and followed circle avg
         missing_flavors = Flavor.objects.exclude(id__in=rated_ids) \
             .select_related('category') \
-            .annotate(average_rating=Avg('ratings__score'))
+            .annotate(
+                average_rating=Avg('ratings__score'),
+                followed_average_rating=Avg('ratings__score', filter=models.Q(ratings__user__in=followed_users))
+            ).order_by('category__name', 'name')
             
-        rated_flavors = user.ratings.select_related('flavor', 'flavor__category')
+        rated_flavors = user.ratings.select_related('flavor', 'flavor__category') \
+            .prefetch_related('replies', 'replies__user') \
+            .order_by('-created_at')
         
         return Response({
             'user': UserSerializer(user).data,
