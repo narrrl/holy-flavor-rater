@@ -16,7 +16,6 @@ import {
   ListItemButton,
   Pagination,
   TextField,
-  InputAdornment,
   alpha,
   IconButton,
   Collapse
@@ -25,10 +24,13 @@ import SearchIcon from '@mui/icons-material/Search';
 import CommentIcon from '@mui/icons-material/Comment';
 import SendIcon from '@mui/icons-material/Send';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import { Link } from 'react-router-dom';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import PeopleIcon from '@mui/icons-material/People';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import RichText from '../components/RichText';
+import { formatDate } from '../utils/date';
 
 interface Reply {
     id: number;
@@ -59,19 +61,34 @@ interface FollowedUser {
     avatar: string | null;
 }
 
+interface Notification {
+    id: number;
+    actor_username: string;
+    actor_avatar: string | null;
+    notification_type: 'reply' | 'mention';
+    rating: number | null;
+    reply: number | null;
+    is_read: boolean;
+    created_at: string;
+    flavor_name: string | null;
+    flavor_id: number | null;
+}
+
 const CommunityFeed: React.FC = () => {
   useTitle('Community Feed');
+  const navigate = useNavigate();
   const [ratings, setRatings] = useState<FeedRating[]>([]);
   const [following, setFollowing] = useState<FollowedUser[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [followingSearch, setFollowingSearch] = useState('');
   
-  // Trending Flavors State (for sidebar)
-  const [trending, setTrending] = useState<any[]>([]);
+  // Top Rated Flavors by followed users
+  const [topFollowed, setTopFollowed] = useState<any[]>([]);
 
-  // Reply State
+  // UI State
   const [replyInputs, setReplyInputs] = useState<{[key: number]: string}>({});
   const [expandedReplies, setExpandedReplies] = useState<{[key: number]: boolean}>({});
 
@@ -82,10 +99,11 @@ const CommunityFeed: React.FC = () => {
   const fetchFeedData = async (pageNum: number) => {
     setLoading(true);
     try {
-      const [feedRes, followingRes, trendingRes] = await Promise.all([
+      const [feedRes, followingRes, topFollowedRes, notifRes] = await Promise.all([
           api.get(`ratings/feed/?page=${pageNum}`),
           api.get('users/following_list/'),
-          api.get('flavors/top/') // Using top as trending for now
+          api.get('flavors/followed_top/'),
+          api.get('notifications/')
       ]);
       
       const feedData = feedRes.data.results || (Array.isArray(feedRes.data) ? feedRes.data : []);
@@ -97,9 +115,15 @@ const CommunityFeed: React.FC = () => {
       const followData = Array.isArray(followingRes.data) ? followingRes.data : (followingRes.data.results || []);
       setFollowing(followData);
 
-      setTrending(Array.isArray(trendingRes.data) ? trendingRes.data.slice(0, 5) : []);
+      setTopFollowed(Array.isArray(topFollowedRes.data) ? topFollowedRes.data.slice(0, 5) : []);
+      
+      const notifData = Array.isArray(notifRes.data) ? notifRes.data : (notifRes.data.results || []);
+      setNotifications(notifData.slice(0, 5)); // Just the latest 5 for sidebar
 
-    } catch (err) {
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+          navigate('/login');
+      }
       console.error('Failed to fetch feed data', err);
     } finally {
       setLoading(false);
@@ -107,8 +131,13 @@ const CommunityFeed: React.FC = () => {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        navigate('/login');
+        return;
+    }
     fetchFeedData(page);
-  }, [page]);
+  }, [page, navigate]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
       setPage(value);
@@ -124,7 +153,6 @@ const CommunityFeed: React.FC = () => {
       if (!text) return;
       try {
           const res = await api.post(`ratings/${ratingId}/reply/`, { text });
-          // Optimistically update the UI
           setRatings(prevRatings => prevRatings.map(r => {
               if (r.id === ratingId) {
                   return { ...r, replies: [...r.replies, res.data] };
@@ -137,20 +165,24 @@ const CommunityFeed: React.FC = () => {
       }
   };
 
+  const formatTimestamp = (dateStr: string) => {
+      return formatDate(dateStr);
+  };
+
   if (loading && ratings.length === 0) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Box sx={{ mb: 6 }}>
+          <Typography variant="h3" sx={{ fontWeight: '800', mb: 1 }}>Community Activity</Typography>
+          <Typography variant="h6" color="text.secondary">
+              Stay updated with your circle's latest ratings and discussions.
+          </Typography>
+      </Box>
+
       <Grid container spacing={4}>
           {/* Main Feed Column */}
           <Grid size={{ xs: 12, md: 8 }}>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" sx={{ fontWeight: '800', mb: 1 }}>Community Feed</Typography>
-                <Typography variant="subtitle1" color="text.secondary">
-                    See what your friends are drinking and rating.
-                </Typography>
-            </Box>
-
             {ratings.length === 0 ? (
                 <Box sx={{ 
                     p: 6, 
@@ -161,167 +193,115 @@ const CommunityFeed: React.FC = () => {
                     border: '1px dashed', 
                     borderColor: 'divider' 
                 }}>
-                    <Typography variant="h6" gutterBottom color="text.secondary">It's quiet in here...</Typography>
+                    <Typography variant="h6" gutterBottom color="text.secondary">Your feed is a bit empty...</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Follow more users to populate your feed with flavor reviews!
+                        Follow more people to see their flavor ratings here!
                     </Typography>
-                    <Button variant="outlined" component={Link} to="/" sx={{ borderRadius: 2 }}>
-                        Discover Users
+                    <Button variant="contained" component={Link} to="/" sx={{ borderRadius: 2 }}>
+                        Explore Flavors
                     </Button>
                 </Box>
             ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                     {ratings.map(rating => (
                         <Card key={rating.id} elevation={0} sx={{ 
-                            borderRadius: 3, 
+                            borderRadius: 4, 
                             border: '1px solid', 
                             borderColor: 'divider',
                             bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
-                            backdropFilter: 'blur(12px)',
-                            transition: 'transform 0.2s, box-shadow 0.2s',
+                            transition: 'transform 0.2s',
                             '&:hover': {
-                                boxShadow: (theme) => `0 4px 20px ${alpha(theme.palette.primary.main, 0.08)}`,
-                                borderColor: (theme) => alpha(theme.palette.primary.main, 0.3)
+                                transform: 'translateY(-2px)',
+                                borderColor: (theme) => alpha(theme.palette.primary.main, 0.2)
                             }
                         }}>
-                            <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
-                                {/* Header */}
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                            <CardContent sx={{ p: 3 }}>
+                                {/* User Info */}
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                     <Box sx={{ display: 'flex', gap: 2 }}>
                                         <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none' }}>
-                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 44, height: 44, border: '2px solid', borderColor: 'divider' }}>
+                                            <Avatar src={rating.user_avatar || undefined} sx={{ width: 48, height: 48, border: '2px solid', borderColor: 'divider' }}>
                                                 {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
                                             </Avatar>
                                         </Link>
                                         <Box>
                                             <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: 1.2 }}>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                                                     {rating.user}
                                                 </Typography>
                                             </Link>
-                                            <Typography variant="caption" color="text.secondary">
-                                                rated <Link to={`/flavor/${rating.flavor}`} style={{ color: 'inherit', fontWeight: 'bold', textDecoration: 'none' }}>{rating.flavor_name}</Link>
-                                            </Typography>
                                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                                {new Date(rating.created_at).toLocaleDateString()}
+                                                {formatTimestamp(rating.created_at)}
                                             </Typography>
                                         </Box>
                                     </Box>
-                                    
-                                    {/* Rating Badge */}
                                     <Box sx={{ 
                                         display: 'flex', 
                                         flexDirection: 'column', 
                                         alignItems: 'center', 
                                         bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
                                         color: 'primary.main',
-                                        px: 1.5, py: 0.5, 
-                                        borderRadius: 2,
-                                        minWidth: 50
+                                        px: 2, py: 0.5, 
+                                        borderRadius: 2
                                     }}>
-                                        <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1 }}>{rating.score}</Typography>
-                                        <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 'bold', opacity: 0.8 }}>/ 10</Typography>
+                                        <Typography variant="h5" sx={{ fontWeight: '900', lineHeight: 1 }}>{rating.score}</Typography>
+                                        <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 'bold' }}>/ 10</Typography>
                                     </Box>
                                 </Box>
 
-                                {/* Content Body */}
-                                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                {/* Flavor and Comment */}
+                                <Box sx={{ display: 'flex', gap: 3 }}>
                                     <Box sx={{ flex: 1 }}>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                            Rated <Link to={`/flavor/${rating.flavor}`} style={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}>{rating.flavor_name}</Link>
+                                        </Typography>
                                         {rating.comment ? (
-                                            <Typography variant="body1" sx={{ lineHeight: 1.6, fontSize: '0.95rem', mb: 1 }}>
+                                            <Typography variant="body1" sx={{ lineHeight: 1.6, fontStyle: 'italic', color: 'text.primary' }}>
                                                 <RichText text={rating.comment} />
                                             </Typography>
                                         ) : (
-                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mb: 1 }}>
-                                                No review text provided.
-                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>No review text.</Typography>
                                         )}
                                     </Box>
-                                    {/* Flavor Thumbnail */}
                                     <Link to={`/flavor/${rating.flavor}`} style={{ flexShrink: 0 }}>
-                                        <Box sx={{ 
-                                            width: 80, 
-                                            height: 80, 
-                                            borderRadius: 2, 
-                                            overflow: 'hidden', 
-                                            bgcolor: 'action.hover',
-                                            border: '1px solid',
-                                            borderColor: 'divider'
-                                        }}>
-                                            <Box 
-                                                component="img" 
-                                                src={rating.flavor_image || undefined} 
-                                                alt={rating.flavor_name}
-                                                sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 0.5 }} 
-                                            />
+                                        <Box sx={{ width: 70, height: 70, borderRadius: 2, overflow: 'hidden', bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}>
+                                            <Box component="img" src={rating.flavor_image || undefined} sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 0.5 }} />
                                         </Box>
                                     </Link>
                                 </Box>
 
-                                <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
+                                <Divider sx={{ my: 2 }} />
 
-                                {/* Actions / Footer */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <Button 
-                                        size="small" 
-                                        startIcon={<CommentIcon fontSize="small" />} 
-                                        onClick={() => handleReplyToggle(rating.id)}
-                                        sx={{ textTransform: 'none', color: 'text.secondary', '&:hover': { color: 'primary.main', bgcolor: 'transparent' } }}
-                                    >
-                                        {rating.replies.length > 0 ? `${rating.replies.length} Replies` : 'Reply'}
-                                    </Button>
-                                    
-                                    {/* Small timestamp or generic action */}
-                                    <Box /> 
-                                </Box>
+                                {/* Footer & Replies */}
+                                <Button 
+                                    size="small" 
+                                    startIcon={<CommentIcon fontSize="small" />} 
+                                    onClick={() => handleReplyToggle(rating.id)}
+                                    sx={{ textTransform: 'none', color: 'text.secondary' }}
+                                >
+                                    {rating.replies.length > 0 ? `${rating.replies.length} Replies` : 'Reply'}
+                                </Button>
 
-                                {/* Replies Section (Collapsible) */}
                                 <Collapse in={expandedReplies[rating.id]}>
                                     <Box sx={{ mt: 2, pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
-                                        {/* Existing Replies */}
                                         {rating.replies.map((reply) => (
                                             <Box key={reply.id} sx={{ mb: 1.5 }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                                                    <Avatar src={undefined} sx={{ width: 20, height: 20, fontSize: '0.7rem' }}>
-                                                        {reply.user.charAt(0).toUpperCase()}
-                                                    </Avatar>
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
-                                                        {reply.user}
-                                                    </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {new Date(reply.created_at).toLocaleDateString()}
-                                                    </Typography>
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>{reply.user}</Typography>
+                                                    <Typography variant="caption" color="text.secondary">{formatTimestamp(reply.created_at)}</Typography>
                                                 </Box>
-                                                <Typography variant="body2" sx={{ pl: 3.5, fontSize: '0.9rem' }}>
-                                                    <RichText text={reply.text} />
-                                                </Typography>
+                                                <Typography variant="body2"><RichText text={reply.text} /></Typography>
                                             </Box>
                                         ))}
-
-                                        {/* Reply Input */}
                                         <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                                             <TextField 
-                                                placeholder="Write a reply..." 
-                                                size="small" 
-                                                fullWidth 
-                                                variant="outlined"
-                                                value={replyInputs[rating.id] || ''}
+                                                fullWidth size="small" placeholder="Add a reply..." 
+                                                value={replyInputs[rating.id] || ''} 
                                                 onChange={(e) => setReplyInputs(prev => ({ ...prev, [rating.id]: e.target.value }))}
-                                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 4, bgcolor: 'background.paper' } }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                                        e.preventDefault();
-                                                        handleReplySubmit(rating.id);
-                                                    }
-                                                }}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleReplySubmit(rating.id)}
                                             />
-                                            <IconButton 
-                                                color="primary" 
-                                                disabled={!replyInputs[rating.id]}
-                                                onClick={() => handleReplySubmit(rating.id)}
-                                                sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' }, width: 40, height: 40 }}
-                                            >
-                                                <SendIcon fontSize="small" />
+                                            <IconButton color="primary" onClick={() => handleReplySubmit(rating.id)} disabled={!replyInputs[rating.id]}>
+                                                <SendIcon />
                                             </IconButton>
                                         </Box>
                                     </Box>
@@ -329,92 +309,87 @@ const CommunityFeed: React.FC = () => {
                             </CardContent>
                         </Card>
                     ))}
-                    
                     {totalPages > 1 && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                            <Pagination 
-                                count={totalPages} 
-                                page={page} 
-                                onChange={handlePageChange} 
-                                color="primary" 
-                                shape="rounded"
-                            />
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                            <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
                         </Box>
                     )}
                 </Box>
             )}
           </Grid>
 
-          {/* Sidebar - Desktop Only */}
-          <Grid size={{ xs: 12, md: 4 }} sx={{ display: { xs: 'none', md: 'block' } }}>
-              <Box sx={{ position: 'sticky', top: 100, display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Sidebar Column */}
+          <Grid size={{ xs: 12, md: 4 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   
-                  {/* Following Widget */}
-                  <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
-                      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Following</Typography>
-                      </Box>
-                      <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
-                          {following.length === 0 ? (
-                              <Box sx={{ p: 3, textAlign: 'center' }}>
-                                  <Typography variant="body2" color="text.secondary">You aren't following anyone yet.</Typography>
-                              </Box>
-                          ) : (
-                              <List disablePadding>
-                                  {filteredFollowing.map((user) => (
-                                      <ListItemButton key={user.id} component={Link} to={`/profile/${user.username}`}>
-                                          <ListItemAvatar>
-                                              <Avatar src={user.avatar || undefined} sx={{ width: 32, height: 32 }}>
-                                                  {!user.avatar && user.username.charAt(0).toUpperCase()}
-                                              </Avatar>
-                                          </ListItemAvatar>
-                                          <ListItemText 
-                                            primary={user.username} 
-                                            primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }} 
-                                          />
-                                      </ListItemButton>
-                                  ))}
-                              </List>
-                          )}
-                      </Box>
-                      <Box sx={{ p: 1.5, borderTop: '1px solid', borderColor: 'divider' }}>
-                           <TextField
-                                fullWidth
-                                size="small"
-                                placeholder="Filter..."
-                                value={followingSearch}
-                                onChange={(e) => setFollowingSearch(e.target.value)}
-                                InputProps={{
-                                    startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment>,
-                                    sx: { borderRadius: 2, fontSize: '0.85rem' }
-                                }}
-                            />
-                      </Box>
-                  </Card>
-
-                  {/* Trending / Top Rated Widget */}
-                  <Card elevation={0} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-                      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <WhatshotIcon color="error" fontSize="small" />
-                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Top Rated Flavors</Typography>
+                  {/* Notifications Widget */}
+                  <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <NotificationsIcon color="primary" fontSize="small" />
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Recent Notifications</Typography>
                       </Box>
                       <List disablePadding>
-                          {trending.map((flavor, index) => (
-                              <ListItemButton key={flavor.id} component={Link} to={`/flavor/${flavor.id}`} sx={{ py: 1.5 }}>
-                                  <Box sx={{ mr: 2, fontWeight: 'bold', color: 'text.secondary', width: 20, textAlign: 'center' }}>
-                                      {index + 1}
-                                  </Box>
-                                  <Avatar 
-                                    src={flavor.image_url} 
-                                    variant="rounded" 
-                                    sx={{ width: 32, height: 32, mr: 2, bgcolor: 'transparent' }} 
-                                    imgProps={{ sx: { objectFit: 'contain' } }}
-                                  >
-                                      F
-                                  </Avatar>
+                          {notifications.length === 0 ? (
+                              <Box sx={{ p: 3, textAlign: 'center' }}><Typography variant="body2" color="text.secondary">No notifications.</Typography></Box>
+                          ) : (
+                              notifications.map(n => (
+                                  <ListItemButton key={n.id} onClick={() => n.flavor_id && navigate(`/flavor/${n.flavor_id}`)} sx={{ py: 1.5 }}>
+                                      <ListItemAvatar sx={{ minWidth: 40 }}>
+                                          <Avatar src={n.actor_avatar || undefined} sx={{ width: 30, height: 30, fontSize: '0.8rem' }}>{n.actor_username.charAt(0)}</Avatar>
+                                      </ListItemAvatar>
+                                      <ListItemText 
+                                        primary={
+                                            <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? 'replied' : 'mentioned you'}
+                                            </Typography>
+                                        }
+                                        secondary={formatTimestamp(n.created_at)}
+                                        secondaryTypographyProps={{ sx: { fontSize: '0.7rem' } }}
+                                      />
+                                  </ListItemButton>
+                              ))
+                          )}
+                      </List>
+                  </Card>
+
+                  {/* Following Widget */}
+                  <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PeopleIcon color="primary" fontSize="small" />
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Following</Typography>
+                      </Box>
+                      <Box sx={{ p: 1.5 }}>
+                           <TextField
+                                fullWidth size="small" placeholder="Search friends..."
+                                value={followingSearch}
+                                onChange={(e) => setFollowingSearch(e.target.value)}
+                                InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> }}
+                            />
+                      </Box>
+                      <List disablePadding sx={{ maxHeight: 250, overflowY: 'auto' }}>
+                          {filteredFollowing.map(user => (
+                              <ListItemButton key={user.id} component={Link} to={`/profile/${user.username}`}>
+                                  <Avatar src={user.avatar || undefined} sx={{ width: 28, height: 28, mr: 2, fontSize: '0.8rem' }}>{user.username.charAt(0)}</Avatar>
+                                  <ListItemText primary={user.username} primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }} />
+                              </ListItemButton>
+                          ))}
+                      </List>
+                  </Card>
+
+                  {/* Top Rated by Circle */}
+                  <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <WhatshotIcon color="error" fontSize="small" />
+                          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Circle's Top Rated</Typography>
+                      </Box>
+                      <List disablePadding>
+                          {topFollowed.map((flavor, idx) => (
+                              <ListItemButton key={flavor.id} component={Link} to={`/flavor/${flavor.id}`}>
+                                  <Box sx={{ mr: 2, fontWeight: 'bold', color: 'text.secondary', width: 15 }}>{idx + 1}</Box>
+                                  <Avatar src={flavor.image_url} variant="rounded" sx={{ width: 32, height: 32, mr: 2, bgcolor: 'transparent' }} imgProps={{ sx: { objectFit: 'contain' } }} />
                                   <ListItemText 
                                     primary={flavor.name} 
-                                    secondary={`${flavor.average_rating ? flavor.average_rating.toFixed(1) : '-'} / 10`}
+                                    secondary={`${(flavor.average_rating || 0).toFixed(1)} / 10`}
                                     primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold', noWrap: true }}
                                     secondaryTypographyProps={{ variant: 'caption', color: 'primary.main', fontWeight: 'bold' }}
                                   />

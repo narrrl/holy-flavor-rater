@@ -39,6 +39,7 @@ import api from './api';
 import './i18n';
 import { useTranslation } from 'react-i18next';
 import Footer from './components/Footer';
+import { formatDate } from './utils/date';
 
 // Code splitting
 const MainPage = lazy(() => import('./pages/MainPage'));
@@ -533,7 +534,7 @@ const App: React.FC = () => {
                                                 <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? 'replied to your review' : 'mentioned you'} on <strong>{n.flavor_name}</strong>
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                {new Date(n.created_at).toLocaleDateString()}
+                                                {formatDate(n.created_at)}
                                             </Typography>
                                         </Box>
                                     </MenuItem>
