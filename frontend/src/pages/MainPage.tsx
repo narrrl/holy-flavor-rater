@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   Typography, 
   Box, 
@@ -56,6 +56,7 @@ const MainPage: React.FC = () => {
   const [feedRatings, setFeedRatings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const location = useLocation();
   
   const query = new URLSearchParams(location.search).get('q') || '';
@@ -100,13 +101,20 @@ const MainPage: React.FC = () => {
     fetchData();
   }, [query, isLoggedIn]);
 
+  const startTimer = () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+          setActiveIndex(prev => (prev + 1) % topFlavors.length);
+      }, 6000);
+  };
+
   // Auto-rotate
   useEffect(() => {
       if (topFlavors.length > 0 && !query) {
-          const timer = setInterval(() => {
-              setActiveIndex(prev => (prev + 1) % topFlavors.length);
-          }, 6000);
-          return () => clearInterval(timer);
+          startTimer();
+          return () => {
+              if (timerRef.current) clearInterval(timerRef.current);
+          };
       }
   }, [topFlavors, query]);
 
@@ -114,8 +122,14 @@ const MainPage: React.FC = () => {
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
 
-  const handlePrev = () => setActiveIndex(prev => (prev - 1 + topFlavors.length) % topFlavors.length);
-  const handleNext = () => setActiveIndex(prev => (prev + 1) % topFlavors.length);
+  const handlePrev = () => {
+      setActiveIndex(prev => (prev - 1 + topFlavors.length) % topFlavors.length);
+      startTimer();
+  };
+  const handleNext = () => {
+      setActiveIndex(prev => (prev + 1) % topFlavors.length);
+      startTimer();
+  };
 
   // --- SEARCH VIEW ---
   if (query) {
@@ -338,25 +352,27 @@ const MainPage: React.FC = () => {
                     <Card sx={{ 
                         display: 'flex', 
                         flexDirection: { xs: 'column', md: 'row' }, 
-                        minHeight: { xs: 'auto', md: 400 },
+                        height: { xs: 'auto', md: 500 },
                         borderRadius: 4,
                         overflow: 'hidden',
                         position: 'relative'
                     }}>
-                        <Box 
-                            component={Link}
-                            to={`/flavor/${currentTop.id}`}
-                            sx={{ 
-                                width: { xs: '100%', md: '45%' }, 
-                                aspectRatio: { xs: '16/9', md: '1/1' },
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: 'action.hover',
-                                overflow: 'hidden',
-                                textDecoration: 'none'
-                            }}
-                        >
+                                            <Box 
+                                                component={Link}
+                                                to={`/flavor/${currentTop.id}`}
+                                                sx={{ 
+                                                    width: { xs: '100%', md: '45%' }, 
+                                                    height: { md: '100%' },
+                                                    aspectRatio: { xs: '16/9', md: 'auto' },
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    bgcolor: 'action.hover',
+                                                    overflow: 'hidden',
+                                                    textDecoration: 'none'
+                                                }}
+                                            >
+                        
                             <Box 
                                 component="img"
                                 src={currentTop.image_url || ''}
@@ -425,10 +441,19 @@ const MainPage: React.FC = () => {
 
             {/* Recent Reviews - SIDE BY SIDE */}
             {recentReviews.length > 0 && (
-                <Box sx={{ flex: { xs: '1 1 100%', xl: '1 1 35%' }, minWidth: 0 }}>
+                <Box sx={{ flex: { xs: '1 1 100%', xl: '1 1 35%' }, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                     <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>{t('home.communityVoice')}</Typography>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {recentReviews.slice(0, 5).map(review => (
+                    <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: 2, 
+                        height: { xl: 500 }, 
+                        overflowY: { xl: 'auto' },
+                        pr: { xl: 1 },
+                        '&::-webkit-scrollbar': { width: '6px' },
+                        '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '3px' }
+                    }}>
+                        {recentReviews.map(review => (
                             <Paper 
                                 key={review.id} 
                                 variant="outlined" 
