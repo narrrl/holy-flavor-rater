@@ -197,7 +197,8 @@ const App: React.FC = () => {
   const fetchNotifications = async () => {
     try {
         const res = await api.get('notifications/');
-        setNotifications(res.data);
+        const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+        setNotifications(data);
     } catch (err) {
         console.error('Failed to fetch notifications');
     }
@@ -220,7 +221,8 @@ const App: React.FC = () => {
             // Also fetch following list for the mobile sidebar
             try {
                 const followRes = await api.get('users/following_list/');
-                setFollowing(followRes.data);
+                const followData = Array.isArray(followRes.data) ? followRes.data : (followRes.data.results || []);
+                setFollowing(followData);
                 fetchNotifications();
             } catch (err) {
                 console.error('Failed to fetch following list');
