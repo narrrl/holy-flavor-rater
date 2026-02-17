@@ -13,7 +13,8 @@ import {
   Tab,
   Paper,
   Divider,
-  Button
+  Button,
+  Stack
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
@@ -40,6 +41,7 @@ interface ProfileData {
     following_count: number;
     followers_count: number;
     is_following: boolean;
+    is_superuser?: boolean;
     ratings: Rating[];
 }
 
@@ -50,7 +52,7 @@ const PublicProfile: React.FC = () => {
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{username: string, is_superuser: boolean} | null>(null);
 
   const handleGoBack = () => {
       if (window.history.length > 1) {
@@ -68,7 +70,7 @@ const PublicProfile: React.FC = () => {
             localStorage.getItem('token') ? api.get('users/me/') : Promise.resolve({ data: null })
         ]);
         setData(profileRes.data);
-        if (meRes.data) setCurrentUser(meRes.data.username);
+        if (meRes.data) setCurrentUser(meRes.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -157,15 +159,27 @@ const PublicProfile: React.FC = () => {
         <Box sx={{ flex: 1, minWidth: 200 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
                 <Typography variant="h2" sx={{ fontWeight: 'bold', fontSize: { xs: '2.5rem', md: '3.75rem' } }}>{data.username}</Typography>
-                {currentUser !== data.username && (
-                    <Button 
-                        variant={data.is_following ? "outlined" : "contained"} 
-                        onClick={handleFollowToggle}
-                        sx={{ borderRadius: 4, px: 4 }}
-                    >
-                        {data.is_following ? "Following" : "Follow"}
-                    </Button>
-                )}
+                <Stack direction="row" spacing={1}>
+                    {currentUser?.username !== data.username && (
+                        <Button 
+                            variant={data.is_following ? "outlined" : "contained"} 
+                            onClick={handleFollowToggle}
+                            sx={{ borderRadius: 4, px: 4 }}
+                        >
+                            {data.is_following ? "Following" : "Follow"}
+                        </Button>
+                    )}
+                    {currentUser?.is_superuser && (
+                        <Button 
+                            variant="outlined" 
+                            color="secondary"
+                            onClick={() => navigate(`/admin/user/${data.id}`)}
+                            sx={{ borderRadius: 4, px: 4 }}
+                        >
+                            {t('admin.manageUser')}
+                        </Button>
+                    )}
+                </Stack>
             </Box>
             <Typography variant="h6" color="text.secondary">
                 Taste Profile • {data.ratings.length} Rated • {data.followers_count} Followers • {data.following_count} Following

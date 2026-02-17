@@ -9,6 +9,8 @@ router.register('categories', views.CategoryViewSet)
 router.register('ratings', views.RatingViewSet)
 router.register('replies', views.ReplyViewSet)
 router.register('notifications', views.NotificationViewSet, basename='notification')
+router.register('tickets', views.TicketViewSet, basename='ticket')
+router.register('admin-custom', views.AdminViewSet, basename='admin-custom')
 
 urlpatterns = [
     path('', include(router.urls)),
