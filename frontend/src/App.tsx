@@ -238,10 +238,12 @@ const App: React.FC = () => {
 
   const drawer = (
     <Box sx={{ width: 280 }} role="presentation">
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar src={user?.avatar || undefined} sx={{ width: 40, height: 40, border: '2px solid', borderColor: 'primary.main' }}>
-              {user?.username ? user.username.charAt(0).toUpperCase() : '?'}
-          </Avatar>
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+              <Link to="/" onClick={() => setDrawerOpen(false)} style={{ color: 'inherit', textDecoration: 'none' }}>
+                  Holy Flavors Archive
+              </Link>
+          </Typography>
       </Box>
       <Divider />
       <List>
@@ -282,13 +284,23 @@ const App: React.FC = () => {
         {user ? (
             <>
                 <ListItem disablePadding>
+                    <ListItemButton component={Link} to={`/profile/${user.username}`} onClick={() => setDrawerOpen(false)}>
+                        <ListItemAvatar>
+                            <Avatar src={user.avatar || undefined} sx={{ width: 32, height: 32, border: '1px solid', borderColor: 'primary.main' }}>
+                                {user.username.charAt(0).toUpperCase()}
+                            </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText primary={t('nav.profile')} secondary={user.username} />
+                    </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
                     <ListItemButton component={Link} to="/dashboard" onClick={() => setDrawerOpen(false)}>
-                        <ListItemText primary={t('nav.dashboard')} />
+                        <ListItemText primary={t('nav.dashboard')} sx={{ pl: 7 }} />
                     </ListItemButton>
                 </ListItem>
                 <ListItem disablePadding>
                     <ListItemButton component={Link} to="/settings" onClick={() => setDrawerOpen(false)}>
-                        <ListItemText primary={t('nav.settings')} />
+                        <ListItemText primary={t('nav.settings')} sx={{ pl: 7 }} />
                     </ListItemButton>
                 </ListItem>
 
