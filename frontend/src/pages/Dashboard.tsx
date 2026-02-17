@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -31,6 +31,7 @@ interface DashboardData {
 
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   useTitle(t('nav.dashboard'));
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,14 @@ const Dashboard: React.FC = () => {
   const copyToClipboard = () => {
       navigator.clipboard.writeText(shareUrl);
       alert(t('dashboard.copySuccess'));
+  };
+
+  const handleGoBack = () => {
+      if (window.history.length > 1) {
+          navigate(-1);
+      } else {
+          navigate('/');
+      }
   };
 
   useEffect(() => {
@@ -82,12 +91,23 @@ const Dashboard: React.FC = () => {
     <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
       <Button 
         variant="outlined" 
-        component={Link} 
-        to="/" 
+        onClick={handleGoBack}
         startIcon={<ArrowBackIcon />}
-        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+        sx={{ 
+            mb: 4, 
+            borderRadius: 2, 
+            textTransform: 'none', 
+            fontWeight: 'bold',
+            color: 'text.secondary',
+            borderColor: 'divider',
+            '&:hover': {
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                bgcolor: 'transparent'
+            }
+        }}
       >
-        {t('common.backToHome')}
+        {t('common.backToHome').replace('Home', 'Back')}
       </Button>
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6, flexWrap: 'wrap', gap: 2 }}>
