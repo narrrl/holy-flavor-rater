@@ -8,11 +8,9 @@ import {
   Container, 
   CircularProgress, 
   Divider,
-  Rating as MuiRating,
   Button,
   Grid,
   List,
-  ListItem,
   ListItemAvatar,
   ListItemText,
   ListItemButton,
@@ -21,14 +19,12 @@ import {
   InputAdornment,
   alpha,
   IconButton,
-  Tooltip,
   Collapse
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CommentIcon from '@mui/icons-material/Comment';
 import SendIcon from '@mui/icons-material/Send';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import VerifiedIcon from '@mui/icons-material/Verified';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
