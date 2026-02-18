@@ -5,11 +5,15 @@ from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
-from django.views.generic.base import TemplateView
+from django.views.static import serve
+from django.conf import settings
 import os
 
 # Clean the admin path
 admin_url = os.environ.get('ADMIN_URL', 'admin').strip('/')
+
+def serve_index(request, resource=None):
+    return serve(request, 'index.html', document_root=settings.STATIC_ROOT)
 
 urlpatterns = [
     # Robots.txt
@@ -24,4 +28,8 @@ urlpatterns = [
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
+    
+    # Catch-all for React Frontend
+    path('', serve_index, name='index'),
+    path('<path:resource>', serve_index),
 ]
