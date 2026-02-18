@@ -90,7 +90,7 @@ const GlobalSearch = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const isMobile = useMediaQuery('(max-width:900px)');
+    const isMobile = useMediaQuery('(max-width:1150px)');
 
     // Debounced search
     useEffect(() => {
@@ -220,7 +220,7 @@ const App: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
   const [adminMode, setAdminMode] = useState(localStorage.getItem('admin-mode') === 'true');
-  const isMobile = useMediaQuery('(max-width:900px)');
+  const isMobile = useMediaQuery('(max-width:1150px)');
 
   const toggleAdminMode = () => {
       const newVal = !adminMode;

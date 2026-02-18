@@ -208,7 +208,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
 
       <Grid container spacing={4}>
           {/* Left Column: Visuals & Language */}
-          <Grid size={{ xs: 12, md: 5 }}>
+          <Grid size={{ xs: 12, lg: 5 }}>
               <Paper sx={{ p: 3, mb: 4, borderRadius: 3, '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 } }}>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>{t('settings.appearanceTitle')}</Typography>
                 <FormControl fullWidth margin="normal">
@@ -272,7 +272,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
           </Grid>
 
           {/* Right Column: Account Info & Security */}
-          <Grid size={{ xs: 12, md: 7 }}>
+          <Grid size={{ xs: 12, lg: 7 }}>
               <Paper sx={{ p: 3, mb: 4, borderRadius: 3, '& .MuiInputLabel-root': { bgcolor: 'background.paper', px: 0.5 } }}>
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>{t('settings.infoTitle')}</Typography>
                 <form onSubmit={handleUpdateProfile}>

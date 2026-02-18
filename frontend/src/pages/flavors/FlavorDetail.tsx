@@ -229,7 +229,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       {/* Main Content Grid */}
       <Grid container spacing={4}>
           {/* Left: Product Info Card */}
-          <Grid size={{ xs: 12, md: 5, lg: 4 }}>
+          <Grid size={{ xs: 12, lg: 4 }}>
               <Box sx={{ position: { md: 'sticky' }, top: 100 }}>
                   <Card elevation={0} sx={{ 
                       borderRadius: 4, 
@@ -324,7 +324,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
           </Grid>
 
           {/* Right: Ratings & Comments */}
-          <Grid size={{ xs: 12, md: 7, lg: 8 }}>
+          <Grid size={{ xs: 12, lg: 8 }}>
               <Box sx={{ mb: 4 }}>
                   <Typography variant="h4" sx={{ fontWeight: '800', mb: 1 }}>Ratings & Comments</Typography>
                   <Typography variant="subtitle1" color="text.secondary">

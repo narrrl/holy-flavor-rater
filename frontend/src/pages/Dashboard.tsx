@@ -47,7 +47,7 @@ const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   useTitle(t('nav.dashboard'));
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -216,7 +216,7 @@ const Dashboard: React.FC = () => {
           border: '1px solid',
           borderColor: 'divider'
       }}>
-          <CardContent sx={{ p: 4 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
               <Grid container spacing={3} alignItems="center">
                   <Grid size={{ xs: 12, sm: 'auto' }}>
                       <Avatar src={data.user.avatar || undefined} sx={{ width: 100, height: 100, border: '4px solid', borderColor: 'primary.main' }}>
@@ -257,55 +257,57 @@ const Dashboard: React.FC = () => {
       {activeTab === 0 && (
           <Box>
               {/* Filter Controls for Reviews */}
-              <Grid container spacing={2} sx={{ mb: 4, alignItems: 'center' }}>
-                  <Grid size={{ xs: 12, md: 4, lg: 5 }}>
-                      <TextField 
-                        fullWidth size="small" placeholder={t('dashboard.searchRated')} 
-                        value={ratedSearch} onChange={e => setRatedSearch(e.target.value)}
-                        slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
-                        sx={{ 
-                            bgcolor: 'background.paper', 
-                            borderRadius: 1, 
-                            '& .MuiOutlinedInput-root': { borderRadius: 1, height: 44 } 
-                        }}
-                      />
-                  </Grid>
-                  
-                  <Grid size={{ xs: 12, md: 'auto' }} sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                      <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5, px: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
-                          {ratedCategories.map(cat => (
-                              <Chip 
-                                key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.my_ratings.find(r => r.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
-                                onClick={() => setRatedCategory(cat)}
-                                color={ratedCategory === cat ? 'primary' : 'default'}
-                                variant={ratedCategory === cat ? 'filled' : 'outlined'}
-                                sx={{ fontWeight: 'bold', height: 36, px: 0.5, borderRadius: 1, fontSize: '0.85rem' }}
-                              />
-                          ))}
-                      </Stack>
-                  </Grid>
+              <Box sx={{ mb: 4 }}>
+                  <Grid container spacing={{ xs: 2, lg: 1.5 }} alignItems="center">
+                      <Grid size={{ xs: 12, lg: 4, xl: 5 }}>
+                          <TextField 
+                            fullWidth size="small" placeholder={t('dashboard.searchRated')} 
+                            value={ratedSearch} onChange={e => setRatedSearch(e.target.value)}
+                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
+                            sx={{ 
+                                bgcolor: 'background.paper', 
+                                borderRadius: 1, 
+                                '& .MuiOutlinedInput-root': { borderRadius: 1, height: { xs: 48, lg: 40 } } 
+                            }}
+                          />
+                      </Grid>
+                      
+                      <Grid size={{ xs: 12, lg: 'auto' }} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                          <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', py: 0.5, px: 0.2, '&::-webkit-scrollbar': { display: 'none' } }}>
+                              {ratedCategories.map(cat => (
+                                  <Chip 
+                                    key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.my_ratings.find(r => r.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
+                                    onClick={() => setRatedCategory(cat)}
+                                    color={ratedCategory === cat ? 'primary' : 'default'}
+                                    variant={ratedCategory === cat ? 'filled' : 'outlined'}
+                                    sx={{ fontWeight: 'bold', height: { xs: 36, lg: 32 }, borderRadius: 1, fontSize: '0.8rem', flexShrink: 0 }}
+                                  />
+                              ))}
+                          </Box>
+                      </Grid>
 
-                  <Grid size={{ xs: 12, md: 'auto' }}>
-                      <Stack direction="row" spacing={0.5} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: 44, width: { xs: '100%', md: 'auto' } }}>
-                          <Button 
-                            fullWidth={isMobile}
-                            size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
-                            onClick={() => setRatedSort('date')}
-                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, fontSize: '0.85rem' }}
-                          >
-                              {t('dashboard.date')}
-                          </Button>
-                          <Button 
-                            fullWidth={isMobile}
-                            size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
-                            onClick={() => setRatedSort('rating')}
-                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, fontSize: '0.85rem' }}
-                          >
-                              {t('dashboard.rating')}
-                          </Button>
-                      </Stack>
+                      <Grid size={{ xs: 12, lg: 'auto' }}>
+                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: { xs: 48, lg: 40 }, display: 'flex', gap: 0.5 }}>
+                              <Button 
+                                fullWidth
+                                size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
+                                onClick={() => setRatedSort('date')}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: { xs: 38, lg: 30 }, fontSize: '0.8rem' }}
+                              >
+                                  {t('dashboard.date')}
+                              </Button>
+                              <Button 
+                                fullWidth
+                                size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
+                                onClick={() => setRatedSort('rating')}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: { xs: 38, lg: 30 }, fontSize: '0.8rem' }}
+                              >
+                                  {t('dashboard.rating')}
+                              </Button>
+                          </Box>
+                      </Grid>
                   </Grid>
-              </Grid>
+              </Box>
 
               <Stack spacing={3}>
                   {filteredAndSortedRated.length === 0 ? (
@@ -323,7 +325,7 @@ const Dashboard: React.FC = () => {
                               transition: 'border-color 0.2s',
                               '&:hover': { borderColor: 'primary.main' }
                           }}>
-                              <CardContent sx={{ p: 3 }}>
+                              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                   {editingRatingId === rating.id ? (
                                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{t('dashboard.editingReview', { flavor: rating.flavor_name })}</Typography>
@@ -431,55 +433,57 @@ const Dashboard: React.FC = () => {
       {activeTab === 1 && (
           <Box>
               {/* Filter Controls for Explore */}
-              <Grid container spacing={2} sx={{ mb: 4, alignItems: 'center' }}>
-                  <Grid size={{ xs: 12, md: 4, lg: 5 }}>
-                      <TextField 
-                        fullWidth size="small" placeholder={t('dashboard.searchMissing')} 
-                        value={exploreSearch} onChange={e => setExploreSearch(e.target.value)}
-                        slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
-                        sx={{ 
-                            bgcolor: 'background.paper', 
-                            borderRadius: 1, 
-                            '& .MuiOutlinedInput-root': { borderRadius: 1, height: 44 } 
-                        }}
-                      />
-                  </Grid>
-                  
-                  <Grid size={{ xs: 12, md: 'auto' }} sx={{ flexGrow: 1, overflow: 'hidden' }}>
-                      <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5, px: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
-                          {exploreCategories.map(cat => (
-                              <Chip 
-                                key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.missing_flavors.find(f => f.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
-                                onClick={() => setExploreCategory(cat)}
-                                color={exploreCategory === cat ? 'primary' : 'default'}
-                                variant={exploreCategory === cat ? 'filled' : 'outlined'}
-                                sx={{ fontWeight: 'bold', height: 36, px: 0.5, borderRadius: 1, fontSize: '0.85rem' }}
-                              />
-                          ))}
-                      </Stack>
-                  </Grid>
+              <Box sx={{ mb: 4 }}>
+                  <Grid container spacing={{ xs: 2, lg: 1.5 }} alignItems="center">
+                      <Grid size={{ xs: 12, lg: 4, xl: 5 }}>
+                          <TextField 
+                            fullWidth size="small" placeholder={t('dashboard.searchMissing')} 
+                            value={exploreSearch} onChange={e => setExploreSearch(e.target.value)}
+                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
+                            sx={{ 
+                                bgcolor: 'background.paper', 
+                                borderRadius: 1, 
+                                '& .MuiOutlinedInput-root': { borderRadius: 1, height: { xs: 48, lg: 40 } } 
+                            }}
+                          />
+                      </Grid>
+                      
+                      <Grid size={{ xs: 12, lg: 'auto' }} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                          <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', py: 0.5, px: 0.2, '&::-webkit-scrollbar': { display: 'none' } }}>
+                              {exploreCategories.map(cat => (
+                                  <Chip 
+                                    key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.missing_flavors.find(f => f.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
+                                    onClick={() => setExploreCategory(cat)}
+                                    color={exploreCategory === cat ? 'primary' : 'default'}
+                                    variant={exploreCategory === cat ? 'filled' : 'outlined'}
+                                    sx={{ fontWeight: 'bold', height: { xs: 36, lg: 32 }, borderRadius: 1, fontSize: '0.8rem', flexShrink: 0 }}
+                                  />
+                              ))}
+                          </Box>
+                      </Grid>
 
-                  <Grid size={{ xs: 12, md: 'auto' }}>
-                      <Stack direction="row" spacing={0.5} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: 44, width: { xs: '100%', md: 'auto' } }}>
-                          <Button 
-                            fullWidth={isMobile}
-                            size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
-                            onClick={() => setExploreSort('community')}
-                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 2, fontSize: '0.85rem' }}
-                          >
-                              {t('dashboard.communityRating')}
-                          </Button>
-                          <Button 
-                            fullWidth={isMobile}
-                            size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
-                            onClick={() => setExploreSort('circle')}
-                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 2, fontSize: '0.85rem' }}
-                          >
-                              {t('dashboard.circleRating')}
-                          </Button>
-                      </Stack>
+                      <Grid size={{ xs: 12, lg: 'auto' }}>
+                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: { xs: 48, lg: 40 }, display: 'flex', gap: 0.5 }}>
+                              <Button 
+                                fullWidth
+                                size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
+                                onClick={() => setExploreSort('community')}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: { xs: 38, lg: 30 }, px: 2, fontSize: '0.8rem' }}
+                              >
+                                  {t('dashboard.communityRating')}
+                              </Button>
+                              <Button 
+                                fullWidth
+                                size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
+                                onClick={() => setExploreSort('circle')}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: { xs: 38, lg: 30 }, px: 2, fontSize: '0.8rem' }}
+                              >
+                                  {t('dashboard.circleRating')}
+                              </Button>
+                          </Box>
+                      </Grid>
                   </Grid>
-              </Grid>
+              </Box>
 
               {filteredMissing.length === 0 ? (
                   <Box sx={{ py: 10, textAlign: 'center' }}>
@@ -488,7 +492,7 @@ const Dashboard: React.FC = () => {
               ) : (
                   <Grid container spacing={2}>
                       {filteredMissing.map(flavor => (
-                          <Grid key={flavor.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                          <Grid key={flavor.id} size={{ xs: 12, sm: 6, lg: 3 }}>
                               <Card elevation={0} sx={{ 
                                   height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider',
                                   transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-4px)', borderColor: 'primary.main', boxShadow: 4 },
