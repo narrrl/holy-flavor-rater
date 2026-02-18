@@ -34,6 +34,7 @@ import { useTitle } from '../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
 import RatingBadge from '../components/RatingBadge';
 import RichText from '../components/RichText';
+import GenerativeBanner from '../components/GenerativeBanner';
 import { formatDate } from '../utils/date';
 
 interface Rating {
@@ -272,15 +273,15 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
               height: { xs: 120, sm: 180 }, 
               background: abstractBanner,
               position: 'relative',
-              '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)',
-                  backgroundSize: '32px 32px',
-                  opacity: 0.5
-              }
-          }} />
+              overflow: 'hidden'
+          }}>
+              <GenerativeBanner 
+                username={data.username} 
+                palette={palette} 
+                ratingsCount={data.ratings.length} 
+                followersCount={data.followers_count} 
+              />
+          </Box>
           
           <CardContent sx={{ pt: 0, px: { xs: 2, md: 5 }, pb: { xs: 2, md: 4 } }}>
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 } }}>
