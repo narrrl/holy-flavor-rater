@@ -288,6 +288,12 @@ const App: React.FC = () => {
 
   const theme = useMemo(() => getTheme(themeName), [themeName]);
 
+  useEffect(() => {
+    // Update body styles to match theme immediately (overriding index.html blocking script)
+    document.body.style.backgroundColor = theme.palette.background.default;
+    document.body.style.color = theme.palette.text.primary;
+  }, [theme]);
+
   const handleMarkAllRead = async () => {
     try {
         await api.post('notifications/mark_all_read/');
