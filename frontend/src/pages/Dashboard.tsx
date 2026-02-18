@@ -21,8 +21,11 @@ import {
   TextField,
     InputAdornment, 
     Tooltip,
-    useMediaQuery
+    useMediaQuery,
+    Select,
+    MenuItem
   } from '@mui/material';import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SortIcon from '@mui/icons-material/Sort';
 import ShareIcon from '@mui/icons-material/Share';
 import CommentIcon from '@mui/icons-material/Comment';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -262,10 +265,10 @@ const Dashboard: React.FC = () => {
           <Box sx={{ 
               height: { xs: 100, sm: 140 }, 
               background: `
-                radial-gradient(at 0% 0%, ${alpha(palette[0] || theme.palette.primary.main, 0.8)} 0px, transparent 55%),
-                radial-gradient(at 100% 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.7)} 0px, transparent 55%),
-                radial-gradient(at 50% 100%, ${alpha(theme.palette.primary.main, 0.4)} 0px, transparent 55%),
-                linear-gradient(135deg, ${alpha(palette[0] || theme.palette.primary.main, 0.2)} 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.2)} 100%)
+                radial-gradient(at 0% 0%, ${alpha(palette[0] || theme.palette.primary.main, 0.6)} 0px, transparent 55%),
+                radial-gradient(at 100% 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.5)} 0px, transparent 55%),
+                radial-gradient(at 50% 100%, ${alpha(theme.palette.primary.main, 0.3)} 0px, transparent 55%),
+                linear-gradient(135deg, ${alpha(palette[0] || theme.palette.primary.main, 0.1)} 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.1)} 100%)
               `,
               position: 'relative',
               overflow: 'hidden'
@@ -385,24 +388,24 @@ const Dashboard: React.FC = () => {
                       </Grid>
 
                       <Grid size={{ xs: 12, lg: 'auto' }}>
-                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', minHeight: 44, display: 'flex', gap: 0.5, flexWrap: { xs: 'wrap', sm: 'nowrap' }, alignItems: 'center' }}>
-                              <Button 
-                                fullWidth
-                                size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
-                                onClick={() => setRatedSort('date')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
-                              >
-                                  {t('dashboard.date')}
-                              </Button>
-                              <Button 
-                                fullWidth
-                                size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
-                                onClick={() => setRatedSort('rating')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
-                              >
-                                  {t('dashboard.rating')}
-                              </Button>
-                          </Box>
+                          <Select
+                            size="small"
+                            value={ratedSort}
+                            onChange={(e) => setRatedSort(e.target.value as any)}
+                            startAdornment={<InputAdornment position="start"><SortIcon fontSize="small" /></InputAdornment>}
+                            sx={{ 
+                                bgcolor: 'background.paper', 
+                                borderRadius: 1, 
+                                height: { xs: 48, lg: 40 },
+                                minWidth: { xs: '100%', lg: 140 },
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' }
+                            }}
+                          >
+                              <MenuItem value="date">{t('dashboard.date')}</MenuItem>
+                              <MenuItem value="rating">{t('dashboard.rating')}</MenuItem>
+                          </Select>
                       </Grid>
                   </Grid>
               </Box>
@@ -561,24 +564,24 @@ const Dashboard: React.FC = () => {
                       </Grid>
 
                       <Grid size={{ xs: 12, lg: 'auto' }}>
-                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', minHeight: 44, display: 'flex', gap: 0.5, flexWrap: { xs: 'wrap', sm: 'nowrap' }, alignItems: 'center' }}>
-                              <Button 
-                                fullWidth
-                                size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
-                                onClick={() => setExploreSort('community')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
-                              >
-                                  {t('dashboard.communityRating')}
-                              </Button>
-                              <Button 
-                                fullWidth
-                                size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
-                                onClick={() => setExploreSort('circle')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
-                              >
-                                  {t('dashboard.circleRating')}
-                              </Button>
-                          </Box>
+                          <Select
+                            size="small"
+                            value={exploreSort}
+                            onChange={(e) => setExploreSort(e.target.value as any)}
+                            startAdornment={<InputAdornment position="start"><SortIcon fontSize="small" /></InputAdornment>}
+                            sx={{ 
+                                bgcolor: 'background.paper', 
+                                borderRadius: 1, 
+                                height: { xs: 48, lg: 40 },
+                                minWidth: { xs: '100%', lg: 180 },
+                                fontWeight: 'bold',
+                                fontSize: '0.85rem',
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' }
+                            }}
+                          >
+                              <MenuItem value="community">{t('dashboard.communityRating')}</MenuItem>
+                              <MenuItem value="circle">{t('dashboard.circleRating')}</MenuItem>
+                          </Select>
                       </Grid>
                   </Grid>
               </Box>
@@ -620,14 +623,24 @@ const Dashboard: React.FC = () => {
                                             }} 
                                           />
                                           <Box sx={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
-                                              <RatingBadge score={flavor.average_rating || 0} size="small" />
+                                              <RatingBadge score={flavor.average_rating || 0} size="small" sx={{ height: 24 }} />
                                           </Box>
                                           {flavor.followed_average_rating && (
                                               <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}>
                                                   <Tooltip title={t('dashboard.circleAvg')}>
-                                                      <Box sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.9), color: 'white', px: 1, py: 0.2, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 0.5, boxShadow: 2 }}>
+                                                      <Box sx={{ 
+                                                          bgcolor: alpha(theme.palette.secondary.main, 0.9), 
+                                                          color: 'white', 
+                                                          px: 1, 
+                                                          borderRadius: 2, 
+                                                          display: 'flex', 
+                                                          alignItems: 'center', 
+                                                          gap: 0.5, 
+                                                          boxShadow: 2,
+                                                          height: 24
+                                                      }}>
                                                           <VerifiedIcon sx={{ fontSize: '0.8rem' }} />
-                                                          <Typography variant="caption" sx={{ fontWeight: '900' }}>{flavor.followed_average_rating.toFixed(1)}</Typography>
+                                                          <Typography variant="caption" sx={{ fontWeight: '900', lineHeight: 1 }}>{flavor.followed_average_rating.toFixed(1)}</Typography>
                                                       </Box>
                                                   </Tooltip>
                                               </Box>

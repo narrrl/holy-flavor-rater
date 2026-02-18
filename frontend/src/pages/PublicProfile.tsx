@@ -234,12 +234,12 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   ];
 
   const abstractBanner = `
-    radial-gradient(at 0% 0%, ${alpha(bannerColors[0], 0.8)} 0px, transparent 55%),
-    radial-gradient(at 100% 0%, ${alpha(bannerColors[1], 0.7)} 0px, transparent 55%),
-    radial-gradient(at 100% 100%, ${alpha(bannerColors[2], 0.6)} 0px, transparent 55%),
-    radial-gradient(at 0% 100%, ${alpha(bannerColors[3], 0.5)} 0px, transparent 55%),
-    radial-gradient(at 50% 50%, ${alpha(bannerColors[0], 0.4)} 0px, transparent 60%),
-    linear-gradient(135deg, ${alpha(bannerColors[0], 0.2)} 0%, ${alpha(bannerColors[1], 0.2)} 100%)
+    radial-gradient(at 0% 0%, ${alpha(bannerColors[0], 0.6)} 0px, transparent 55%),
+    radial-gradient(at 100% 0%, ${alpha(bannerColors[1], 0.5)} 0px, transparent 55%),
+    radial-gradient(at 100% 100%, ${alpha(bannerColors[2], 0.4)} 0px, transparent 55%),
+    radial-gradient(at 0% 100%, ${alpha(bannerColors[3], 0.3)} 0px, transparent 55%),
+    radial-gradient(at 50% 50%, ${alpha(bannerColors[0], 0.3)} 0px, transparent 60%),
+    linear-gradient(135deg, ${alpha(bannerColors[0], 0.1)} 0%, ${alpha(bannerColors[1], 0.1)} 100%)
   `;
 
   const handleGoBack = () => {
