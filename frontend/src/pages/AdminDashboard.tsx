@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -86,6 +87,14 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
+            <Button 
+                variant="outlined" 
+                startIcon={<ArrowBackIcon />} 
+                onClick={() => navigate(-1)}
+                sx={{ mb: 4, borderRadius: 2 }}
+            >
+                {t('common.back')}
+            </Button>
             <Typography variant={isMobile ? "h4" : "h3"} sx={{ fontWeight: 'bold', mb: 4 }}>{t('admin.title')}</Typography>
 
             <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 6 }}>

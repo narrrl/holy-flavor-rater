@@ -576,7 +576,16 @@ class TicketViewSet(viewsets.ModelViewSet):
         return Ticket.objects.filter(user=self.request.user).prefetch_related('messages', 'messages__user').order_by('-updated_at')
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        ticket = serializer.save(user=self.request.user)
+        # Notify all superusers about new ticket
+        admins = User.objects.filter(is_superuser=True).exclude(pk=self.request.user.pk)
+        for admin in admins:
+            Notification.objects.create(
+                recipient=admin,
+                actor=self.request.user,
+                notification_type='ticket',
+                ticket=ticket
+            )
 
     @action(detail=True, methods=['post'])
     def add_message(self, request, pk=None):
@@ -586,6 +595,28 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         msg = TicketMessage.objects.create(ticket=ticket, user=request.user, text=text)
+        
+        # Notification logic
+        if request.user.is_superuser:
+            # Notify the user who opened the ticket
+            if ticket.user != request.user:
+                Notification.objects.create(
+                    recipient=ticket.user,
+                    actor=request.user,
+                    notification_type='ticket',
+                    ticket=ticket
+                )
+        else:
+            # Notify all superusers
+            admins = User.objects.filter(is_superuser=True).exclude(pk=request.user.pk)
+            for admin in admins:
+                Notification.objects.create(
+                    recipient=admin,
+                    actor=request.user,
+                    notification_type='ticket',
+                    ticket=ticket
+                )
+
         return Response(TicketMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])

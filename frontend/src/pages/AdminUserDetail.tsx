@@ -121,7 +121,7 @@ const AdminUserDetail: React.FC = () => {
             <Button 
                 variant="outlined" 
                 startIcon={<ArrowBackIcon />} 
-                onClick={() => navigate('/admin-panel')}
+                onClick={() => navigate(-1)}
                 sx={{ mb: 4, borderRadius: 2 }}
             >
                 {t('common.back')}
