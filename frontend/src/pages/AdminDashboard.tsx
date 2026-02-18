@@ -11,7 +11,6 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
 import WallpaperIcon from '@mui/icons-material/Wallpaper';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -273,7 +272,7 @@ const AdminDashboard: React.FC = () => {
 
             {currentTab === 2 && (
                 <Box>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>{t('admin.banners')}</Typography>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>{t('admin.banners')} ({banners.length})</Typography>
                     
                     {banners.length === 0 ? (
                         <Card variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
@@ -287,57 +286,44 @@ const AdminDashboard: React.FC = () => {
                             </Button>
                         </Card>
                     ) : (
-                        <Grid container spacing={3}>
+                        <Stack spacing={3}>
                             {banners.map((banner) => (
-                                <Grid size={{ xs: 12, md: 4 }} key={banner.id}>
-                                    <Card sx={{ borderRadius: 3, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                        {banner.is_active && (
-                                            <Chip 
-                                                icon={<CheckCircleIcon />} 
-                                                label="Active" 
-                                                color="success" 
-                                                size="small"
-                                                sx={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}
-                                            />
-                                        )}
-                                        <CardContent sx={{ flexGrow: 1 }}>
-                                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{banner.name}</Typography>
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{banner.description}</Typography>
-                                            
-                                            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                                                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>Settings:</Typography>
-                                                <pre style={{ margin: 0, fontSize: '0.7rem', overflow: 'auto' }}>
-                                                    {JSON.stringify(banner.settings, null, 2)}
-                                                </pre>
-                                            </Box>
-                                        </CardContent>
-                                        <Box sx={{ p: 2, pt: 0 }}>
-                                            <Stack direction="row" spacing={1}>
+                                <Card key={banner.id} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{banner.name} (Slug: {banner.slug})</Typography>
+                                            {banner.is_active && <Chip label="Active" color="success" size="small" />}
+                                        </Box>
+                                        
+                                        <Typography variant="body2" sx={{ mb: 2 }}>{banner.description}</Typography>
+                                        
+                                        <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 2, mb: 2 }}>
+                                            <pre style={{ margin: 0, fontSize: '0.8rem' }}>{JSON.stringify(banner.settings, null, 2)}</pre>
+                                        </Box>
+
+                                        <Stack direction="row" spacing={2}>
+                                            <Button 
+                                                variant="outlined" size="small"
+                                                onClick={() => {
+                                                    setSelectedBanner(banner);
+                                                    setIsSettingsDialogOpen(true);
+                                                }}
+                                            >
+                                                Edit Settings
+                                            </Button>
+                                            {!banner.is_active && (
                                                 <Button 
-                                                    fullWidth 
-                                                    variant="outlined" 
-                                                    startIcon={<EditIcon />}
-                                                    onClick={() => {
-                                                        setSelectedBanner(banner);
-                                                        setIsSettingsDialogOpen(true);
-                                                    }}
-                                                >
-                                                    Edit Settings
-                                                </Button>
-                                                <Button 
-                                                    fullWidth 
-                                                    variant={banner.is_active ? "outlined" : "contained"} 
-                                                    disabled={banner.is_active}
+                                                    variant="contained" size="small"
                                                     onClick={() => handleActivateBanner(banner.id)}
                                                 >
-                                                    {banner.is_active ? "Currently Active" : "Set as Active"}
+                                                    Set as Active
                                                 </Button>
-                                            </Stack>
-                                        </Box>
-                                    </Card>
-                                </Grid>
+                                            )}
+                                        </Stack>
+                                    </CardContent>
+                                </Card>
                             ))}
-                        </Grid>
+                        </Stack>
                     )}
                 </Box>
             )}
