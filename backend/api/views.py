@@ -598,6 +598,11 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Response({'status': 'updated'})
         return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
 
+    def destroy(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise permissions.PermissionDenied("Only admins can delete tickets.")
+        return super().destroy(request, *args, **kwargs)
+
 class AdminViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAdminUser]
 

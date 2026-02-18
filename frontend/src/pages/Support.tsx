@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
@@ -98,6 +99,16 @@ const Support: React.FC = () => {
         }
     };
 
+    const handleDeleteTicket = async (ticketId: number) => {
+        if (!confirm('Delete this ticket?')) return;
+        try {
+            await api.delete(`tickets/${ticketId}/`);
+            fetchTickets();
+        } catch (err) {
+            alert('Failed to delete ticket');
+        }
+    };
+
     const getStatusColor = (status: string) => {
         switch (status) {
             case 'open': return 'error';
@@ -169,7 +180,14 @@ const Support: React.FC = () => {
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">{formatDate(ticket.created_at)}</Typography>
                                     </Box>
-                                    <Chip label={t(`support.${ticket.status}`)} color={getStatusColor(ticket.status) as any} size="small" sx={{ fontWeight: 'bold' }} />
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <Chip label={t(`support.${ticket.status}`)} color={getStatusColor(ticket.status) as any} size="small" sx={{ fontWeight: 'bold' }} />
+                                        {currentUser?.is_superuser && (
+                                            <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteTicket(ticket.id); }}>
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
+                                        )}
+                                    </Stack>
                                 </Box>
                                 
                                 <Collapse in={expandedId === ticket.id}>
