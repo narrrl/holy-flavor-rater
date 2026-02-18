@@ -34,7 +34,7 @@ import { useTitle } from '../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
 import RatingBadge from '../components/RatingBadge';
 import RichText from '../components/RichText';
-import GenerativeBanner from '../components/GenerativeBanner';
+import DynamicBanner from '../components/DynamicBanner';
 import { formatDate } from '../utils/date';
 
 interface Rating {
@@ -283,7 +283,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
               }} />
               
               {/* Layer 2: Interactive Generative Art */}
-              <GenerativeBanner 
+              <DynamicBanner 
                 username={data.username} 
                 palette={palette} 
                 ratingsCount={data.ratings.length} 

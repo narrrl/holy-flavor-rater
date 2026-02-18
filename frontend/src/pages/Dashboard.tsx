@@ -38,7 +38,7 @@ import { useTitle } from '../hooks/useTitle';
 import RatingBadge from '../components/RatingBadge';
 import MentionTextField from '../components/MentionTextField';
 import RichText from '../components/RichText';
-import GenerativeBanner from '../components/GenerativeBanner';
+import DynamicBanner from '../components/DynamicBanner';
 import { formatDate } from '../utils/date';
 
 interface DashboardData {
@@ -281,7 +281,7 @@ const Dashboard: React.FC = () => {
               }} />
               
               {/* Layer 2: Interactive Generative Art */}
-              <GenerativeBanner 
+              <DynamicBanner 
                 username={data.user.username} 
                 palette={palette} 
                 ratingsCount={data.rated_count} 
