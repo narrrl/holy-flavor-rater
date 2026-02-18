@@ -5,15 +5,14 @@ from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
-from django.views.static import serve
-from django.conf import settings
+from django.views.generic.base import TemplateView
 import os
 
 # Clean the admin path
 admin_url = os.environ.get('ADMIN_URL', 'admin').strip('/')
 
-def serve_index(request, resource=None):
-    return serve(request, 'index.html', document_root=settings.STATIC_ROOT)
+# Catch-all view for React
+index_view = TemplateView.as_view(template_name="index.html")
 
 urlpatterns = [
     # Robots.txt
@@ -30,6 +29,6 @@ urlpatterns = [
     path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
     
     # Catch-all for React Frontend
-    path('', serve_index, name='index'),
-    path('<path:resource>', serve_index),
+    path('', index_view, name='index'),
+    path('<path:resource>', index_view),
 ]
