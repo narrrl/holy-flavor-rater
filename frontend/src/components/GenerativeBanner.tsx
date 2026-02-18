@@ -6,12 +6,23 @@ interface GenerativeBannerProps {
     palette: string[];
     ratingsCount: number;
     followersCount: number;
+    settings?: {
+        nodeCountBase?: number;
+        connectionDist?: number;
+        speed?: number;
+        opacity?: number;
+    };
 }
 
-const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, ratingsCount, followersCount }) => {
+const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, ratingsCount, followersCount, settings }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const theme = useTheme();
     
+    const nodeCountBase = settings?.nodeCountBase ?? 60;
+    const connectionDist = settings?.connectionDist ?? 140;
+    const speed = settings?.speed ?? 0.005;
+    const globalOpacity = settings?.opacity ?? 0.35;
+
     const getSeed = (str: string) => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -31,7 +42,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
         const seed = getSeed(username);
         
         // Configuration - High density for "complex web" feel
-        const nodeCount = Math.min(60 + Math.floor(ratingsCount * 1.5), 120);
+        const nodeCount = Math.min(nodeCountBase + Math.floor(ratingsCount * 1.5), 120);
         const colors = palette.length >= 2 ? palette : [theme.palette.primary.main, theme.palette.secondary.main, theme.palette.info.main];
 
         interface Node {
@@ -132,8 +143,8 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 // Return force (Elasticity) - slightly slower return
                 const dxBase = node.baseX - node.x;
                 const dyBase = node.baseY - node.y;
-                node.vx += dxBase * 0.005;
-                node.vy += dyBase * 0.005;
+                node.vx += dxBase * speed;
+                node.vy += dyBase * speed;
 
                 // Mouse interaction
                 const dxMouse = mouse.x - node.x;
@@ -168,7 +179,6 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
             });
 
             // Draw Mesh (Connections)
-            const connectionDist = 140;
             ctx.lineWidth = 1;
             
             for (let i = 0; i < nodes.length; i++) {
@@ -181,7 +191,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
 
                     if (dist < connectionDist) {
                         currentConnections++;
-                        const opacity = (1 - dist / connectionDist) * 0.35;
+                        const opacity = (1 - dist / connectionDist) * globalOpacity;
                         ctx.beginPath();
                         ctx.moveTo(nodes[i].x, nodes[i].y);
                         ctx.lineTo(nodes[j].x, nodes[j].y);
@@ -246,7 +256,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
             }
             cancelAnimationFrame(animationFrameId);
         };
-    }, [username, palette, ratingsCount, followersCount, theme]);
+    }, [username, palette, ratingsCount, followersCount, theme, nodeCountBase, connectionDist, speed, globalOpacity]);
 
     return (
         <canvas 
