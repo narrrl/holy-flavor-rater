@@ -11,8 +11,7 @@ class InsecureEmailBackend(EmailBackend):
     @property
     def ssl_context(self):
         if getattr(settings, 'EMAIL_SKIP_CERT_VERIFICATION', False):
-            context = ssl.create_default_context()
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
+            # The most robust way to bypass verification for self-signed certs
+            context = ssl._create_unverified_context()
             return context
         return super().ssl_context
