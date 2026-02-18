@@ -11,9 +11,6 @@ import os
 # Clean the admin path
 admin_url = os.environ.get('ADMIN_URL', 'admin').strip('/')
 
-# Catch-all view for React
-index_view = TemplateView.as_view(template_name="index.html")
-
 urlpatterns = [
     # Robots.txt
     path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
@@ -27,8 +24,4 @@ urlpatterns = [
     path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('media/<path:path>', serve, {'document_root': settings.MEDIA_ROOT}),
-    
-    # Catch-all for React Frontend
-    path('', index_view, name='index'),
-    path('<path:resource>', index_view),
 ]
