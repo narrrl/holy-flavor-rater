@@ -4,10 +4,11 @@ import { flavors } from '@catppuccin/palette';
 export type CatppuccinTheme = 
     | 'holy_light' | 'holy_dark'
     | 'latte' | 'frappe' | 'macchiato' | 'mocha'
-    | 'pink_pastel' | 'dracula' | 'nord' | 'gruvbox' | 'oceanic';
+    | 'pink_pastel' | 'mint_pastel' | 'lavender_pastel' | 'dracula' | 'nord' | 'gruvbox' | 'oceanic'
+    | 't0p_sai' | 't0p_trench' | 't0p_blurryface' | 't0p_clancy';
 
 export const isLightTheme = (mode: CatppuccinTheme): boolean => {
-    return ['holy_light', 'latte', 'pink_pastel'].includes(mode);
+    return ['holy_light', 'latte', 'pink_pastel', 'mint_pastel', 'lavender_pastel', 't0p_sai'].includes(mode);
 };
 
 export const getTheme = (mode: CatppuccinTheme) => {
@@ -46,6 +47,66 @@ export const getTheme = (mode: CatppuccinTheme) => {
           subtext0: { hex: '#be123c' },
           primary: { hex: '#fb7185' },
           secondary: { hex: '#2dd4bf' },
+      };
+  } else if (mode === 'mint_pastel') {
+      palette = {
+          base: { hex: '#f0fdf4' }, 
+          surface0: { hex: '#ffffff' }, 
+          crust: { hex: '#dcfce7' }, 
+          text: { hex: '#14532d' }, 
+          subtext0: { hex: '#16a34a' },
+          primary: { hex: '#4ade80' },
+          secondary: { hex: '#fb7185' },
+      };
+  } else if (mode === 'lavender_pastel') {
+      palette = {
+          base: { hex: '#f5f3ff' }, 
+          surface0: { hex: '#ffffff' }, 
+          crust: { hex: '#ede9fe' }, 
+          text: { hex: '#4c1d95' }, 
+          subtext0: { hex: '#7c3aed' },
+          primary: { hex: '#8b5cf6' },
+          secondary: { hex: '#facc15' },
+      };
+  } else if (mode === 't0p_sai') {
+      palette = {
+          base: { hex: '#ffffff' }, 
+          surface0: { hex: '#f8f8f8' }, 
+          crust: { hex: '#e8e8e8' }, 
+          text: { hex: '#231f20' }, 
+          subtext0: { hex: '#666666' },
+          primary: { hex: '#00d7ff' }, // Sai Cyan
+          secondary: { hex: '#ff8ad8' }, // Sai Pink
+      };
+  } else if (mode === 't0p_trench') {
+      palette = {
+          base: { hex: '#1a1a1a' }, 
+          surface0: { hex: '#242424' }, 
+          crust: { hex: '#000000' }, 
+          text: { hex: '#fce300' }, // Trench Yellow
+          subtext0: { hex: '#a0a0a0' },
+          primary: { hex: '#fce300' },
+          secondary: { hex: '#4b5320' }, // Olive
+      };
+  } else if (mode === 't0p_blurryface') {
+      palette = {
+          base: { hex: '#000000' }, 
+          surface0: { hex: '#1a1a1a' }, 
+          crust: { hex: '#000000' }, 
+          text: { hex: '#ffffff' }, 
+          subtext0: { hex: '#e31e24' },
+          primary: { hex: '#e31e24' }, // BF Red
+          secondary: { hex: '#ffffff' },
+      };
+  } else if (mode === 't0p_clancy') {
+      palette = {
+          base: { hex: '#000000' }, 
+          surface0: { hex: '#121212' }, 
+          crust: { hex: '#000000' }, 
+          text: { hex: '#ffffff' }, 
+          subtext0: { hex: '#fce300' },
+          primary: { hex: '#e31e24' }, // Clancy Red
+          secondary: { hex: '#fce300' }, // Clancy Yellow
       };
   } else if (mode === 'dracula') {
       palette = {

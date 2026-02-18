@@ -225,6 +225,9 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                         <ListSubheader>Light Themes</ListSubheader>
                         <MenuItem value="latte">Catppuccin Latte</MenuItem>
                         <MenuItem value="pink_pastel">Pink Pastel</MenuItem>
+                        <MenuItem value="mint_pastel">Mint Pastel</MenuItem>
+                        <MenuItem value="lavender_pastel">Lavender Pastel</MenuItem>
+                        <MenuItem value="t0p_sai">Scaled and Icy (T0P)</MenuItem>
                         
                         <Divider />
                         
@@ -236,6 +239,9 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                         <MenuItem value="nord">Nordic Frost</MenuItem>
                         <MenuItem value="gruvbox">Gruvbox Retro</MenuItem>
                         <MenuItem value="oceanic">Oceanic Deep</MenuItem>
+                        <MenuItem value="t0p_trench">Trench (T0P)</MenuItem>
+                        <MenuItem value="t0p_blurryface">Blurryface (T0P)</MenuItem>
+                        <MenuItem value="t0p_clancy">Clancy (T0P)</MenuItem>
                     </Select>
                 </FormControl>
 

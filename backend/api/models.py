@@ -11,10 +11,16 @@ class User(AbstractUser):
         ('macchiato', 'Catppuccin Macchiato'),
         ('mocha', 'Catppuccin Mocha'),
         ('pink_pastel', 'Pink Pastel'),
+        ('mint_pastel', 'Mint Pastel'),
+        ('lavender_pastel', 'Lavender Pastel'),
         ('dracula', 'Dracula'),
         ('nord', 'Nordic Frost'),
         ('gruvbox', 'Gruvbox Retro'),
         ('oceanic', 'Oceanic Deep'),
+        ('t0p_sai', 'SAI (T0P)'),
+        ('t0p_trench', 'Trench (T0P)'),
+        ('t0p_blurryface', 'Blurryface (T0P)'),
+        ('t0p_clancy', 'Clancy (T0P)'),
     ]
     LANGUAGE_CHOICES = [
         ('en', 'English'),
