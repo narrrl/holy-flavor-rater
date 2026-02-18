@@ -257,7 +257,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             width: { xs: 140, sm: 180 }, 
                             height: { xs: 140, sm: 180 }, 
                             border: '6px solid', 
-                            borderColor: (theme) => theme.palette.background.paper,
+                            borderColor: palette[0] || 'primary.main',
                             boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
                             fontSize: '4.5rem',
                             bgcolor: palette[0] || 'primary.main',
@@ -267,7 +267,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                       </Avatar>
                       {data.ratings.length > 50 && (
                           <Tooltip title="Master Collector">
-                              <VerifiedIcon color="primary" sx={{ position: 'absolute', bottom: 12, right: 12, bgcolor: 'background.paper', borderRadius: '50%', fontSize: '2.2rem', p: 0.2 }} />
+                              <VerifiedIcon color="primary" sx={{ position: 'absolute', bottom: 12, right: 12, bgcolor: 'background.paper', borderRadius: '50%', fontSize: '2.2rem', p: 0.2, border: '2px solid', borderColor: palette[0] || 'primary.main' }} />
                           </Tooltip>
                       )}
                   </Box>
@@ -283,7 +283,18 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             color: 'text.primary',
                             position: 'relative',
                             display: 'inline-block',
-                            mb: 2.5
+                            mb: 3,
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: -12,
+                                left: { xs: '50%', sm: 0 },
+                                transform: { xs: 'translateX(-50%)', sm: 'none' },
+                                width: '80px',
+                                height: '8px',
+                                bgcolor: palette[0] || 'primary.main',
+                                borderRadius: 1
+                            }
                         }}
                       >
                           {data.username}
@@ -325,7 +336,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             variant={data.is_following ? "outlined" : "contained"} 
                             onClick={handleFollowToggle}
                             startIcon={data.is_following ? <PersonRemoveIcon /> : <PersonAddIcon />}
-                            sx={{ borderRadius: 3, px: 4, fontWeight: '900', py: 1.2, textTransform: 'none', fontSize: '1rem' }}
+                            sx={{ borderRadius: 1, px: 4, fontWeight: '900', py: 1.2, textTransform: 'none', fontSize: '1rem' }}
                           >
                               {data.is_following ? "Unfollow" : "Follow"}
                           </Button>
@@ -335,7 +346,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             variant="outlined" 
                             color="secondary"
                             onClick={() => navigate(`/admin-panel/user/${data.id}`)}
-                            sx={{ borderRadius: 3, px: 2.5, fontWeight: 'bold', textTransform: 'none' }}
+                            sx={{ borderRadius: 1, px: 2.5, fontWeight: 'bold', textTransform: 'none' }}
                           >
                               {t('admin.manageUser')}
                           </Button>
@@ -372,7 +383,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             onClick={() => setCategoryTab(idx)}
                             color={categoryTab === idx ? 'primary' : 'default'}
                             variant={categoryTab === idx ? 'filled' : 'outlined'}
-                            sx={{ fontWeight: '900', px: 1.5, borderRadius: 2 }}
+                            sx={{ fontWeight: '900', px: 1.5, borderRadius: 1 }}
                           />
                       ))}
                   </Box>
