@@ -12,6 +12,7 @@ interface NebulaBannerProps {
         opacity?: number;
         attractionForce?: number;
         cloudSize?: number;
+        returnSpeed?: number;
     };
 }
 
@@ -24,7 +25,8 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
     const speed = settings?.speed ?? 0.003;
     const globalOpacity = settings?.opacity ?? 0.85;
     const attractionForce = settings?.attractionForce ?? 0.25;
-    const cloudSizeMultiplier = settings?.cloudSize ?? 12; // Much larger for cloud feel
+    const cloudSizeMultiplier = settings?.cloudSize ?? 12;
+    const returnSpeed = settings?.returnSpeed ?? 0.015; // Snappier return
 
     const getSeed = (str: string) => {
         let hash = 0;
@@ -48,6 +50,8 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
         interface Particle {
             x: number;
             y: number;
+            baseX: number;
+            baseY: number;
             vx: number;
             vy: number;
             size: number;
@@ -73,9 +77,11 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
             
             // Foreground Active Gas
             for (let i = 0; i < particleCount; i++) {
+                const bx = pseudoRandom(i) * width;
+                const by = pseudoRandom(i + 500) * height;
                 p.push({
-                    x: pseudoRandom(i) * width,
-                    y: pseudoRandom(i + 500) * height,
+                    x: bx, y: by,
+                    baseX: bx, baseY: by,
                     vx: 0, vy: 0,
                     size: (5 + pseudoRandom(i + 1000) * 15) * cloudSizeMultiplier,
                     color: colors[i % colors.length],
@@ -89,9 +95,11 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
 
             // Static background cloud layers for density
             for (let i = 0; i < 15; i++) {
+                const bx = pseudoRandom(i + 4000) * width;
+                const by = pseudoRandom(i + 4500) * height;
                 bg.push({
-                    x: pseudoRandom(i + 4000) * width,
-                    y: pseudoRandom(i + 4500) * height,
+                    x: bx, y: by,
+                    baseX: bx, baseY: by,
                     vx: 0, vy: 0,
                     size: (40 + pseudoRandom(i + 5000) * 60) * (cloudSizeMultiplier / 4),
                     color: colors[i % colors.length],
@@ -167,6 +175,12 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
 
             // Process and Draw Active Gas Particles
             particles.forEach((p) => {
+                // Restoration Force (Elasticity)
+                const dxBase = p.baseX - p.x;
+                const dyBase = p.baseY - p.y;
+                p.vx += dxBase * returnSpeed;
+                p.vy += dyBase * returnSpeed;
+
                 // Organic Drift
                 const driftX = Math.sin(time + p.phase) * 0.2;
                 const driftY = Math.cos(time * 0.7 + p.phase) * 0.2;
@@ -238,7 +252,7 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
             }
             cancelAnimationFrame(animationFrameId);
         };
-    }, [username, palette, ratingsCount, followersCount, theme, particleCount, speed, globalOpacity, attractionForce, cloudSizeMultiplier]);
+    }, [username, palette, ratingsCount, followersCount, theme, particleCount, speed, globalOpacity, attractionForce, cloudSizeMultiplier, returnSpeed]);
 
     return (
         <canvas 
