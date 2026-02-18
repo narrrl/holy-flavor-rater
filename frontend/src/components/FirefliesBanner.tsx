@@ -139,8 +139,20 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
 
             ctx.clearRect(0, 0, width, height);
             
-            // Subtle forest night background
-            ctx.fillStyle = '#020408';
+            // Subtle theme-aware night sky background
+            const isLight = theme.palette.mode === 'light';
+            const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
+            
+            if (isLight) {
+                // Use a darker shade of the primary color but not pitch black
+                bgGrad.addColorStop(0, alpha(brightColors[0], 0.3));
+                bgGrad.addColorStop(1, alpha(brightColors[0], 0.8));
+            } else {
+                bgGrad.addColorStop(0, '#0a0e14');
+                bgGrad.addColorStop(1, '#020408');
+            }
+            
+            ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, width, height);
 
             time += flickerSpeed;
