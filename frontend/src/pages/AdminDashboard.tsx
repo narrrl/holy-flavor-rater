@@ -49,6 +49,7 @@ interface Banner {
     slug: string;
     description: string;
     is_active: boolean;
+    is_enabled: boolean;
     settings: any;
     schema: any[];
 }
@@ -100,6 +101,15 @@ const AdminDashboard: React.FC = () => {
             fetchData();
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handleToggleEnabled = async (id: number) => {
+        try {
+            await api.post(`banners/${id}/toggle_enabled/`);
+            fetchData();
+        } catch (err: any) {
+            alert(err.response?.data?.error || 'Failed to toggle visibility');
         }
     };
 
@@ -293,7 +303,10 @@ const AdminDashboard: React.FC = () => {
                                     <CardContent>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{banner.name} (Slug: {banner.slug})</Typography>
-                                            {banner.is_active && <Chip label="Active" color="success" size="small" />}
+                                            <Stack direction="row" spacing={1}>
+                                                {!banner.is_enabled && <Chip label="Hidden from Users" color="warning" size="small" variant="outlined" />}
+                                                {banner.is_active && <Chip label="Global Default" color="success" size="small" />}
+                                            </Stack>
                                         </Box>
                                         
                                         <Typography variant="body2" sx={{ mb: 2 }}>{banner.description}</Typography>
@@ -302,7 +315,7 @@ const AdminDashboard: React.FC = () => {
                                             <pre style={{ margin: 0, fontSize: '0.8rem' }}>{JSON.stringify(banner.settings, null, 2)}</pre>
                                         </Box>
 
-                                        <Stack direction="row" spacing={2}>
+                                        <Stack direction="row" spacing={2} flexWrap="wrap" useFlexGap>
                                             <Button 
                                                 variant="outlined" size="small"
                                                 onClick={() => {
@@ -312,12 +325,19 @@ const AdminDashboard: React.FC = () => {
                                             >
                                                 Edit Settings
                                             </Button>
+                                            <Button 
+                                                variant="outlined" size="small" color={banner.is_enabled ? "warning" : "success"}
+                                                onClick={() => handleToggleEnabled(banner.id)}
+                                                disabled={banner.is_active}
+                                            >
+                                                {banner.is_enabled ? "Disable for Users" : "Enable for Users"}
+                                            </Button>
                                             {!banner.is_active && (
                                                 <Button 
                                                     variant="contained" size="small"
                                                     onClick={() => handleActivateBanner(banner.id)}
                                                 >
-                                                    Set as Active
+                                                    Set as Default
                                                 </Button>
                                             )}
                                         </Stack>

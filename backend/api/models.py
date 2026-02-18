@@ -32,6 +32,7 @@ class User(AbstractUser):
     pending_email = models.EmailField(max_length=254, blank=True, null=True)
     email_confirmation_code = models.CharField(max_length=6, blank=True, null=True)
     following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
+    selected_banner = models.ForeignKey('Banner', on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -195,7 +196,8 @@ class Banner(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False, help_text="Designates this as the global default banner.")
+    is_enabled = models.BooleanField(default=True, help_text="Allows users to select this banner.")
     settings = models.JSONField(default=dict, blank=True)
     schema = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -203,8 +205,12 @@ class Banner(models.Model):
 
     def save(self, *args, **kwargs):
         if self.is_active:
-            # Deactivate other banners
+            # Set all others to inactive
             Banner.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
+        elif not Banner.objects.filter(is_active=True).exclude(pk=self.pk).exists():
+            # If this was the only active banner, don't allow deactivating it
+            # unless there's another one to take its place.
+            self.is_active = True
         super().save(*args, **kwargs)
 
     def __str__(self):

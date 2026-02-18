@@ -44,6 +44,8 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const [deletionCode, setDeletionCode] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [selectedBannerId, setSelectedBannerId] = useState<number | string>("");
 
   const handleGoBack = () => {
       if (window.history.length > 1) {
@@ -56,14 +58,24 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get('users/me/');
-        setUsername(res.data.username);
-        setEmail(res.data.email);
-        setCurrentEmail(res.data.email);
-        setAvatar(res.data.avatar);
-        if (res.data.language) {
-            setLanguage(res.data.language);
+        const [userRes, bannersRes] = await Promise.all([
+            api.get('users/me/'),
+            api.get('banners/')
+        ]);
+        
+        setUsername(userRes.data.username);
+        setEmail(userRes.data.email);
+        setCurrentEmail(userRes.data.email);
+        setAvatar(userRes.data.avatar);
+        setSelectedBannerId(userRes.data.selected_banner || "");
+        
+        if (userRes.data.language) {
+            setLanguage(userRes.data.language);
         }
+
+        // Handle both paginated and non-paginated
+        const bannersData = Array.isArray(bannersRes.data) ? bannersRes.data : (bannersRes.data.results || []);
+        setBanners(bannersData);
       } catch (err) {
         console.error(err);
       }
@@ -242,6 +254,28 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                         <MenuItem value="t0p_trench">Trench (T0P)</MenuItem>
                         <MenuItem value="t0p_blurryface">Blurryface (T0P)</MenuItem>
                         <MenuItem value="t0p_clancy">Clancy (T0P)</MenuItem>
+                    </Select>
+                </FormControl>
+
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>{t('settings.bannerLabel')}</InputLabel>
+                    <Select
+                        value={selectedBannerId}
+                        label={t('settings.bannerLabel')}
+                        onChange={async (e) => {
+                            const newId = e.target.value;
+                            setSelectedBannerId(newId);
+                            try {
+                                await api.patch('users/update_preferences/', { selected_banner: newId });
+                            } catch (err) {
+                                console.error('Failed to update banner preference');
+                            }
+                        }}
+                    >
+                        <MenuItem value="">{t('settings.bannerDefault')}</MenuItem>
+                        {banners.map(b => (
+                            <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
+                        ))}
                     </Select>
                 </FormControl>
 

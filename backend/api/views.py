@@ -418,6 +418,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         theme = request.data.get('theme')
         language = request.data.get('language')
+        banner_id = request.data.get('selected_banner')
         
         updated = False
         if theme in dict(User.THEME_CHOICES):
@@ -426,10 +427,27 @@ class UserViewSet(viewsets.ModelViewSet):
         if language in dict(User.LANGUAGE_CHOICES):
             user.language = language
             updated = True
+        
+        if banner_id is not None:
+            if banner_id == "":
+                user.selected_banner = None
+                updated = True
+            else:
+                try:
+                    banner = Banner.objects.get(pk=banner_id, is_enabled=True)
+                    user.selected_banner = banner
+                    updated = True
+                except Banner.DoesNotExist:
+                    return Response({'error': 'Invalid or disabled banner'}, status=status.HTTP_400_BAD_REQUEST)
             
         if updated:
             user.save()
-            return Response({'status': 'preferences updated', 'theme': user.theme, 'language': user.language})
+            return Response({
+                'status': 'preferences updated', 
+                'theme': user.theme, 
+                'language': user.language,
+                'selected_banner': user.selected_banner.id if user.selected_banner else None
+            })
         return Response({'error': 'No valid updates provided'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
@@ -691,6 +709,11 @@ class BannerViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     pagination_class = None
 
+    def get_queryset(self):
+        if self.request.user.is_authenticated and self.request.user.is_superuser:
+            return Banner.objects.all()
+        return Banner.objects.filter(is_enabled=True)
+
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'active']:
             return [permissions.AllowAny()]
@@ -698,6 +721,27 @@ class BannerViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def active(self, request):
+        # Determine which banner to show
+        # Priority: 
+        # 1. Requested user's preference (if username provided in query)
+        # 2. Logged in user's preference
+        # 3. Global default
+        
+        username = request.query_params.get('username')
+        user = None
+        if username:
+            try:
+                user = User.objects.get(username=username)
+            except User.DoesNotExist:
+                pass
+        
+        if not user and request.user.is_authenticated:
+            user = request.user
+            
+        if user and user.selected_banner and user.selected_banner.is_enabled:
+            serializer = self.get_serializer(user.selected_banner)
+            return Response(serializer.data)
+            
         active_banner = Banner.objects.filter(is_active=True).first()
         if active_banner:
             serializer = self.get_serializer(active_banner)
@@ -708,8 +752,18 @@ class BannerViewSet(viewsets.ModelViewSet):
     def activate(self, request, pk=None):
         banner = self.get_object()
         banner.is_active = True
+        banner.is_enabled = True # Active banner must be enabled
         banner.save()
-        return Response({'status': 'banner activated'})
+        return Response({'status': 'banner set as global default'})
+
+    @action(detail=True, methods=['post'])
+    def toggle_enabled(self, request, pk=None):
+        banner = self.get_object()
+        if banner.is_active:
+            return Response({'error': 'Cannot disable the global default banner.'}, status=status.HTTP_400_BAD_REQUEST)
+        banner.is_enabled = not banner.is_enabled
+        banner.save()
+        return Response({'status': 'enabled' if banner.is_enabled else 'disabled'})
 
 class AdminViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAdminUser]

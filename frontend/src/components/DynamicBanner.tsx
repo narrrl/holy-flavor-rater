@@ -60,7 +60,9 @@ const DynamicBanner: React.FC<DynamicBannerProps> = (props) => {
     useEffect(() => {
         const fetchActiveBanner = async () => {
             try {
-                const res = await api.get('banners/active/');
+                const res = await api.get('banners/active/', {
+                    params: { username: props.username }
+                });
                 setBanner(res.data);
             } catch (err) {
                 console.error('Failed to fetch active banner:', err);
@@ -70,7 +72,7 @@ const DynamicBanner: React.FC<DynamicBannerProps> = (props) => {
         };
 
         fetchActiveBanner();
-    }, []);
+    }, [props.username]);
 
     if (loading) return null;
 
