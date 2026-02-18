@@ -29,6 +29,10 @@ python manage.py sync_flavors
 echo "Seeding legacy flavors..."
 python manage.py seed_legacy_flavors
 
+# Auto-sync banner models and settings from JSON files
+echo "Syncing banner configurations..."
+python manage.py seed_banners
+
 # Start the server using Gunicorn
 echo "Starting Gunicorn..."
 exec gunicorn holy_backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120

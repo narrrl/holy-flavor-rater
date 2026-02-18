@@ -1,0 +1,11 @@
+{
+  "name": "Generative Web",
+  "slug": "generative-web",
+  "description": "The original complex web interactive banner.",
+  "settings": {
+    "nodeCountBase": 60,
+    "connectionDist": 140,
+    "speed": 0.005,
+    "opacity": 0.35
+  }
+}
