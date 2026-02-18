@@ -30,10 +30,12 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
         let animationFrameId: number;
         const seed = getSeed(username);
         
-        const nodeCount = Math.min(12 + Math.floor(ratingsCount / 4), 30);
-        const speedMultiplier = 0.15 + (Math.min(followersCount, 50) / 120);
+        // Dynamic count and speed
+        const nodeCount = Math.min(20 + Math.floor(ratingsCount / 2), 50);
+        const speedMultiplier = 0.25 + (Math.min(followersCount, 50) / 80);
         
-        const colors = palette.length > 0 ? palette : [theme.palette.primary.main, theme.palette.secondary.main];
+        // Prefer vibrant colors
+        const colors = palette.length >= 2 ? palette : [theme.palette.primary.main, theme.palette.secondary.main, theme.palette.info.main];
 
         interface Node {
             x: number;
@@ -44,34 +46,49 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
             size: number;
         }
 
-        const nodes: Node[] = [];
+        let nodes: Node[] = [];
         
         const pseudoRandom = (offset: number) => {
             const x = Math.sin(seed + offset) * 10000;
             return x - Math.floor(x);
         };
 
+        const initNodes = (width: number, height: number) => {
+            const newNodes = [];
+            for (let i = 0; i < nodeCount; i++) {
+                newNodes.push({
+                    x: pseudoRandom(i) * width,
+                    y: pseudoRandom(i + 100) * height,
+                    vx: (pseudoRandom(i + 200) - 0.5) * speedMultiplier,
+                    vy: (pseudoRandom(i + 300) - 0.5) * speedMultiplier,
+                    color: colors[i % colors.length],
+                    size: 2 + pseudoRandom(i + 400) * 5
+                });
+            }
+            return newNodes;
+        };
+
         const resize = () => {
             const parent = canvas.parentElement;
             if (parent) {
-                canvas.width = parent.clientWidth;
-                canvas.height = parent.clientHeight;
+                const rect = parent.getBoundingClientRect();
+                // Scale for high DPI
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
+                ctx.scale(dpr, dpr);
+                // Adjust CSS display size
+                canvas.style.width = `${rect.width}px`;
+                canvas.style.height = `${rect.height}px`;
+                
+                nodes = initNodes(rect.width, rect.height);
             }
         };
 
-        window.addEventListener('resize', resize);
+        const resizeObserver = new ResizeObserver(() => resize());
+        if (canvas.parentElement) resizeObserver.observe(canvas.parentElement);
+        
         resize();
-
-        for (let i = 0; i < nodeCount; i++) {
-            nodes.push({
-                x: pseudoRandom(i) * canvas.width,
-                y: pseudoRandom(i + nodeCount) * canvas.height,
-                vx: (pseudoRandom(i + 2) - 0.5) * speedMultiplier,
-                vy: (pseudoRandom(i + 3) - 0.5) * speedMultiplier,
-                color: colors[i % colors.length],
-                size: 1 + pseudoRandom(i + 4) * 3
-            });
-        }
 
         let mouse = { x: -1000, y: -1000, down: false };
         const handleMouseMove = (e: MouseEvent) => {
@@ -91,22 +108,30 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
         const handleMouseDown = () => mouse.down = true;
         const handleMouseUp = () => mouse.down = false;
 
-        canvas.addEventListener('mousemove', handleMouseMove);
-        canvas.addEventListener('touchmove', handleTouchMove);
-        canvas.addEventListener('mousedown', handleMouseDown);
-        canvas.addEventListener('mouseup', handleMouseUp);
-        canvas.addEventListener('touchstart', (e) => { mouse.down = true; handleTouchMove(e); });
-        canvas.addEventListener('touchend', handleMouseUp);
+        // Attach to window for better tracking
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('touchmove', handleTouchMove);
+        window.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mouseup', handleMouseUp);
 
         const draw = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Get CSS dimensions for drawing
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+            
+            if (!width || !height) {
+                animationFrameId = requestAnimationFrame(draw);
+                return;
+            }
+
+            ctx.clearRect(0, 0, width, height);
             
             nodes.forEach((node) => {
                 node.x += node.vx;
                 node.y += node.vy;
 
-                if (node.x < 0 || node.x > canvas.width) node.vx *= -1;
-                if (node.y < 0 || node.y > canvas.height) node.vy *= -1;
+                if (node.x < 0 || node.x > width) node.vx *= -1;
+                if (node.y < 0 || node.y > height) node.vy *= -1;
 
                 const dx = mouse.x - node.x;
                 const dy = mouse.y - node.y;
@@ -116,7 +141,6 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 if (dist < maxDist) {
                     const force = (maxDist - dist) / maxDist;
                     const strength = mouse.down ? 0.2 : 0.08;
-                    // Pull when down, repel when hovering
                     if (mouse.down) {
                         node.x += dx * force * strength;
                         node.y += dy * force * strength;
@@ -127,31 +151,30 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 }
             });
 
-            // Draw connections and triangles
+            // Draw mesh connections
+            ctx.lineWidth = 1.5;
             for (let i = 0; i < nodes.length; i++) {
                 for (let j = i + 1; j < nodes.length; j++) {
                     const ddist = Math.sqrt(Math.pow(nodes[i].x - nodes[j].x, 2) + Math.pow(nodes[i].y - nodes[j].y, 2));
                     
-                    if (ddist < 150) {
-                        // Lines
+                    if (ddist < 160) {
                         ctx.beginPath();
                         ctx.moveTo(nodes[i].x, nodes[i].y);
                         ctx.lineTo(nodes[j].x, nodes[j].y);
-                        ctx.strokeStyle = alpha(nodes[i].color, (1 - ddist / 150) * 0.15);
+                        ctx.strokeStyle = alpha(nodes[i].color, (1 - ddist / 160) * 0.3);
                         ctx.stroke();
 
-                        // Search for a third point to make a triangle
                         for (let k = j + 1; k < nodes.length; k++) {
                             const ddist2 = Math.sqrt(Math.pow(nodes[j].x - nodes[k].x, 2) + Math.pow(nodes[j].y - nodes[k].y, 2));
                             const ddist3 = Math.sqrt(Math.pow(nodes[i].x - nodes[k].x, 2) + Math.pow(nodes[i].y - nodes[k].y, 2));
 
-                            if (ddist2 < 150 && ddist3 < 150) {
+                            if (ddist2 < 160 && ddist3 < 160) {
                                 ctx.beginPath();
                                 ctx.moveTo(nodes[i].x, nodes[i].y);
                                 ctx.lineTo(nodes[j].x, nodes[j].y);
                                 ctx.lineTo(nodes[k].x, nodes[k].y);
                                 ctx.closePath();
-                                ctx.fillStyle = alpha(nodes[i].color, 0.03);
+                                ctx.fillStyle = alpha(nodes[i].color, 0.06);
                                 ctx.fill();
                             }
                         }
@@ -159,10 +182,24 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 }
             }
 
+            // Draw nodes with high-visibility glow
             nodes.forEach(node => {
+                // Core
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
-                ctx.fillStyle = alpha(node.color, 0.4);
+                ctx.fillStyle = alpha(node.color, 0.8);
+                ctx.fill();
+                
+                // Inner Glow
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.size * 2, 0, Math.PI * 2);
+                ctx.fillStyle = alpha(node.color, 0.2);
+                ctx.fill();
+
+                // Outer Atmosphere
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.size * 4, 0, Math.PI * 2);
+                ctx.fillStyle = alpha(node.color, 0.05);
                 ctx.fill();
             });
 
@@ -172,12 +209,11 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
         draw();
 
         return () => {
-            window.removeEventListener('resize', resize);
-            canvas.removeEventListener('mousemove', handleMouseMove);
-            canvas.removeEventListener('touchmove', handleTouchMove);
-            canvas.removeEventListener('mousedown', handleMouseDown);
-            canvas.removeEventListener('mouseup', handleMouseUp);
-            canvas.removeEventListener('touchend', handleMouseUp);
+            resizeObserver.disconnect();
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('mousedown', handleMouseDown);
+            window.removeEventListener('mouseup', handleMouseUp);
             cancelAnimationFrame(animationFrameId);
         };
     }, [username, palette, ratingsCount, followersCount, theme]);
@@ -189,9 +225,9 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 position: 'absolute', 
                 top: 0, 
                 left: 0, 
-                width: '100%', 
-                height: '100%',
-                pointerEvents: 'auto'
+                pointerEvents: 'none',
+                zIndex: 10,
+                mixBlendMode: 'plus-lighter' // Makes it pop against dark backgrounds
             }} 
         />
     );
