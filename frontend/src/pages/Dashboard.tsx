@@ -264,15 +264,23 @@ const Dashboard: React.FC = () => {
       }}>
           <Box sx={{ 
               height: { xs: 100, sm: 140 }, 
-              background: `
-                radial-gradient(at 0% 0%, ${alpha(palette[0] || theme.palette.primary.main, 0.6)} 0px, transparent 55%),
-                radial-gradient(at 100% 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.5)} 0px, transparent 55%),
-                radial-gradient(at 50% 100%, ${alpha(theme.palette.primary.main, 0.3)} 0px, transparent 55%),
-                linear-gradient(135deg, ${alpha(palette[0] || theme.palette.primary.main, 0.1)} 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.1)} 100%)
-              `,
               position: 'relative',
               overflow: 'hidden'
           }}>
+              {/* Layer 1: Abstract Mesh Background */}
+              <Box sx={{ 
+                  position: 'absolute', 
+                  top: 0, left: 0, right: 0, bottom: 0, 
+                  background: `
+                    radial-gradient(at 0% 0%, ${alpha(palette[0] || theme.palette.primary.main, 0.6)} 0px, transparent 55%),
+                    radial-gradient(at 100% 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.5)} 0px, transparent 55%),
+                    radial-gradient(at 50% 100%, ${alpha(theme.palette.primary.main, 0.3)} 0px, transparent 55%),
+                    linear-gradient(135deg, ${alpha(palette[0] || theme.palette.primary.main, 0.1)} 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.1)} 100%)
+                  `,
+                  zIndex: 0
+              }} />
+              
+              {/* Layer 2: Interactive Generative Art */}
               <GenerativeBanner 
                 username={data.user.username} 
                 palette={palette} 

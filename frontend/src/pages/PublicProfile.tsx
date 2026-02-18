@@ -271,10 +271,18 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
       }}>
           <Box sx={{ 
               height: { xs: 120, sm: 180 }, 
-              background: abstractBanner,
               position: 'relative',
               overflow: 'hidden'
           }}>
+              {/* Layer 1: Abstract Mesh Background */}
+              <Box sx={{ 
+                  position: 'absolute', 
+                  top: 0, left: 0, right: 0, bottom: 0, 
+                  background: abstractBanner,
+                  zIndex: 0
+              }} />
+              
+              {/* Layer 2: Interactive Generative Art */}
               <GenerativeBanner 
                 username={data.username} 
                 palette={palette} 
