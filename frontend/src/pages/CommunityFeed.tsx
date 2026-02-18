@@ -79,7 +79,11 @@ interface Notification {
     flavor_id: number | null;
 }
 
-const CommunityFeed: React.FC = () => {
+interface CommunityFeedProps {
+    adminMode?: boolean;
+}
+
+const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
   const { t } = useTranslation();
   useTitle(t('community.title'));
   const navigate = useNavigate();
@@ -274,6 +278,16 @@ const CommunityFeed: React.FC = () => {
                                     <RatingBadge score={rating.score} />
                                 </Box>
 
+                                {adminMode && (
+                                    <Button 
+                                        size="small" variant="outlined" color="secondary"
+                                        onClick={() => navigate(`/admin-panel/rating/${rating.id}`)}
+                                        sx={{ mb: 2, borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                                    >
+                                        {t('admin.manageRating')}
+                                    </Button>
+                                )}
+
                                 {/* Flavor and Comment */}
                                 <Box sx={{ display: 'flex', gap: 3 }}>
                                     <Box sx={{ flex: 1 }}>
@@ -315,7 +329,17 @@ const CommunityFeed: React.FC = () => {
                                                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>{reply.user}</Typography>
                                                     <Typography variant="caption" color="text.secondary">{formatTimestamp(reply.created_at)}</Typography>
                                                 </Box>
-                                                <Typography variant="body2"><RichText text={reply.text} /></Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Typography variant="body2"><RichText text={reply.text} /></Typography>
+                                                    {adminMode && (
+                                                        <Button 
+                                                            size="small" sx={{ minWidth: 0, py: 0, fontSize: '0.7rem' }} 
+                                                            onClick={() => navigate(`/admin-panel/reply/${reply.id}`)}
+                                                        >
+                                                            {t('admin.manageReply')}
+                                                        </Button>
+                                                    )}
+                                                </Box>
                                             </Box>
                                         ))}
                                         <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>

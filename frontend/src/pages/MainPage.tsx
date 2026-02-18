@@ -22,6 +22,7 @@ import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
 import RatingBadge from '../components/RatingBadge';
+import { useNavigate } from 'react-router-dom';
 
 interface Flavor {
     id: number;
@@ -47,8 +48,13 @@ interface Review {
     flavor: number;
 }
 
-const MainPage: React.FC = () => {
+interface MainPageProps {
+    adminMode?: boolean;
+}
+
+const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
   const [newestFlavors, setNewestFlavors] = useState<Flavor[]>([]);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
@@ -282,6 +288,16 @@ const MainPage: React.FC = () => {
                                             {t('home.rated')} {formatDate(rating.created_at)}
                                         </Typography>
                                     </Box>
+
+                                    {adminMode && (
+                                        <Button 
+                                            size="small" variant="outlined" color="secondary"
+                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/admin-panel/rating/${rating.id}`); }}
+                                            sx={{ mb: 1, borderRadius: 1, fontSize: '0.6rem', py: 0, textTransform: 'none' }}
+                                        >
+                                            {t('admin.manageRating')}
+                                        </Button>
+                                    )}
                                     
                                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                         <Box 
@@ -496,6 +512,15 @@ const MainPage: React.FC = () => {
                                     <Box sx={{ flexGrow: 1 }} />
                                     <RatingBadge score={review.score} size="small" />
                                 </Box>
+                                {adminMode && (
+                                    <Button 
+                                        size="small" variant="text" color="secondary"
+                                        onClick={() => navigate(`/admin-panel/rating/${review.id}`)}
+                                        sx={{ mb: 1, fontSize: '0.65rem', py: 0, textTransform: 'none', fontWeight: 'bold' }}
+                                    >
+                                        {t('admin.manageRating')}
+                                    </Button>
+                                )}
                                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
                                     {formatDate(review.created_at)} • on <Link to={`/flavor/${review.flavor}`} style={{ color: 'inherit', fontWeight: 'bold' }}>{review.flavor_name}</Link>
                                 </Typography>
