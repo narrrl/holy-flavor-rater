@@ -28,6 +28,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
+import ColorThief from 'colorthief';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
@@ -89,6 +90,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   const [activeTab, setActiveTab] = useState(0); 
   const [categoryTab, setCategoryTab] = useState(0);
   const [currentUser, setCurrentUser] = useState<{username: string, is_superuser: boolean} | null>(null);
+  const [palette, setPalette] = useState<string[]>([]);
   
   const [newComment, setNewComment] = useState('');
 
@@ -110,6 +112,25 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   useEffect(() => {
     fetchProfile();
   }, [username]);
+
+  useEffect(() => {
+      if (data?.avatar) {
+          const img = new Image();
+          img.crossOrigin = 'Anonymous';
+          img.src = data.avatar;
+          img.onload = () => {
+              const colorThief = new ColorThief();
+              try {
+                  const colors = colorThief.getPalette(img, 3);
+                  setPalette(colors.map(c => `rgb(${c[0]}, ${c[1]}, ${c[2]})`));
+              } catch (e) {
+                  setPalette([]);
+              }
+          };
+      } else {
+          setPalette([]);
+      }
+  }, [data?.avatar]);
 
   const handleFollowToggle = async () => {
       if (!data) return;
@@ -182,6 +203,10 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
       { key: 'D', title: 'D-Tier', min: 0, color: '#7fff7f' },
   ];
 
+  const bannerGradient = palette.length >= 2 
+    ? `linear-gradient(135deg, ${palette[0]} 0%, ${palette[1]} 100%)`
+    : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`;
+
   const handleGoBack = () => {
       if (window.history.length > 1) navigate(-1);
       else navigate('/');
@@ -206,91 +231,86 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           bgcolor: (theme) => alpha(theme.palette.background.paper, 0.6),
           backdropFilter: 'blur(20px)',
           mb: 4,
-          overflow: 'hidden',
-          position: 'relative'
+          overflow: 'hidden'
       }}>
-          {/* Decorative Gradient Banner */}
           <Box sx={{ 
-              height: 160, 
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.4)} 0%, ${alpha(theme.palette.secondary.main, 0.2)} 100%)`,
+              height: { xs: 120, sm: 180 }, 
+              background: bannerGradient,
+              opacity: 0.8,
               position: 'relative',
               '&::after': {
                   content: '""',
                   position: 'absolute',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)',
-                  backgroundSize: '24px 24px'
+                  backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)',
+                  backgroundSize: '32px 32px'
               }
           }} />
           
           <CardContent sx={{ pt: 0, px: { xs: 2, md: 5 }, pb: 4 }}>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 }, mt: -8 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 }, mt: { xs: -7, sm: -10 } }}>
                   <Box sx={{ position: 'relative' }}>
                       <Avatar 
                         src={data.avatar || undefined} 
                         sx={{ 
-                            width: { xs: 140, sm: 160 }, 
-                            height: { xs: 140, sm: 160 }, 
-                            border: '8px solid', 
+                            width: { xs: 140, sm: 180 }, 
+                            height: { xs: 140, sm: 180 }, 
+                            border: '4px solid', 
                             borderColor: (theme) => theme.palette.background.paper,
-                            boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
-                            fontSize: '4rem',
-                            bgcolor: 'primary.main',
-                            transition: 'transform 0.3s ease',
-                            '&:hover': { transform: 'scale(1.02)' }
+                            boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
+                            fontSize: '4.5rem',
+                            bgcolor: palette[0] || 'primary.main',
                         }}
                       >
                           {!data.avatar && data.username.charAt(0).toUpperCase()}
                       </Avatar>
                       {data.ratings.length > 50 && (
                           <Tooltip title="Master Collector">
-                              <VerifiedIcon color="primary" sx={{ position: 'absolute', bottom: 10, right: 10, bgcolor: 'background.paper', borderRadius: '50%', fontSize: '2rem' }} />
+                              <VerifiedIcon color="primary" sx={{ position: 'absolute', bottom: 12, right: 12, bgcolor: 'background.paper', borderRadius: '50%', fontSize: '2.2rem', p: 0.2 }} />
                           </Tooltip>
                       )}
                   </Box>
                   
-                  <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' }, mb: { xs: 1, sm: 2 } }}>
-                      <Typography variant="h2" sx={{ fontWeight: '900', letterSpacing: -1, fontSize: { xs: '2.5rem', sm: '3.5rem' } }}>
+                  <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
+                      <Typography variant="h2" sx={{ fontWeight: '900', letterSpacing: -1.5, fontSize: { xs: '2.5rem', sm: '3.8rem' }, lineHeight: 1 }}>
                           {data.username}
                       </Typography>
                       
-                      <Stack 
-                        direction="row" 
-                        spacing={{ xs: 2, sm: 4 }} 
+                      <Paper 
+                        elevation={0}
                         sx={{ 
-                            mt: 2, 
-                            justifyContent: { xs: 'center', sm: 'flex-start' },
-                            bgcolor: alpha(theme.palette.action.hover, 0.5),
-                            p: 1.5,
+                            mt: 2.5, 
+                            display: 'inline-flex',
+                            bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                            border: '1px solid',
+                            borderColor: 'divider',
                             borderRadius: 3,
-                            width: 'fit-content',
-                            mx: { xs: 'auto', sm: 0 }
+                            overflow: 'hidden'
                         }}
                       >
-                          <Box>
-                              <Typography variant="h6" sx={{ fontWeight: '900', color: 'primary.main', lineHeight: 1 }}>{data.ratings.length}</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.6, fontSize: '0.65rem' }}>Rated</Typography>
-                          </Box>
-                          <Divider orientation="vertical" flexItem />
-                          <Box>
-                              <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1 }}>{data.followers_count}</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.6, fontSize: '0.65rem' }}>Followers</Typography>
-                          </Box>
-                          <Divider orientation="vertical" flexItem />
-                          <Box>
-                              <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1 }}>{data.following_count}</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.6, fontSize: '0.65rem' }}>Following</Typography>
-                          </Box>
-                      </Stack>
+                          {[
+                              { label: 'Rated', val: data.ratings.length },
+                              { label: 'Followers', val: data.followers_count },
+                              { label: 'Following', val: data.following_count }
+                          ].map((stat, i) => (
+                              <React.Fragment key={stat.label}>
+                                  <Box sx={{ py: 1.5, px: { xs: 2, sm: 3 }, textAlign: 'center', minWidth: { xs: 80, sm: 100 } }}>
+                                      <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1, color: 'text.primary' }}>{stat.val}</Typography>
+                                      <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.5, fontSize: '0.6rem', letterSpacing: 0.5 }}>{stat.label}</Typography>
+                                  </Box>
+                                  {i < 2 && <Divider orientation="vertical" flexItem />}
+                              </React.Fragment>
+                          ))}
+                      </Paper>
                   </Box>
 
-                  <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: 'center', mb: { xs: 0, sm: 2 } }}>
+                  <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: 'center', mb: 1 }}>
                       {currentUser?.username !== data.username && (
                           <Button 
                             variant={data.is_following ? "outlined" : "contained"} 
                             onClick={handleFollowToggle}
                             startIcon={data.is_following ? <PersonRemoveIcon /> : <PersonAddIcon />}
-                            sx={{ borderRadius: 3, px: 4, fontWeight: '900', py: 1.2, textTransform: 'none' }}
+                            sx={{ borderRadius: 3, px: 4, fontWeight: '900', py: 1.2, textTransform: 'none', fontSize: '1rem' }}
                           >
                               {data.is_following ? "Unfollow" : "Follow"}
                           </Button>
@@ -300,7 +320,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             variant="outlined" 
                             color="secondary"
                             onClick={() => navigate(`/admin-panel/user/${data.id}`)}
-                            sx={{ borderRadius: 3, px: 2, fontWeight: 'bold', textTransform: 'none' }}
+                            sx={{ borderRadius: 3, px: 2.5, fontWeight: 'bold', textTransform: 'none' }}
                           >
                               {t('admin.manageUser')}
                           </Button>
@@ -310,8 +330,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           </CardContent>
       </Card>
 
-      {/* Profile Navigation Tabs */}
-      <Box sx={{ mb: 4, position: 'sticky', top: 80, zIndex: 10, bgcolor: alpha(theme.palette.background.default, 0.8), backdropFilter: 'blur(8px)', py: 1, borderRadius: 3 }}>
+      <Box sx={{ mb: 4, position: 'sticky', top: 80, zIndex: 10, bgcolor: alpha(theme.palette.background.default, 0.9), backdropFilter: 'blur(12px)', py: 1, borderRadius: 3, border: '1px solid', borderColor: alpha(theme.palette.divider, 0.1) }}>
           <Tabs 
             value={activeTab} 
             onChange={(_, v) => setActiveTab(v)} 
@@ -328,22 +347,22 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           </Tabs>
       </Box>
 
-      {/* Content Area */}
       <Box sx={{ minHeight: 400 }}>
           {activeTab === 0 && (
               <Box>
-                  <Box sx={{ mb: 4, display: 'flex', overflowX: 'auto', pb: 1, gap: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
+                  <Box sx={{ mb: 5, display: 'flex', overflowX: 'auto', pb: 1, gap: 1.5, '&::-webkit-scrollbar': { display: 'none' } }}>
                       {ratingCategories.map((cat, idx) => (
                           <Chip 
                             key={cat} label={cat} 
                             onClick={() => setCategoryTab(idx)}
                             color={categoryTab === idx ? 'primary' : 'default'}
-                            sx={{ fontWeight: 'bold', px: 1 }}
+                            variant={categoryTab === idx ? 'filled' : 'outlined'}
+                            sx={{ fontWeight: '900', px: 1.5, borderRadius: 2 }}
                           />
                       ))}
                   </Box>
 
-                  <Stack spacing={8}>
+                  <Stack spacing={10}>
                       {tiers.map(tier => {
                           const items = currentRatings.filter((r: Rating) => {
                               const s = r.score;
@@ -358,46 +377,43 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
 
                           return (
                               <Box key={tier.key}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 2.5 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3 }}>
                                       <Paper sx={{ 
-                                          width: 56, height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                          bgcolor: tier.color, color: 'black', fontWeight: '900', fontSize: '1.75rem',
-                                          borderRadius: 2.5, boxShadow: `0 8px 24px ${alpha(tier.color, 0.4)}`
+                                          width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                          bgcolor: tier.color, color: 'black', fontWeight: '900', fontSize: '2rem',
+                                          borderRadius: 3, boxShadow: `0 12px 32px ${alpha(tier.color, 0.5)}`
                                       }}>
                                           {tier.key}
                                       </Paper>
                                       <Box>
-                                          <Typography variant="h5" sx={{ fontWeight: '900', lineHeight: 1.2 }}>{tier.title}</Typography>
-                                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>{items.length} items</Typography>
+                                          <Typography variant="h4" sx={{ fontWeight: '900', lineHeight: 1.1, letterSpacing: -0.5 }}>{tier.title}</Typography>
+                                          <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 'bold', opacity: 0.7 }}>{items.length} total items</Typography>
                                       </Box>
-                                      <Divider sx={{ flexGrow: 1, borderStyle: 'dashed', opacity: 0.5 }} />
+                                      <Divider sx={{ flexGrow: 1, borderStyle: 'dashed', opacity: 0.3 }} />
                                   </Box>
 
                                   <Grid container spacing={3}>
                                       {items.map((rating: Rating) => (
-                                          <Grid key={rating.id} size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }}>
+                                          <Grid key={rating.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
                                               <Card sx={{ 
                                                   height: '100%', borderRadius: 4, border: '1px solid', borderColor: 'divider',
                                                   bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
-                                                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
-                                                  '&:hover': { transform: 'translateY(-8px)', borderColor: 'primary.main', boxShadow: '0 12px 32px rgba(0,0,0,0.12)' }
+                                                  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)', 
+                                                  '&:hover': { transform: 'translateY(-12px)', borderColor: 'primary.main', boxShadow: '0 20px 48px rgba(0,0,0,0.15)' }
                                               }}>
                                                   <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                      <Box sx={{ position: 'relative', aspectRatio: '1/1', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-                                                          <Box component="img" src={rating.flavor_image || undefined} sx={{ height: '85%', width: '85%', objectFit: 'contain', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.15))' }} />
-                                                          <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
-                                                              <RatingBadge score={rating.score} size="small" />
+                                                      <Box sx={{ position: 'relative', aspectRatio: '1/1', bgcolor: alpha(theme.palette.text.primary, 0.03), display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+                                                          <Box component="img" src={rating.flavor_image || undefined} sx={{ height: '90%', width: '90%', objectFit: 'contain', filter: 'drop-shadow(0 16px 24px rgba(0,0,0,0.12))' }} />
+                                                          <Box sx={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
+                                                              <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, p: 0.5, boxShadow: 2, border: '1px solid', borderColor: 'divider' }}>
+                                                                  <RatingBadge score={rating.score} size="small" />
+                                                              </Box>
                                                           </Box>
                                                       </Box>
-                                                      <CardContent sx={{ p: 2 }}>
-                                                          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: '0.85rem' }}>
+                                                      <CardContent sx={{ p: 2, textAlign: 'center' }}>
+                                                          <Typography variant="subtitle2" sx={{ fontWeight: '900', fontSize: '0.9rem', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                               {rating.flavor_name}
                                                           </Typography>
-                                                          {rating.comment && (
-                                                              <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontStyle: 'italic', minHeight: 32, lineHeight: 1.3 }}>
-                                                                  "<RichText text={rating.comment} />"
-                                                              </Typography>
-                                                          )}
                                                       </CardContent>
                                                   </Link>
                                                   {adminMode && (
@@ -405,7 +421,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                                                           <Button 
                                                             size="small" fullWidth variant="outlined" color="secondary"
                                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/admin-panel/rating/${rating.id}`); }}
-                                                            sx={{ borderRadius: 2, textTransform: 'none', fontSize: '0.65rem', py: 0 }}
+                                                            sx={{ borderRadius: 2, textTransform: 'none', fontSize: '0.65rem', py: 0.5, fontWeight: 'bold' }}
                                                           >
                                                               Manage
                                                           </Button>
@@ -425,34 +441,35 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           {activeTab === 1 && (
               <Box maxWidth="md" sx={{ mx: 'auto' }}>
                   {currentUser && (
-                      <Paper sx={{ p: 3, mb: 4, borderRadius: 4, border: '1px solid', borderColor: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
-                          <Typography variant="h6" gutterBottom sx={{ fontWeight: '900' }}>Leave a message</Typography>
+                      <Paper sx={{ p: 4, mb: 5, borderRadius: 5, border: '1px solid', borderColor: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.02), boxShadow: `0 8px 32px ${alpha(theme.palette.primary.main, 0.05)}` }}>
+                          <Typography variant="h5" gutterBottom sx={{ fontWeight: '900', mb: 2 }}>Leave a message</Typography>
                           <form onSubmit={handleAddComment}>
                               <TextField 
                                 fullWidth multiline rows={3} placeholder="Say something about their taste..." 
                                 value={newComment} onChange={(e) => setNewComment(e.target.value)}
-                                sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+                                sx={{ mb: 3, '& .MuiOutlinedInput-root': { borderRadius: 4, bgcolor: 'background.paper' } }}
                               />
-                              <Button variant="contained" type="submit" endIcon={<SendIcon />} sx={{ borderRadius: 3, px: 4, fontWeight: 'bold' }}>
-                                Send Message
+                              <Button variant="contained" type="submit" endIcon={<SendIcon />} sx={{ borderRadius: 3, px: 5, py: 1.2, fontWeight: '900', fontSize: '1rem', textTransform: 'none' }}>
+                                Send to Guestbook
                               </Button>
                           </form>
                       </Paper>
                   )}
 
-                  <Stack spacing={2}>
+                  <Stack spacing={2.5}>
                       {data.comments.length === 0 ? (
-                          <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 5, border: '2px dashed', borderColor: 'divider' }}>
-                              <Typography color="text.secondary" variant="h6">No messages yet. Be the first to break the ice!</Typography>
+                          <Box sx={{ py: 12, textAlign: 'center', bgcolor: alpha(theme.palette.action.hover, 0.5), borderRadius: 6, border: '2px dashed', borderColor: 'divider' }}>
+                              <Typography color="text.secondary" variant="h6" sx={{ fontWeight: 'bold' }}>No entries in the guestbook yet.</Typography>
+                              <Typography variant="body2" color="text.secondary">Be the first to leave a message!</Typography>
                           </Box>
                       ) : (
                           data.comments.map(comment => (
-                              <Card key={comment.id} elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', transition: 'border-color 0.2s', '&:hover': { borderColor: 'primary.main' } }}>
+                              <Card key={comment.id} elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', transition: 'all 0.2s', '&:hover': { borderColor: 'primary.main', bgcolor: alpha(theme.palette.background.paper, 0.8) } }}>
                                   <CardContent sx={{ p: 3 }}>
                                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                          <Stack direction="row" spacing={2} alignItems="center">
+                                          <Stack direction="row" spacing={2.5} alignItems="center">
                                               <Link to={`/profile/${comment.author_username}`} style={{ textDecoration: 'none' }}>
-                                                  <Avatar src={comment.author_avatar || undefined} sx={{ width: 48, height: 48, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                                                  <Avatar src={comment.author_avatar || undefined} sx={{ width: 52, height: 52, boxShadow: '0 4px 16px rgba(0,0,0,0.1)', border: '2px solid white' }}>
                                                       {comment.author_username.charAt(0).toUpperCase()}
                                                   </Avatar>
                                               </Link>
@@ -469,7 +486,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                                               </IconButton>
                                           )}
                                       </Box>
-                                      <Typography variant="body1" sx={{ mt: 2.5, pl: { xs: 0, sm: 8.5 }, lineHeight: 1.6 }}>
+                                      <Typography variant="body1" sx={{ mt: 3, pl: { xs: 0, sm: 9.5 }, lineHeight: 1.7, fontSize: '1.05rem' }}>
                                           <RichText text={comment.text} />
                                       </Typography>
                                   </CardContent>
@@ -483,21 +500,25 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           {activeTab === 2 && (
               <Grid container spacing={3}>
                   {data.followers.length === 0 ? (
-                      <Grid size={12}><Typography sx={{ py: 10, textAlign: 'center' }} color="text.secondary">No followers yet.</Typography></Grid>
+                      <Grid size={12}><Typography variant="h6" color="text.secondary" sx={{ py: 12, textAlign: 'center', fontWeight: 'bold' }}>No followers yet.</Typography></Grid>
                   ) : (
                       data.followers.map(user => (
                           <Grid key={user.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                              <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', transition: 'all 0.2s', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-4px)' } }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, gap: 2 }}>
-                                      <Avatar component={Link} to={`/profile/${user.username}`} src={user.avatar || undefined} sx={{ width: 56, height: 56, cursor: 'pointer' }}>{user.username.charAt(0)}</Avatar>
+                              <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-6px)', boxShadow: '0 12px 32px rgba(0,0,0,0.1)' } }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2.5, gap: 2.5 }}>
+                                      <Avatar component={Link} to={`/profile/${user.username}`} src={user.avatar || undefined} sx={{ width: 64, height: 64, cursor: 'pointer', border: '2px solid', borderColor: 'divider' }}>{user.username.charAt(0)}</Avatar>
                                       <Box sx={{ flex: 1, minWidth: 0 }}>
                                           <Typography component={Link} to={`/profile/${user.username}`} variant="subtitle1" sx={{ fontWeight: '900', color: 'text.primary', textDecoration: 'none', '&:hover': { color: 'primary.main' }, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                               {user.username}
                                           </Typography>
-                                          <Typography variant="caption" color="text.secondary">Community Member</Typography>
+                                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>Community Member</Typography>
                                       </Box>
                                       {currentUser && currentUser.username !== user.username && (
-                                          <IconButton color="primary" onClick={() => handleMiniFollowToggle(user)}>
+                                          <IconButton 
+                                            color={user.is_following ? "secondary" : "primary"} 
+                                            onClick={() => handleMiniFollowToggle(user)}
+                                            sx={{ bgcolor: alpha(user.is_following ? theme.palette.secondary.main : theme.palette.primary.main, 0.1), '&:hover': { bgcolor: alpha(user.is_following ? theme.palette.secondary.main : theme.palette.primary.main, 0.2) } }}
+                                          >
                                               {user.is_following ? <PersonRemoveIcon /> : <PersonAddIcon />}
                                           </IconButton>
                                       )}
@@ -512,21 +533,25 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           {activeTab === 3 && (
               <Grid container spacing={3}>
                   {data.following.length === 0 ? (
-                      <Grid size={12}><Typography sx={{ py: 10, textAlign: 'center' }} color="text.secondary">Not following anyone yet.</Typography></Grid>
+                      <Grid size={12}><Typography variant="h6" color="text.secondary" sx={{ py: 12, textAlign: 'center', fontWeight: 'bold' }}>Not following anyone yet.</Typography></Grid>
                   ) : (
                       data.following.map(user => (
                           <Grid key={user.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                              <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', transition: 'all 0.2s', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-4px)' } }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2, gap: 2 }}>
-                                      <Avatar component={Link} to={`/profile/${user.username}`} src={user.avatar || undefined} sx={{ width: 56, height: 56, cursor: 'pointer' }}>{user.username.charAt(0)}</Avatar>
+                              <Card sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', overflow: 'hidden', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-6px)', boxShadow: '0 12px 32px rgba(0,0,0,0.1)' } }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', p: 2.5, gap: 2.5 }}>
+                                      <Avatar component={Link} to={`/profile/${user.username}`} src={user.avatar || undefined} sx={{ width: 64, height: 64, cursor: 'pointer', border: '2px solid', borderColor: 'divider' }}>{user.username.charAt(0)}</Avatar>
                                       <Box sx={{ flex: 1, minWidth: 0 }}>
                                           <Typography component={Link} to={`/profile/${user.username}`} variant="subtitle1" sx={{ fontWeight: '900', color: 'text.primary', textDecoration: 'none', '&:hover': { color: 'primary.main' }, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                               {user.username}
                                           </Typography>
-                                          <Typography variant="caption" color="text.secondary">Community Member</Typography>
+                                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>Community Member</Typography>
                                       </Box>
                                       {currentUser && currentUser.username !== user.username && (
-                                          <IconButton color="primary" onClick={() => handleMiniFollowToggle(user)}>
+                                          <IconButton 
+                                            color={user.is_following ? "secondary" : "primary"} 
+                                            onClick={() => handleMiniFollowToggle(user)}
+                                            sx={{ bgcolor: alpha(user.is_following ? theme.palette.secondary.main : theme.palette.primary.main, 0.1), '&:hover': { bgcolor: alpha(user.is_following ? theme.palette.secondary.main : theme.palette.primary.main, 0.2) } }}
+                                          >
                                               {user.is_following ? <PersonRemoveIcon /> : <PersonAddIcon />}
                                           </IconButton>
                                       )}
