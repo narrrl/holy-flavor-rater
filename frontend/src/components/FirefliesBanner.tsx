@@ -137,14 +137,15 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
 
             ctx.clearRect(0, 0, width, height);
             
+            // Vibrant theme-aware night sky background
             const isLight = theme.palette.mode === 'light';
             const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             if (isLight) {
-                bgGrad.addColorStop(0, alpha(brightColors[0], 0.3));
-                bgGrad.addColorStop(1, alpha(brightColors[0], 0.8));
+                bgGrad.addColorStop(0, alpha(brightColors[0], 0.5));
+                bgGrad.addColorStop(1, alpha(brightColors[0], 0.95));
             } else {
-                bgGrad.addColorStop(0, '#0a0e14');
-                bgGrad.addColorStop(1, '#020408');
+                bgGrad.addColorStop(0, '#141a2a'); // Noticeable blue-grey tint
+                bgGrad.addColorStop(1, '#05080f');
             }
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, width, height);
