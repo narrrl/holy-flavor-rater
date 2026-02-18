@@ -40,12 +40,12 @@ const resources = {
         "newScore": "New Score:",
         "searchMissing": "Search flavors you haven't rated...",
         "searchRated": "Search your reviews...",
-        "circleAvg": "Average rating from people you follow",
+        "circleAvg": "Average rating from your friends",
         "sortBy": "Sort by",
         "date": "Date",
         "rating": "Rating",
         "communityRating": "Community Rating",
-        "circleRating": "Circle Rating"
+        "circleRating": "Friends Rating"
       },
       "settings": {
         "subtitle": "Manage your account and preferences",
@@ -234,12 +234,12 @@ const resources = {
         "newScore": "Neue Bewertung:",
         "searchMissing": "Suche nach Sorten, die du noch nicht bewertet hast...",
         "searchRated": "Suche in deinen Rezensionen...",
-        "circleAvg": "Durchschnittsbewertung der Personen, denen du folgst",
+        "circleAvg": "Durchschnittsbewertung deiner Freunde",
         "sortBy": "Sortieren nach",
         "date": "Datum",
         "rating": "Bewertung",
         "communityRating": "Community-Bewertung",
-        "circleRating": "Circle-Bewertung"
+        "circleRating": "Freunde-Bewertung"
       },
       "settings": {
         "subtitle": "Verwalte dein Konto und deine Einstellungen",
