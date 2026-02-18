@@ -361,7 +361,7 @@ const Dashboard: React.FC = () => {
                                                       </Typography>
                                                   </Box>
                                               </Box>
-                                              <RatingBadge score={rating.score} size="large" />
+                                              <RatingBadge score={rating.score} size={isMobile ? "medium" : "large"} />
                                           </Box>
 
                                           <Box sx={{ mb: 2, p: 2, bgcolor: alpha('#000', 0.02), borderRadius: 2 }}>
