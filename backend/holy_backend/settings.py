@@ -97,14 +97,13 @@ DATABASES = {
 # Cache configuration for Ratelimiting
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': os.path.join(BASE_DIR, 'django_cache'),
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_ratelimit_cache',
     }
 }
 
-# Silence the ratelimit error for locmem if it appears, 
-# though we just switched to file-based which is supported.
-SILENCED_SYSTEM_CHECKS = ['django_ratelimit.E003']
+# Silence ratelimit warnings for non-Redis/Memcached backends
+SILENCED_SYSTEM_CHECKS = ['django_ratelimit.W001', 'django_ratelimit.E003']
 
 
 # Password validation
