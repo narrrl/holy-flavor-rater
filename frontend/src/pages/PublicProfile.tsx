@@ -272,22 +272,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                       )}
                   </Box>
                   
-                  <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-                      <Box sx={{ mb: 0.5 }}>
-                          <Typography 
-                            variant="overline" 
-                            sx={{ 
-                                fontWeight: '900', 
-                                color: 'primary.main', 
-                                letterSpacing: 3, 
-                                opacity: 0.9,
-                                fontSize: '0.7rem',
-                                textTransform: 'uppercase'
-                            }}
-                          >
-                              Taste Profile
-                          </Typography>
-                      </Box>
+                  <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' }, mt: { xs: 2, sm: 6 } }}>
                       <Typography 
                         variant="h2" 
                         sx={{ 
@@ -298,13 +283,13 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             color: 'text.primary',
                             position: 'relative',
                             display: 'inline-block',
-                            mb: 1
+                            mb: 2.5
                         }}
                       >
                           {data.username}
                       </Typography>
                       
-                      <Box sx={{ mt: 1 }}>
+                      <Box>
                           <Paper 
                             elevation={0}
                             sx={{ 
@@ -312,7 +297,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                                 bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
                                 border: '1px solid',
                                 borderColor: 'divider',
-                                borderRadius: 3,
+                                borderRadius: 1,
                                 overflow: 'hidden',
                                 backdropFilter: 'blur(8px)'
                             }}
@@ -323,7 +308,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                                   { label: 'Following', val: data.following_count }
                               ].map((stat, i) => (
                                   <React.Fragment key={stat.label}>
-                                      <Box sx={{ py: 1.2, width: { xs: 85, sm: 115 }, textAlign: 'center' }}>
+                                      <Box sx={{ py: 1.2, width: { xs: 90, sm: 120 }, textAlign: 'center' }}>
                                           <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1, color: 'text.primary' }}>{stat.val}</Typography>
                                           <Typography variant="caption" sx={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.5, fontSize: '0.6rem', letterSpacing: 1 }}>{stat.label}</Typography>
                                       </Box>
@@ -360,13 +345,13 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           </CardContent>
       </Card>
 
-      <Box sx={{ mb: 4, position: 'sticky', top: 80, zIndex: 10, bgcolor: alpha(theme.palette.background.default, 0.9), backdropFilter: 'blur(12px)', py: 1, borderRadius: 3, border: '1px solid', borderColor: alpha(theme.palette.divider, 0.1) }}>
+      <Box sx={{ mb: 4, position: 'sticky', top: 80, zIndex: 10, bgcolor: alpha(theme.palette.background.default, 0.9), backdropFilter: 'blur(12px)', py: 1, borderRadius: 1, border: '1px solid', borderColor: alpha(theme.palette.divider, 0.1) }}>
           <Tabs 
             value={activeTab} 
             onChange={(_, v) => setActiveTab(v)} 
             variant="fullWidth"
             sx={{ 
-                '& .MuiTab-root': { fontWeight: '900', textTransform: 'none', fontSize: '1rem', borderRadius: 2 },
+                '& .MuiTab-root': { fontWeight: '900', textTransform: 'none', fontSize: '1rem', borderRadius: 1 },
                 '& .Mui-selected': { color: 'primary.main' }
             }}
           >
@@ -411,7 +396,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                                       <Paper sx={{ 
                                           width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', 
                                           bgcolor: tier.color, color: 'black', fontWeight: '900', fontSize: '2rem',
-                                          borderRadius: 2, boxShadow: `0 12px 32px ${alpha(tier.color, 0.5)}`
+                                          borderRadius: 0.5, boxShadow: `0 0 20px ${alpha(tier.color, 0.6)}`
                                       }}>
                                           {tier.key}
                                       </Paper>
@@ -424,16 +409,37 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
 
                                   <Grid container spacing={3}>
                                       {items.map((rating: Rating) => (
-                                          <Grid key={rating.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
+                                          <Grid key={rating.id} size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }}>
                                               <Card sx={{ 
-                                                  height: '100%', borderRadius: 3, border: '1px solid', borderColor: 'divider',
+                                                  height: '100%', borderRadius: 1, border: '1px solid', borderColor: 'divider',
                                                   bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
                                                   transition: 'all 0.3s ease', 
+                                                  overflow: 'hidden',
                                                   '&:hover': { transform: 'translateY(-8px)', borderColor: 'primary.main', boxShadow: '0 12px 32px rgba(0,0,0,0.1)' }
                                               }}>
                                                   <Link to={`/flavor/${rating.flavor}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                      <Box sx={{ position: 'relative', aspectRatio: '1/1', bgcolor: alpha(theme.palette.text.primary, 0.03), display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-                                                          <Box component="img" src={rating.flavor_image || undefined} sx={{ height: '90%', width: '90%', objectFit: 'contain', filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.1))' }} />
+                                                      <Box sx={{ 
+                                                          position: 'relative', 
+                                                          aspectRatio: '1/1', 
+                                                          bgcolor: 'background.default', 
+                                                          display: 'flex', 
+                                                          alignItems: 'center', 
+                                                          justifyContent: 'center',
+                                                          borderBottom: '1px solid',
+                                                          borderColor: 'divider',
+                                                          overflow: 'hidden'
+                                                      }}>
+                                                          <Box 
+                                                            component="img" 
+                                                            src={rating.flavor_image || undefined} 
+                                                            sx={{ 
+                                                                height: '100%', 
+                                                                width: '100%', 
+                                                                objectFit: 'cover',
+                                                                transition: 'transform 0.5s ease',
+                                                                '&:hover': { transform: 'scale(1.1)' }
+                                                            }} 
+                                                          />
                                                           <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}>
                                                               <RatingBadge score={rating.score} size="small" />
                                                           </Box>
@@ -449,7 +455,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                                                           <Button 
                                                             size="small" fullWidth variant="outlined" color="secondary"
                                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/admin-panel/rating/${rating.id}`); }}
-                                                            sx={{ borderRadius: 1.5, textTransform: 'none', fontSize: '0.6rem', py: 0, fontWeight: 'bold' }}
+                                                            sx={{ borderRadius: 1, textTransform: 'none', fontSize: '0.6rem', py: 0, fontWeight: 'bold' }}
                                                           >
                                                               Manage
                                                           </Button>

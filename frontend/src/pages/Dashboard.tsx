@@ -255,14 +255,13 @@ const Dashboard: React.FC = () => {
       {/* TAB 0: MY REVIEWS */}
       {activeTab === 0 && (
           <Box>
-              {/* Filter Controls for Reviews */}
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 4 }}>
                   <Box sx={{ flexGrow: 1 }}>
                       <TextField 
                         fullWidth placeholder={t('dashboard.searchRated')} 
                         value={ratedSearch} onChange={e => setRatedSearch(e.target.value)}
                         slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> } }}
-                        sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
+                        sx={{ bgcolor: 'background.paper', borderRadius: 1, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                       />
                   </Box>
                   <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
@@ -272,22 +271,22 @@ const Dashboard: React.FC = () => {
                             onClick={() => setRatedCategory(cat)}
                             color={ratedCategory === cat ? 'primary' : 'default'}
                             variant={ratedCategory === cat ? 'filled' : 'outlined'}
-                            sx={{ fontWeight: 'bold', height: 40, px: 1 }}
+                            sx={{ fontWeight: 'bold', height: 40, px: 1, borderRadius: 1 }}
                           />
                       ))}
                   </Stack>
-                  <Stack direction="row" spacing={1} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                  <Stack direction="row" spacing={1} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                       <Button 
                         size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
                         onClick={() => setRatedSort('date')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8 }}
                       >
                           {t('dashboard.date')}
                       </Button>
                       <Button 
                         size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
                         onClick={() => setRatedSort('rating')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8 }}
                       >
                           {t('dashboard.rating')}
                       </Button>
@@ -336,9 +335,9 @@ const Dashboard: React.FC = () => {
                                       <>
                                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                               <Box sx={{ display: 'flex', gap: 2 }}>
-                                                  <Avatar src={rating.flavor_image || undefined} variant="rounded" sx={{ width: 60, height: 60, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', p: 0.5 }}>
-                                                      F
-                                                  </Avatar>
+                                                  <Box sx={{ width: 64, height: 64, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 1.5, overflow: 'hidden', flexShrink: 0 }}>
+                                                      <Box component="img" src={rating.flavor_image || undefined} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                  </Box>
                                                   <Box>
                                                       <Typography variant="h6" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                                                           <Link to={`/flavor/${rating.flavor}`} style={{ color: 'inherit', textDecoration: 'none' }}>{rating.flavor_name}</Link>
@@ -424,7 +423,7 @@ const Dashboard: React.FC = () => {
                         fullWidth placeholder={t('dashboard.searchMissing')} 
                         value={exploreSearch} onChange={e => setExploreSearch(e.target.value)}
                         slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> } }}
-                        sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
+                        sx={{ bgcolor: 'background.paper', borderRadius: 1, '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                       />
                   </Box>
                   <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { display: 'none' } }}>
@@ -434,22 +433,22 @@ const Dashboard: React.FC = () => {
                             onClick={() => setExploreCategory(cat)}
                             color={exploreCategory === cat ? 'primary' : 'default'}
                             variant={exploreCategory === cat ? 'filled' : 'outlined'}
-                            sx={{ fontWeight: 'bold', height: 40, px: 1 }}
+                            sx={{ fontWeight: 'bold', height: 40, px: 1, borderRadius: 1 }}
                           />
                       ))}
                   </Stack>
-                  <Stack direction="row" spacing={1} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                  <Stack direction="row" spacing={1} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                       <Button 
                         size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
                         onClick={() => setExploreSort('community')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8 }}
                       >
                           {t('dashboard.communityRating')}
                       </Button>
                       <Button 
                         size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
                         onClick={() => setExploreSort('circle')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8 }}
                       >
                           {t('dashboard.circleRating')}
                       </Button>
@@ -463,21 +462,42 @@ const Dashboard: React.FC = () => {
               ) : (
                   <Grid container spacing={2}>
                       {filteredMissing.map(flavor => (
-                          <Grid key={flavor.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                          <Grid key={flavor.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                               <Card elevation={0} sx={{ 
-                                  height: '100%', borderRadius: 3, border: '1px solid', borderColor: 'divider',
-                                  transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-4px)', borderColor: 'primary.main', boxShadow: 4 }
+                                  height: '100%', borderRadius: 1.5, border: '1px solid', borderColor: 'divider',
+                                  transition: 'all 0.2s ease', '&:hover': { transform: 'translateY(-4px)', borderColor: 'primary.main', boxShadow: 4 },
+                                  overflow: 'hidden'
                               }}>
                                   <Link to={`/flavor/${flavor.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                      <Box sx={{ position: 'relative', aspectRatio: '16/10', bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
-                                          <Box component="img" src={flavor.image_url || undefined} sx={{ height: '100%', maxWidth: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }} />
-                                          <Box sx={{ position: 'absolute', top: 10, left: 10 }}>
+                                      <Box sx={{ 
+                                          position: 'relative', 
+                                          aspectRatio: '1/1', 
+                                          bgcolor: 'background.default', 
+                                          display: 'flex', 
+                                          alignItems: 'center', 
+                                          justifyContent: 'center',
+                                          borderBottom: '1px solid',
+                                          borderColor: 'divider',
+                                          overflow: 'hidden'
+                                      }}>
+                                          <Box 
+                                            component="img" 
+                                            src={flavor.image_url || undefined} 
+                                            sx={{ 
+                                                width: '100%', 
+                                                height: '100%', 
+                                                objectFit: 'cover',
+                                                transition: 'transform 0.5s ease',
+                                                '&:hover': { transform: 'scale(1.1)' }
+                                            }} 
+                                          />
+                                          <Box sx={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
                                               <RatingBadge score={flavor.average_rating || 0} size="small" />
                                           </Box>
                                           {flavor.followed_average_rating && (
-                                              <Box sx={{ position: 'absolute', top: 10, right: 10 }}>
+                                              <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}>
                                                   <Tooltip title={t('dashboard.circleAvg')}>
-                                                      <Box sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.9), color: 'white', px: 1, py: 0.2, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                      <Box sx={{ bgcolor: alpha(theme.palette.secondary.main, 0.9), color: 'white', px: 1, py: 0.2, borderRadius: 1, display: 'flex', alignItems: 'center', gap: 0.5, boxShadow: 2 }}>
                                                           <VerifiedIcon sx={{ fontSize: '0.8rem' }} />
                                                           <Typography variant="caption" sx={{ fontWeight: '900' }}>{flavor.followed_average_rating.toFixed(1)}</Typography>
                                                       </Box>
