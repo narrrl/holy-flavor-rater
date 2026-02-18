@@ -21,9 +21,9 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
     const theme = useTheme();
     
     const count = settings?.count ?? 150;
-    const baseSpeed = settings?.speed ?? 1.5;
-    const evasionRadius = settings?.evasionRadius ?? 150;
-    const evasionStrength = settings?.evasionStrength ?? 0.2;
+    const baseSpeed = settings?.speed ?? 0.8; // Slower default cruise
+    const evasionRadius = settings?.evasionRadius ?? 180;
+    const evasionStrength = settings?.evasionStrength ?? 0.6; // High evasion
     const glowSizeMultiplier = settings?.glowSize ?? 4;
     const flickerSpeed = settings?.flickerSpeed ?? 0.05;
 
@@ -37,20 +37,16 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
 
     const seed = useMemo(() => getSeed(username), [username]);
 
-    // Filter for bright colors only
     const brightColors = useMemo(() => {
         const colors = palette.length >= 2 ? palette : [theme.palette.primary.main, theme.palette.secondary.main, theme.palette.info.main];
-        
-        // Simple brightness heuristic: sum of RGB (very rough but works for hex)
         const getBrightness = (hex: string) => {
             const r = parseInt(hex.slice(1, 3), 16) || 0;
             const g = parseInt(hex.slice(3, 5), 16) || 0;
             const b = parseInt(hex.slice(5, 7), 16) || 0;
             return (r * 299 + g * 587 + b * 114) / 1000;
         };
-
         const sorted = [...colors].sort((a, b) => getBrightness(b) - getBrightness(a));
-        return sorted.slice(0, 3); // Take the top 3 brightest
+        return sorted.slice(0, 3);
     }, [palette, theme]);
 
     useEffect(() => {
@@ -71,6 +67,7 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
             color: string;
             phase: number;
             noiseOffset: number;
+            isEvading: boolean;
         }
 
         let swarm: Firefly[] = [];
@@ -91,7 +88,8 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
                     size: 1 + pseudoRandom(i + 2000) * 2,
                     color: brightColors[i % brightColors.length],
                     phase: pseudoRandom(i + 2500) * Math.PI * 2,
-                    noiseOffset: pseudoRandom(i + 3000) * 100
+                    noiseOffset: pseudoRandom(i + 3000) * 100,
+                    isEvading: false
                 });
             }
             return newSwarm;
@@ -139,68 +137,74 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
 
             ctx.clearRect(0, 0, width, height);
             
-            // Subtle theme-aware night sky background
             const isLight = theme.palette.mode === 'light';
             const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
-            
             if (isLight) {
-                // Use a darker shade of the primary color but not pitch black
                 bgGrad.addColorStop(0, alpha(brightColors[0], 0.3));
                 bgGrad.addColorStop(1, alpha(brightColors[0], 0.8));
             } else {
                 bgGrad.addColorStop(0, '#0a0e14');
                 bgGrad.addColorStop(1, '#020408');
             }
-            
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, width, height);
 
             time += flickerSpeed;
 
-            swarm.forEach((f) => {
-                // 1. Autonomous Chaotic Movement (Perlin-lite)
-                f.vx += Math.sin(time * 0.5 + f.noiseOffset) * 0.1;
-                f.vy += Math.cos(time * 0.4 + f.noiseOffset) * 0.1;
+            swarm.forEach((f, i) => {
+                // 1. Autonomous Chaotic Movement (Perlin + Jitter)
+                const driftX = Math.sin(time * 0.5 + f.noiseOffset) * 0.05;
+                const driftY = Math.cos(time * 0.4 + f.noiseOffset) * 0.05;
+                
+                // High-frequency jitter for insect feel
+                const jitterX = (pseudoRandom(i + time * 10) - 0.5) * 0.2;
+                const jitterY = (pseudoRandom(i + 500 + time * 10) - 0.5) * 0.2;
 
-                // 2. Mouse Evasion
+                f.vx += driftX + jitterX;
+                f.vy += driftY + jitterY;
+
+                // 2. Mouse Evasion (Fast Dash)
                 const dx = mouse.x - f.x;
                 const dy = mouse.y - f.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                if (dist < evasionRadius) {
+                f.isEvading = dist < evasionRadius;
+                if (f.isEvading) {
                     const force = (evasionRadius - dist) / evasionRadius;
                     const angle = Math.atan2(dy, dx);
-                    // Push away
-                    f.vx -= Math.cos(angle) * force * evasionStrength * 5;
-                    f.vy -= Math.sin(angle) * force * evasionStrength * 5;
+                    // Sharp acceleration away
+                    f.vx -= Math.cos(angle) * force * evasionStrength * 1.5;
+                    f.vy -= Math.sin(angle) * force * evasionStrength * 1.5;
                 }
 
-                // Limit speed
-                const speed = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
-                const maxSpeed = baseSpeed * 2;
-                if (speed > maxSpeed) {
-                    f.vx = (f.vx / speed) * maxSpeed;
-                    f.vy = (f.vy / speed) * maxSpeed;
+                // 3. Dynamic Speed Limits
+                const currentSpeed = Math.sqrt(f.vx * f.vx + f.vy * f.vy);
+                const maxSpeed = f.isEvading ? baseSpeed * 10 : baseSpeed * 1.5;
+                
+                if (currentSpeed > maxSpeed) {
+                    f.vx = (f.vx / currentSpeed) * maxSpeed;
+                    f.vy = (f.vy / currentSpeed) * maxSpeed;
                 }
 
-                // Apply friction
-                f.vx *= 0.98;
-                f.vy *= 0.98;
+                // 4. Smooth Friction
+                f.vx *= 0.97;
+                f.vy *= 0.97;
 
                 f.x += f.vx;
                 f.y += f.vy;
 
                 // Screen Wrap
-                if (f.x < -20) f.x = width + 20;
-                if (f.x > width + 20) f.x = -20;
-                if (f.y < -20) f.y = height + 20;
-                if (f.y > height + 20) f.y = -20;
+                const margin = 20;
+                if (f.x < -margin) f.x = width + margin;
+                if (f.x > width + margin) f.x = -margin;
+                if (f.y < -margin) f.y = height + margin;
+                if (f.y > height + margin) f.y = -margin;
 
-                // 3. Flicker Logic
+                // Flicker
                 const flicker = 0.4 + Math.sin(time + f.phase) * 0.6;
                 const opacity = flicker > 0 ? flicker : 0;
 
-                // 4. Render Glow
+                // Render
                 const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size * glowSizeMultiplier);
                 grad.addColorStop(0, alpha(f.color, opacity));
                 grad.addColorStop(0.4, alpha(f.color, opacity * 0.3));
@@ -211,7 +215,6 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
                 ctx.arc(f.x, f.y, f.size * glowSizeMultiplier, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Core
                 ctx.fillStyle = alpha('#fff', opacity * 0.8);
                 ctx.beginPath();
                 ctx.arc(f.x, f.y, f.size * 0.5, 0, Math.PI * 2);
@@ -230,7 +233,7 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
             }
             cancelAnimationFrame(animationFrameId);
         };
-    }, [seed, brightColors, count, baseSpeed, evasionRadius, evasionStrength, glowSizeMultiplier, flickerSpeed]);
+    }, [seed, brightColors, count, baseSpeed, evasionRadius, evasionStrength, glowSizeMultiplier, flickerSpeed, theme]);
 
     return (
         <canvas 
