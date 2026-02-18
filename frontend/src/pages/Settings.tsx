@@ -218,29 +218,24 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                         label={t('settings.themeLabel')}
                         onChange={(e) => onThemeChange(e.target.value as CatppuccinTheme)}
                     >
-                        <ListSubheader>Holy Energy</ListSubheader>
-                        <MenuItem value="holy_light">Holy Light (Default)</MenuItem>
-                        <MenuItem value="holy_dark">Holy Dark</MenuItem>
+                        <ListSubheader>Holy Archive</ListSubheader>
+                        <MenuItem value="holy_light">Holy Light (Clean)</MenuItem>
+                        <MenuItem value="holy_dark">Holy Dark (Premium)</MenuItem>
 
                         <ListSubheader>Light Themes</ListSubheader>
-                        <MenuItem value="latte">Latte</MenuItem>
-                        <MenuItem value="pink">Pastel Pink</MenuItem>
-                        <MenuItem value="solarized_light">Solarized Light</MenuItem>
-                        <MenuItem value="one_light">One Light</MenuItem>
-                        <MenuItem value="paper">Paper White</MenuItem>
+                        <MenuItem value="latte">Catppuccin Latte</MenuItem>
+                        <MenuItem value="pink_pastel">Pink Pastel</MenuItem>
                         
                         <Divider />
                         
                         <ListSubheader>Dark Themes</ListSubheader>
-                        <MenuItem value="mocha">Mocha</MenuItem>
-                        <MenuItem value="frappe">Frappé</MenuItem>
-                        <MenuItem value="macchiato">Macchiato</MenuItem>
-                        <MenuItem value="atom">Atom One Dark</MenuItem>
+                        <MenuItem value="mocha">Catppuccin Mocha</MenuItem>
+                        <MenuItem value="frappe">Catppuccin Frappé</MenuItem>
+                        <MenuItem value="macchiato">Catppuccin Macchiato</MenuItem>
                         <MenuItem value="dracula">Dracula</MenuItem>
-                        <MenuItem value="gruvbox">Gruvbox Dark</MenuItem>
-                        <MenuItem value="nord">Nord</MenuItem>
-                        <MenuItem value="cyberpunk">Cyberpunk</MenuItem>
-                        <MenuItem value="forest">Forest Dark</MenuItem>
+                        <MenuItem value="nord">Nordic Frost</MenuItem>
+                        <MenuItem value="gruvbox">Gruvbox Retro</MenuItem>
+                        <MenuItem value="oceanic">Oceanic Deep</MenuItem>
                     </Select>
                 </FormControl>
 
