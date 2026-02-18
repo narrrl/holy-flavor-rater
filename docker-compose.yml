@@ -19,7 +19,7 @@ services:
       - "traefik.docker.network=narl"
       # Ultra-clean rule for maximum Traefik compatibility
       - "traefik.http.routers.holy-energy-backend.priority=100"
-      - "traefik.http.routers.holy-energy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
+      - "traefik.http.routers.holy-energy-backend.rule=Host(`holy.narl.io`) && (PathPrefix(`/api`) || PathPrefix(`/admin/`) || PathPrefix(`/static`) || PathPrefix(`/media`))"
       - "traefik.http.routers.holy-energy-backend.entrypoints=websecure"
       - "traefik.http.routers.holy-energy-backend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-energy-backend.loadbalancer.server.port=8000"
