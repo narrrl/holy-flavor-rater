@@ -289,7 +289,7 @@ const Dashboard: React.FC = () => {
               />
           </Box>
 
-          <CardContent sx={{ pt: 0, px: { xs: 2, sm: 4 }, pb: 4 }}>
+          <CardContent sx={{ pt: 0, px: { xs: 2, sm: 4 }, pb: 4, position: 'relative', zIndex: 2 }}>
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 } }}>
                   <Box sx={{ 
                       position: 'relative',
