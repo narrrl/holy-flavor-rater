@@ -76,7 +76,8 @@ const AdminDashboard: React.FC = () => {
             ]);
             setStats(statsRes.data);
             setUsers(usersRes.data);
-            setBanners(bannersRes.data);
+            // Handle both paginated and non-paginated responses
+            setBanners(Array.isArray(bannersRes.data) ? bannersRes.data : (bannersRes.data.results || []));
         } catch (err) {
             console.error(err);
             navigate('/');
