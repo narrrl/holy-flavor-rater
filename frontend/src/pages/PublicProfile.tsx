@@ -272,36 +272,65 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                   </Box>
                   
                   <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-                      <Typography variant="h2" sx={{ fontWeight: '900', letterSpacing: -1.5, fontSize: { xs: '2.5rem', sm: '3.8rem' }, lineHeight: 1 }}>
+                      <Box sx={{ mb: 0.5 }}>
+                          <Typography 
+                            variant="overline" 
+                            sx={{ 
+                                fontWeight: '900', 
+                                color: 'primary.main', 
+                                letterSpacing: 3, 
+                                opacity: 0.9,
+                                fontSize: '0.7rem',
+                                textTransform: 'uppercase'
+                            }}
+                          >
+                              Taste Profile
+                          </Typography>
+                      </Box>
+                      <Typography 
+                        variant="h2" 
+                        sx={{ 
+                            fontWeight: '900', 
+                            letterSpacing: -2, 
+                            fontSize: { xs: '2.8rem', sm: '4.2rem' }, 
+                            lineHeight: 0.9,
+                            color: 'text.primary',
+                            position: 'relative',
+                            display: 'inline-block',
+                            mb: 1
+                        }}
+                      >
                           {data.username}
                       </Typography>
                       
-                      <Paper 
-                        elevation={0}
-                        sx={{ 
-                            mt: 2.5, 
-                            display: 'inline-flex',
-                            bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 3,
-                            overflow: 'hidden'
-                        }}
-                      >
-                          {[
-                              { label: 'Rated', val: data.ratings.length },
-                              { label: 'Followers', val: data.followers_count },
-                              { label: 'Following', val: data.following_count }
-                          ].map((stat, i) => (
-                              <React.Fragment key={stat.label}>
-                                  <Box sx={{ py: 1.5, px: { xs: 2, sm: 3 }, textAlign: 'center', minWidth: { xs: 80, sm: 100 } }}>
-                                      <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1, color: 'text.primary' }}>{stat.val}</Typography>
-                                      <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', opacity: 0.5, fontSize: '0.6rem', letterSpacing: 0.5 }}>{stat.label}</Typography>
-                                  </Box>
-                                  {i < 2 && <Divider orientation="vertical" flexItem />}
-                              </React.Fragment>
-                          ))}
-                      </Paper>
+                      <Box sx={{ mt: 1 }}>
+                          <Paper 
+                            elevation={0}
+                            sx={{ 
+                                display: 'inline-flex',
+                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 3,
+                                overflow: 'hidden',
+                                backdropFilter: 'blur(8px)'
+                            }}
+                          >
+                              {[
+                                  { label: 'Rated', val: data.ratings.length },
+                                  { label: 'Followers', val: data.followers_count },
+                                  { label: 'Following', val: data.following_count }
+                              ].map((stat, i) => (
+                                  <React.Fragment key={stat.label}>
+                                      <Box sx={{ py: 1.2, px: { xs: 2, sm: 3 }, textAlign: 'center', minWidth: { xs: 80, sm: 110 } }}>
+                                          <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1, color: 'text.primary' }}>{stat.val}</Typography>
+                                          <Typography variant="caption" sx={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.5, fontSize: '0.6rem', letterSpacing: 1 }}>{stat.label}</Typography>
+                                      </Box>
+                                      {i < 2 && <Divider orientation="vertical" flexItem sx={{ borderStyle: 'solid', opacity: 0.1 }} />}
+                                  </React.Fragment>
+                              ))}
+                          </Paper>
+                      </Box>
                   </Box>
 
                   <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: 'center', mb: 1 }}>
