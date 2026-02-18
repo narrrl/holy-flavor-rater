@@ -203,9 +203,19 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
       { key: 'D', title: 'D-Tier', min: 0, color: '#7fff7f' },
   ];
 
-  const bannerGradient = palette.length >= 2 
-    ? `linear-gradient(135deg, ${palette[0]} 0%, ${palette[1]} 100%)`
-    : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`;
+  const bannerColors = [
+      palette[0] || theme.palette.primary.main,
+      palette[1] || theme.palette.secondary.main,
+      theme.palette.primary.main,
+      theme.palette.secondary.main
+  ];
+
+  const abstractBanner = `
+    radial-gradient(at 0% 0%, ${alpha(bannerColors[0], 0.6)} 0px, transparent 50%),
+    radial-gradient(at 100% 0%, ${alpha(bannerColors[1], 0.4)} 0px, transparent 50%),
+    radial-gradient(at 50% 100%, ${alpha(bannerColors[2], 0.3)} 0px, transparent 50%),
+    linear-gradient(135deg, ${alpha(bannerColors[0], 0.1)} 0%, ${alpha(bannerColors[3], 0.1)} 100%)
+  `;
 
   const handleGoBack = () => {
       if (window.history.length > 1) navigate(-1);
@@ -236,38 +246,46 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
       }}>
           <Box sx={{ 
               height: { xs: 120, sm: 180 }, 
-              background: bannerGradient,
-              opacity: 0.8,
+              background: abstractBanner,
               position: 'relative',
               '&::after': {
                   content: '""',
                   position: 'absolute',
                   top: 0, left: 0, right: 0, bottom: 0,
                   backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)',
-                  backgroundSize: '32px 32px'
+                  backgroundSize: '32px 32px',
+                  opacity: 0.5
               }
           }} />
           
           <CardContent sx={{ pt: 0, px: { xs: 2, md: 5 }, pb: 4 }}>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 }, mt: { xs: -7, sm: -10 } }}>
-                  <Box sx={{ position: 'relative' }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 } }}>
+                  <Box sx={{ 
+                      position: 'relative',
+                      mt: { xs: -7, sm: -10 },
+                      p: 0.75,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${bannerColors[0]}, ${bannerColors[2]})`,
+                      boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+                      display: 'flex'
+                  }}>
                       <Avatar 
                         src={data.avatar || undefined} 
                         sx={{ 
                             width: { xs: 140, sm: 180 }, 
                             height: { xs: 140, sm: 180 }, 
                             border: '6px solid', 
-                            borderColor: palette[0] || 'primary.main',
-                            boxShadow: '0 12px 40px rgba(0,0,0,0.2)',
+                            borderColor: (theme) => theme.palette.background.paper,
                             fontSize: '4.5rem',
-                            bgcolor: palette[0] || 'primary.main',
+                            bgcolor: (theme) => theme.palette.background.paper,
+                            color: bannerColors[0],
                         }}
                       >
                           {!data.avatar && data.username.charAt(0).toUpperCase()}
                       </Avatar>
                       {data.ratings.length > 50 && (
                           <Tooltip title="Master Collector">
-                              <VerifiedIcon color="primary" sx={{ position: 'absolute', bottom: 12, right: 12, bgcolor: 'background.paper', borderRadius: '50%', fontSize: '2.2rem', p: 0.2, border: '2px solid', borderColor: palette[0] || 'primary.main' }} />
+                              <VerifiedIcon color="primary" sx={{ position: 'absolute', bottom: 12, right: 12, bgcolor: 'background.paper', borderRadius: '50%', fontSize: '2.2rem', p: 0.2, border: '3px solid', borderColor: bannerColors[0] }} />
                           </Tooltip>
                       )}
                   </Box>
@@ -283,18 +301,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                             color: 'text.primary',
                             position: 'relative',
                             display: 'inline-block',
-                            mb: 3,
-                            '&::after': {
-                                content: '""',
-                                position: 'absolute',
-                                bottom: -12,
-                                left: { xs: '50%', sm: 0 },
-                                transform: { xs: 'translateX(-50%)', sm: 'none' },
-                                width: '80px',
-                                height: '8px',
-                                bgcolor: palette[0] || 'primary.main',
-                                borderRadius: 1
-                            }
+                            mb: 2
                         }}
                       >
                           {data.username}
