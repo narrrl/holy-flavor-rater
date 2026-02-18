@@ -1,10 +1,15 @@
 from rest_framework import serializers
-from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP
+from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, Banner
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug']
+
+class BannerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Banner
+        fields = ['id', 'name', 'slug', 'description', 'is_active', 'settings', 'created_at', 'updated_at']
 
 class ReplySerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)

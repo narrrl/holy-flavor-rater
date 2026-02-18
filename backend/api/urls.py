@@ -11,6 +11,7 @@ router.register('replies', views.ReplyViewSet)
 router.register('notifications', views.NotificationViewSet, basename='notification')
 router.register('tickets', views.TicketViewSet, basename='ticket')
 router.register('admin-custom', views.AdminViewSet, basename='admin-custom')
+router.register('banners', views.BannerViewSet, basename='banner')
 
 urlpatterns = [
     path('', include(router.urls)),

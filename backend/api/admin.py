@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Category, Flavor, Rating
+from .models import User, Category, Flavor, Rating, Banner
 
 class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
@@ -14,3 +14,4 @@ admin.site.register(User, CustomUserAdmin)
 admin.site.register(Category)
 admin.site.register(Flavor)
 admin.site.register(Rating)
+admin.site.register(Banner)
