@@ -249,7 +249,10 @@ const App: React.FC = () => {
         
         if (userRes.data && userRes.data.username) {
             setUser(userRes.data);
-            if (userRes.data.theme) setThemeName(userRes.data.theme);
+            if (userRes.data.theme) {
+                setThemeName(userRes.data.theme);
+                localStorage.setItem('theme', userRes.data.theme);
+            }
             if (userRes.data.language) i18n.changeLanguage(userRes.data.language);
             
             try {

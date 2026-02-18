@@ -6,7 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Holy Flavors</title>
   </head>
-  <body>
+  <body style="margin: 0; padding: 0;">
+    <script>
+      (function() {
+        const theme = localStorage.getItem('theme') || 'holy_light';
+        const darkThemes = ['holy_dark', 'frappe', 'macchiato', 'mocha', 'dracula', 'nord', 'gruvbox', 'oceanic', 't0p_trench', 't0p_blurryface', 't0p_clancy'];
+        const isDark = darkThemes.includes(theme);
+        
+        // Define primary background colors for common themes to prevent flash
+        const bgColors = {
+          'holy_light': '#f8fafc',
+          'holy_dark': '#020617',
+          'pink_pastel': '#fff1f2',
+          'mocha': '#1e1e2e',
+          't0p_sai': '#fdf2f8',
+          't0p_trench': '#1a1a1a'
+        };
+        
+        document.body.style.backgroundColor = bgColors[theme] || (isDark ? '#0f172a' : '#f8fafc');
+        document.body.style.color = isDark ? '#f8fafc' : '#0f172a';
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
