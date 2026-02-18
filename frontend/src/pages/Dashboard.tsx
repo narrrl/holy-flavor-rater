@@ -152,9 +152,10 @@ const Dashboard: React.FC = () => {
   const filteredMissing = useMemo(() => {
       if (!data) return [];
       let items = data.missing_flavors.filter(f => {
+          const isNotPack = f.category_name !== 'Packs and other';
           const matchCat = exploreCategory === 'All' || f.category_name === exploreCategory;
           const matchSearch = f.name.toLowerCase().includes(exploreSearch.toLowerCase());
-          return matchCat && matchSearch;
+          return isNotPack && matchCat && matchSearch;
       });
 
       if (exploreSort === 'community') {
@@ -287,12 +288,12 @@ const Dashboard: React.FC = () => {
                       </Grid>
 
                       <Grid size={{ xs: 12, lg: 'auto' }}>
-                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', minHeight: 40, display: 'flex', gap: 0.5, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', minHeight: 44, display: 'flex', gap: 0.5, flexWrap: { xs: 'wrap', sm: 'nowrap' }, alignItems: 'center' }}>
                               <Button 
                                 fullWidth
                                 size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
                                 onClick={() => setRatedSort('date')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 32, px: { xs: 1, sm: 2 }, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
                               >
                                   {t('dashboard.date')}
                               </Button>
@@ -300,7 +301,7 @@ const Dashboard: React.FC = () => {
                                 fullWidth
                                 size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
                                 onClick={() => setRatedSort('rating')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 32, px: { xs: 1, sm: 2 }, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
                               >
                                   {t('dashboard.rating')}
                               </Button>
@@ -463,12 +464,12 @@ const Dashboard: React.FC = () => {
                       </Grid>
 
                       <Grid size={{ xs: 12, lg: 'auto' }}>
-                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', minHeight: 40, display: 'flex', gap: 0.5, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+                          <Box sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', minHeight: 44, display: 'flex', gap: 0.5, flexWrap: { xs: 'wrap', sm: 'nowrap' }, alignItems: 'center' }}>
                               <Button 
                                 fullWidth
                                 size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
                                 onClick={() => setExploreSort('community')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 32, px: { xs: 1, sm: 2 }, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
                               >
                                   {t('dashboard.communityRating')}
                               </Button>
@@ -476,7 +477,7 @@ const Dashboard: React.FC = () => {
                                 fullWidth
                                 size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
                                 onClick={() => setExploreSort('circle')}
-                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 32, px: { xs: 1, sm: 2 }, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
+                                sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 3, fontSize: '0.8rem', whiteSpace: 'nowrap', minWidth: 'fit-content' }}
                               >
                                   {t('dashboard.circleRating')}
                               </Button>
