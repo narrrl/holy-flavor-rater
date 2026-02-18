@@ -7,5 +7,42 @@
     "connectionDist": 140,
     "speed": 0.005,
     "opacity": 0.35
-  }
+  },
+  "schema": [
+    {
+      "key": "nodeCountBase",
+      "label": "Base Node Count",
+      "type": "number",
+      "min": 10,
+      "max": 500,
+      "description": "The starting number of nodes in the mesh."
+    },
+    {
+      "key": "connectionDist",
+      "label": "Connection Distance",
+      "type": "slider",
+      "min": 50,
+      "max": 500,
+      "step": 10,
+      "description": "The maximum distance at which nodes will connect to form the web."
+    },
+    {
+      "key": "speed",
+      "label": "Animation Speed",
+      "type": "slider",
+      "min": 0.001,
+      "max": 0.05,
+      "step": 0.001,
+      "description": "How fast the nodes return to their original position."
+    },
+    {
+      "key": "opacity",
+      "label": "Line Opacity",
+      "type": "slider",
+      "min": 0.05,
+      "max": 1.0,
+      "step": 0.05,
+      "description": "Transparency of the connecting lines."
+    }
+  ]
 }

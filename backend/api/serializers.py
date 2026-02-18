@@ -9,7 +9,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class BannerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banner
-        fields = ['id', 'name', 'slug', 'description', 'is_active', 'settings', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'slug', 'description', 'is_active', 'settings', 'schema', 'created_at', 'updated_at']
 
 class ReplySerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
