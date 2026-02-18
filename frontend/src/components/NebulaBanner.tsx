@@ -11,6 +11,7 @@ interface NebulaBannerProps {
         speed?: number;
         opacity?: number;
         attractionForce?: number;
+        cloudSize?: number;
     };
 }
 
@@ -18,10 +19,12 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const theme = useTheme();
     
-    const particleCount = settings?.particleCount ?? Math.min(150 + Math.floor(ratingsCount * 2), 300);
-    const speed = settings?.speed ?? 0.002;
-    const globalOpacity = settings?.opacity ?? 0.8;
-    const attractionForce = settings?.attractionForce ?? 0.15;
+    // Cloud settings for high density
+    const particleCount = settings?.particleCount ?? 250;
+    const speed = settings?.speed ?? 0.003;
+    const globalOpacity = settings?.opacity ?? 0.85;
+    const attractionForce = settings?.attractionForce ?? 0.25;
+    const cloudSizeMultiplier = settings?.cloudSize ?? 12; // Much larger for cloud feel
 
     const getSeed = (str: string) => {
         let hash = 0;
@@ -52,10 +55,12 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
             alpha: number;
             targetAlpha: number;
             phase: number;
-            offset: number;
+            pulse: number;
+            pulseSpeed: number;
         }
 
         let particles: Particle[] = [];
+        let bgClouds: Particle[] = [];
         
         const pseudoRandom = (offset: number) => {
             const x = Math.sin(seed + offset) * 10000;
@@ -63,22 +68,38 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
         };
 
         const initParticles = (width: number, height: number) => {
-            const newParticles = [];
+            const p = [];
+            const bg = [];
+            
+            // Foreground Active Gas
             for (let i = 0; i < particleCount; i++) {
-                newParticles.push({
+                p.push({
                     x: pseudoRandom(i) * width,
                     y: pseudoRandom(i + 500) * height,
-                    vx: (pseudoRandom(i + 1000) - 0.5) * 0.5,
-                    vy: (pseudoRandom(i + 1500) - 0.5) * 0.5,
-                    size: 2 + pseudoRandom(i + 2000) * 8,
+                    vx: 0, vy: 0,
+                    size: (5 + pseudoRandom(i + 1000) * 15) * cloudSizeMultiplier,
                     color: colors[i % colors.length],
                     alpha: 0,
-                    targetAlpha: 0.1 + pseudoRandom(i + 2500) * 0.4,
-                    phase: pseudoRandom(i + 3000) * Math.PI * 2,
-                    offset: pseudoRandom(i + 3500) * 100
+                    targetAlpha: 0.05 + pseudoRandom(i + 1500) * 0.15,
+                    phase: pseudoRandom(i + 2000) * Math.PI * 2,
+                    pulse: pseudoRandom(i + 2500),
+                    pulseSpeed: 0.005 + pseudoRandom(i + 3000) * 0.01
                 });
             }
-            return newParticles;
+
+            // Static background cloud layers for density
+            for (let i = 0; i < 15; i++) {
+                bg.push({
+                    x: pseudoRandom(i + 4000) * width,
+                    y: pseudoRandom(i + 4500) * height,
+                    vx: 0, vy: 0,
+                    size: (40 + pseudoRandom(i + 5000) * 60) * (cloudSizeMultiplier / 4),
+                    color: colors[i % colors.length],
+                    alpha: 0.02 + pseudoRandom(i + 5500) * 0.05,
+                    targetAlpha: 0, phase: 0, pulse: 0, pulseSpeed: 0
+                });
+            }
+            return { p, bg };
         };
 
         const resize = () => {
@@ -91,7 +112,9 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
                 ctx.scale(dpr, dpr);
                 canvas.style.width = `${rect.width}px`;
                 canvas.style.height = `${rect.height}px`;
-                particles = initParticles(rect.width, rect.height);
+                const { p, bg } = initParticles(rect.width, rect.height);
+                particles = p;
+                bgClouds = bg;
             }
         };
 
@@ -100,13 +123,11 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
         resize();
 
         let mouse = { x: -1000, y: -1000, down: false };
-        
         const handleMouseMove = (e: MouseEvent) => {
             const rect = canvas.getBoundingClientRect();
             mouse.x = e.clientX - rect.left;
             mouse.y = e.clientY - rect.top;
         };
-
         const handleMouseDown = () => { mouse.down = true; };
         const handleMouseUp = () => { mouse.down = false; };
 
@@ -122,7 +143,6 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
         const draw = () => {
             const width = canvas.width / (window.devicePixelRatio || 1);
             const height = canvas.height / (window.devicePixelRatio || 1);
-            
             if (!width || !height) {
                 animationFrameId = requestAnimationFrame(draw);
                 return;
@@ -130,71 +150,80 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
 
             ctx.clearRect(0, 0, width, height);
             
-            // Nebula Background Gradient (Darker tone of the primary color)
-            const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/1.2);
-            bgGrad.addColorStop(0, alpha(theme.palette.background.paper, 0.4));
-            bgGrad.addColorStop(1, alpha('#000', 0.8));
-            ctx.fillStyle = bgGrad;
+            // Deep Space Background
+            ctx.fillStyle = '#050508';
             ctx.fillRect(0, 0, width, height);
 
             time += speed;
 
-            particles.forEach((p) => {
-                // Organic Movement (Cloud-like)
-                const noiseX = Math.sin(time + p.phase) * 0.5;
-                const noiseY = Math.cos(time * 0.8 + p.phase) * 0.5;
-                
-                p.vx += noiseX * 0.01;
-                p.vy += noiseY * 0.01;
+            // Draw Background atmospheric clouds first
+            bgClouds.forEach(c => {
+                const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.size);
+                g.addColorStop(0, alpha(c.color, c.alpha));
+                g.addColorStop(1, alpha(c.color, 0));
+                ctx.fillStyle = g;
+                ctx.fillRect(c.x - c.size, c.y - c.size, c.size * 2, c.size * 2);
+            });
 
-                // Mouse Interaction
+            // Process and Draw Active Gas Particles
+            particles.forEach((p) => {
+                // Organic Drift
+                const driftX = Math.sin(time + p.phase) * 0.2;
+                const driftY = Math.cos(time * 0.7 + p.phase) * 0.2;
+                p.vx += driftX;
+                p.vy += driftY;
+
+                // Mouse Interaction (Fluid feel)
                 const dx = mouse.x - p.x;
                 const dy = mouse.y - p.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 
-                if (dist < 250) {
+                if (dist < 300) {
                     if (mouse.down) {
-                        // Pull in effect
-                        p.vx += (dx / dist) * attractionForce;
-                        p.vy += (dy / dist) * attractionForce;
+                        // Condense / Gravity Pull
+                        const force = (300 - dist) / 300;
+                        p.vx += (dx / dist) * attractionForce * force;
+                        p.vy += (dy / dist) * attractionForce * force;
                     } else {
-                        // Disturbance / Swirl effect
-                        const angle = Math.atan2(dy, dx);
-                        p.vx += Math.cos(angle + Math.PI/2) * 0.05;
-                        p.vy += Math.sin(angle + Math.PI/2) * 0.05;
+                        // Swirl / Turbulence
+                        const swirl = (300 - dist) / 300;
+                        p.vx += (dy / dist) * 0.15 * swirl;
+                        p.vy -= (dx / dist) * 0.15 * swirl;
                     }
                 }
 
-                // Friction
-                p.vx *= 0.96;
-                p.vy *= 0.96;
-
+                p.vx *= 0.94;
+                p.vy *= 0.94;
                 p.x += p.vx;
                 p.y += p.vy;
 
                 // Screen Wrap
-                if (p.x < -50) p.x = width + 50;
-                if (p.x > width + 50) p.x = -50;
-                if (p.y < -50) p.y = height + 50;
-                if (p.y > height + 50) p.y = -50;
+                const margin = p.size;
+                if (p.x < -margin) p.x = width + margin;
+                if (p.x > width + margin) p.x = -margin;
+                if (p.y < -margin) p.y = height + margin;
+                if (p.y > height + margin) p.y = -margin;
 
-                // Fade in
-                if (p.alpha < p.targetAlpha) p.alpha += 0.005;
-
-                // Draw Particle (Nebula blob)
-                const pOpacity = p.alpha * globalOpacity * (0.6 + Math.sin(time * 2 + p.offset) * 0.4);
+                // Pulsing Alpha
+                p.pulse += p.pulseSpeed;
+                const currentAlpha = p.targetAlpha * (0.5 + Math.sin(p.pulse) * 0.5);
                 
-                const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
-                grad.addColorStop(0, alpha(p.color, pOpacity));
-                grad.addColorStop(0.5, alpha(p.color, pOpacity * 0.3));
+                // Render as additive cloud blob
+                const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+                const colorAlpha = currentAlpha * globalOpacity;
+                
+                grad.addColorStop(0, alpha(p.color, colorAlpha));
+                grad.addColorStop(0.4, alpha(p.color, colorAlpha * 0.4));
                 grad.addColorStop(1, alpha(p.color, 0));
                 
                 ctx.fillStyle = grad;
+                ctx.globalCompositeOperation = 'screen';
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                 ctx.fill();
             });
 
+            ctx.globalCompositeOperation = 'source-over';
             animationFrameId = requestAnimationFrame(draw);
         };
 
@@ -209,7 +238,7 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
             }
             cancelAnimationFrame(animationFrameId);
         };
-    }, [username, palette, ratingsCount, followersCount, theme, particleCount, speed, globalOpacity, attractionForce]);
+    }, [username, palette, ratingsCount, followersCount, theme, particleCount, speed, globalOpacity, attractionForce, cloudSizeMultiplier]);
 
     return (
         <canvas 
@@ -221,8 +250,7 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                zIndex: 1,
-                mixBlendMode: 'screen'
+                zIndex: 1
             }} 
         />
     );
