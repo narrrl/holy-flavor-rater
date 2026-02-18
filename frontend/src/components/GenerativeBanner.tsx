@@ -24,14 +24,14 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true });
         if (!ctx) return;
 
         let animationFrameId: number;
         const seed = getSeed(username);
         
-        const nodeCount = Math.min(20 + Math.floor(ratingsCount / 2), 50);
-        const speedMultiplier = 0.25 + (Math.min(followersCount, 50) / 80);
+        // Configuration - High density for "complex web" feel
+        const nodeCount = Math.min(60 + Math.floor(ratingsCount * 1.5), 120);
         const colors = palette.length >= 2 ? palette : [theme.palette.primary.main, theme.palette.secondary.main, theme.palette.info.main];
 
         interface Node {
@@ -39,6 +39,8 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
             y: number;
             vx: number;
             vy: number;
+            baseX: number;
+            baseY: number;
             color: string;
             size: number;
         }
@@ -53,13 +55,14 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
         const initNodes = (width: number, height: number) => {
             const newNodes = [];
             for (let i = 0; i < nodeCount; i++) {
+                const bx = pseudoRandom(i) * width;
+                const by = pseudoRandom(i + 100) * height;
                 newNodes.push({
-                    x: pseudoRandom(i) * width,
-                    y: pseudoRandom(i + 100) * height,
-                    vx: (pseudoRandom(i + 200) - 0.5) * speedMultiplier,
-                    vy: (pseudoRandom(i + 300) - 0.5) * speedMultiplier,
+                    x: bx, y: by,
+                    baseX: bx, baseY: by,
+                    vx: 0, vy: 0,
                     color: colors[i % colors.length],
-                    size: 2 + pseudoRandom(i + 400) * 4
+                    size: 1 + pseudoRandom(i + 200) * 3
                 });
             }
             return newNodes;
@@ -102,13 +105,15 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
         const handleMouseDown = () => { mouse.down = true; };
         const handleMouseUp = () => { mouse.down = false; };
 
-        // Attach listeners to parent to ensure they work even if canvas has issues
         const parent = canvas.parentElement;
         if (parent) {
             parent.addEventListener('mousemove', handleMouseMove);
-            parent.addEventListener('touchmove', handleTouchMove);
+            parent.addEventListener('touchmove', handleTouchMove, { passive: false });
             parent.addEventListener('mousedown', handleMouseDown);
             parent.addEventListener('mouseup', handleMouseUp);
+            parent.addEventListener('touchstart', (e) => { mouse.down = true; handleTouchMove(e); });
+            parent.addEventListener('touchend', handleMouseUp);
+            parent.addEventListener('mouseleave', () => { mouse.x = -1000; mouse.y = -1000; mouse.down = false; });
         }
 
         const draw = () => {
@@ -122,56 +127,105 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
 
             ctx.clearRect(0, 0, width, height);
             
+            // Physics Update
             nodes.forEach((node) => {
-                node.x += node.vx;
-                node.y += node.vy;
+                // Return force (Elasticity)
+                const dxBase = node.baseX - node.x;
+                const dyBase = node.baseY - node.y;
+                node.vx += dxBase * 0.008;
+                node.vy += dyBase * 0.008;
 
-                if (node.x < 0 || node.x > width) node.vx *= -1;
-                if (node.y < 0 || node.y > height) node.vy *= -1;
-
-                const dx = mouse.x - node.x;
-                const dy = mouse.y - node.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const maxDist = mouse.down ? 300 : 150;
-
-                if (dist < maxDist) {
-                    const force = (maxDist - dist) / maxDist;
-                    const strength = mouse.down ? 0.3 : 0.1;
-                    if (mouse.down) {
-                        node.x += dx * force * strength;
-                        node.y += dy * force * strength;
-                    } else {
-                        node.x -= dx * force * strength;
-                        node.y -= dy * force * strength;
+                // Mouse interaction
+                const dxMouse = mouse.x - node.x;
+                const dyMouse = mouse.y - node.y;
+                const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+                
+                if (mouse.down) {
+                    // Grab and drag effect - wider range
+                    const dragDist = 350;
+                    if (distMouse < dragDist) {
+                        const power = (dragDist - distMouse) / dragDist;
+                        node.vx += dxMouse * power * 0.15;
+                        node.vy += dyMouse * power * 0.15;
+                    }
+                } else {
+                    // Hover disturbance - pushing effect
+                    const hoverDist = 180;
+                    if (distMouse < hoverDist) {
+                        const power = (hoverDist - distMouse) / hoverDist;
+                        node.vx -= dxMouse * power * 0.04;
+                        node.vy -= dyMouse * power * 0.04;
                     }
                 }
+
+                // Damping (Friction)
+                node.vx *= 0.9;
+                node.vy *= 0.9;
+
+                // Update Position
+                node.x += node.vx;
+                node.y += node.vy;
             });
 
-            // Mesh
-            ctx.lineWidth = 1.2;
+            // Draw Mesh (Connections)
+            const connectionDist = 140;
+            ctx.lineWidth = 1;
+            
             for (let i = 0; i < nodes.length; i++) {
-                for (let j = i + 1; j < nodes.length; j++) {
-                    const ddist = Math.sqrt(Math.pow(nodes[i].x - nodes[j].x, 2) + Math.pow(nodes[i].y - nodes[j].y, 2));
-                    if (ddist < 130) {
+                let currentConnections = 0;
+                // We only connect a few to keep it a "web" and not a solid block
+                for (let j = i + 1; j < nodes.length && currentConnections < 6; j++) {
+                    const dx = nodes[i].x - nodes[j].x;
+                    const dy = nodes[i].y - nodes[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < connectionDist) {
+                        currentConnections++;
+                        const opacity = (1 - dist / connectionDist) * 0.35;
                         ctx.beginPath();
                         ctx.moveTo(nodes[i].x, nodes[i].y);
                         ctx.lineTo(nodes[j].x, nodes[j].y);
-                        ctx.strokeStyle = alpha(nodes[i].color, (1 - ddist / 130) * 0.4);
+                        
+                        // Dynamic gradient for the line
+                        const lineGrad = ctx.createLinearGradient(nodes[i].x, nodes[i].y, nodes[j].x, nodes[j].y);
+                        lineGrad.addColorStop(0, alpha(nodes[i].color, opacity));
+                        lineGrad.addColorStop(1, alpha(nodes[j].color, opacity));
+                        
+                        ctx.strokeStyle = lineGrad;
                         ctx.stroke();
+
+                        // Fill some triangles for complexity
+                        if (dist < connectionDist * 0.6 && pseudoRandom(i + j) > 0.92) {
+                            for (let k = j + 1; k < nodes.length; k++) {
+                                const d3x = nodes[i].x - nodes[k].x;
+                                const d3y = nodes[i].y - nodes[k].y;
+                                if (Math.sqrt(d3x*d3x + d3y*d3y) < connectionDist * 0.6) {
+                                    ctx.beginPath();
+                                    ctx.moveTo(nodes[i].x, nodes[i].y);
+                                    ctx.lineTo(nodes[j].x, nodes[j].y);
+                                    ctx.lineTo(nodes[k].x, nodes[k].y);
+                                    ctx.closePath();
+                                    ctx.fillStyle = alpha(nodes[i].color, 0.04);
+                                    ctx.fill();
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            // Points
+            // Draw Nodes
             nodes.forEach(node => {
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
-                ctx.fillStyle = alpha(node.color, 0.9);
+                ctx.fillStyle = node.color;
                 ctx.fill();
                 
+                // Core glow
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, node.size * 2.5, 0, Math.PI * 2);
-                ctx.fillStyle = alpha(node.color, 0.2);
+                ctx.fillStyle = alpha(node.color, 0.15);
                 ctx.fill();
             });
 
@@ -187,6 +241,8 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 parent.removeEventListener('touchmove', handleTouchMove);
                 parent.removeEventListener('mousedown', handleMouseDown);
                 parent.removeEventListener('mouseup', handleMouseUp);
+                parent.removeEventListener('touchstart', handleMouseDown);
+                parent.removeEventListener('touchend', handleMouseUp);
             }
             cancelAnimationFrame(animationFrameId);
         };
@@ -203,7 +259,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 height: '100%',
                 pointerEvents: 'none',
                 zIndex: 5,
-                mixBlendMode: 'plus-lighter'
+                mixBlendMode: 'screen'
             }} 
         />
     );
