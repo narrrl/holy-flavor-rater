@@ -1,0 +1,59 @@
+{
+  "name": "Firefly Swarm",
+  "slug": "fireflies",
+  "description": "A swarm of chaotic, glowing fireflies that avoid your cursor as you move through them.",
+  "settings": {
+    "count": 150,
+    "speed": 1.5,
+    "evasionRadius": 150,
+    "evasionStrength": 0.2,
+    "glowSize": 4,
+    "flickerSpeed": 0.05
+  },
+  "schema": [
+    {
+      "key": "count",
+      "label": "Firefly Count",
+      "type": "number",
+      "min": 50,
+      "max": 500,
+      "description": "Number of glowing fireflies in the sky."
+    },
+    {
+      "key": "speed",
+      "label": "Movement Speed",
+      "type": "slider",
+      "min": 0.5,
+      "max": 5.0,
+      "step": 0.1,
+      "description": "How fast the fireflies fly autonomously."
+    },
+    {
+      "key": "evasionRadius",
+      "label": "Avoidance Distance",
+      "type": "slider",
+      "min": 50,
+      "max": 400,
+      "step": 10,
+      "description": "How close your cursor needs to be before they start flying away."
+    },
+    {
+      "key": "evasionStrength",
+      "label": "Evasion Agility",
+      "type": "slider",
+      "min": 0.05,
+      "max": 1.0,
+      "step": 0.05,
+      "description": "How quickly they dart away from your cursor."
+    },
+    {
+      "key": "glowSize",
+      "label": "Glow Intensity",
+      "type": "slider",
+      "min": 1,
+      "max": 10,
+      "step": 1,
+      "description": "The size of the glowing aura around each firefly."
+    }
+  ]
+}

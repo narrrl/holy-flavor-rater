@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import GenerativeBanner from './GenerativeBanner';
 import NebulaBanner from './NebulaBanner';
+import FirefliesBanner from './FirefliesBanner';
 
 interface Banner {
     id: number;
@@ -82,6 +83,10 @@ const DynamicBanner: React.FC<DynamicBannerProps> = (props) => {
 
     if (banner.slug === 'nebula') {
         return <NebulaBanner {...props} settings={banner.settings} />;
+    }
+
+    if (banner.slug === 'fireflies') {
+        return <FirefliesBanner {...props} settings={banner.settings} />;
     }
 
     // Fallback
