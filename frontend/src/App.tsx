@@ -57,6 +57,8 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Support = lazy(() => import('./pages/Support'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'));
+const AdminRatingDetail = lazy(() => import('./pages/AdminRatingDetail'));
+const AdminReplyDetail = lazy(() => import('./pages/AdminReplyDetail'));
 
 interface SearchResult {
     id: number;
@@ -215,7 +217,14 @@ const App: React.FC = () => {
   const [loadingUser, setLoadingUser] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
+  const [adminMode, setAdminMode] = useState(localStorage.getItem('admin-mode') === 'true');
   const isMobile = useMediaQuery('(max-width:900px)');
+
+  const toggleAdminMode = () => {
+      const newVal = !adminMode;
+      setAdminMode(newVal);
+      localStorage.setItem('admin-mode', String(newVal));
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -403,7 +412,19 @@ const App: React.FC = () => {
 
                 {user.is_superuser && (
                     <ListItem disablePadding>
-                        <ListItemButton component={Link} to="/admin" onClick={() => setDrawerOpen(false)}>
+                        <ListItemButton onClick={toggleAdminMode}>
+                            <ListItemText 
+                                primary={t('admin.adminMode')} 
+                                secondary={adminMode ? "ON" : "OFF"}
+                                sx={{ color: adminMode ? 'primary.main' : 'inherit' }}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+                )}
+
+                {user.is_superuser && (
+                    <ListItem disablePadding>
+                        <ListItemButton component={Link} to="/admin-panel" onClick={() => setDrawerOpen(false)}>
                             <ListItemText primary="Admin Panel" sx={{ color: 'primary.main', fontWeight: 'bold' }} />
                         </ListItemButton>
                     </ListItem>
@@ -592,11 +613,15 @@ const App: React.FC = () => {
                             <MenuItem component={Link} to={`/profile/${user.username}`} onClick={() => setAnchorEl(null)}>{t('nav.profile')}</MenuItem>
                                                       <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>{t('nav.dashboard')}</MenuItem>
                                                       <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>{t('nav.settings')}</MenuItem>
-                                                      <MenuItem component={Link} to="/support" onClick={() => setAnchorEl(null)}>{t('support.title')}</MenuItem>
-                                                      {user.is_superuser && (
-                                                          <MenuItem component={Link} to="/admin" onClick={() => setAnchorEl(null)} sx={{ fontWeight: 'bold', color: 'primary.main' }}>Admin Panel</MenuItem>
-                                                      )}
-                                                      <Divider />
+                                                                                <MenuItem component={Link} to="/support" onClick={() => setAnchorEl(null)}>{t('support.title')}</MenuItem>
+                                                                                {user.is_superuser && (
+                                                                                    <MenuItem onClick={toggleAdminMode} sx={{ color: adminMode ? 'primary.main' : 'inherit' }}>
+                                                                                        {t('admin.adminMode')}: {adminMode ? "ON" : "OFF"}
+                                                                                    </MenuItem>
+                                                                                )}
+                                                                                {user.is_superuser && (
+                                                                                    <MenuItem component={Link} to="/admin-panel" onClick={() => setAnchorEl(null)} sx={{ fontWeight: 'bold', color: 'primary.main' }}>Admin Panel</MenuItem>
+                                                                                )}                                                      <Divider />
                                                       <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>{t('nav.logout')}</MenuItem>                            </Menu>
                         </Box>
                       ) : (
@@ -631,18 +656,20 @@ const App: React.FC = () => {
           <Box sx={{ flexGrow: 1, width: '100%' }}>
             <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>}>
                 <Routes>
-                    <Route path="/" element={<MainPage />} />
+                    <Route path="/" element={<MainPage adminMode={adminMode} />} />
                     <Route path="/category/:slug" element={<CategoryFlavors />} />
-                    <Route path="/flavor/:id" element={<FlavorDetail />} />
-                    <Route path="/profile/:username" element={<PublicProfile />} />
-                    <Route path="/community" element={<CommunityFeed />} />
+                    <Route path="/flavor/:id" element={<FlavorDetail adminMode={adminMode} />} />
+                    <Route path="/profile/:username" element={<PublicProfile adminMode={adminMode} />} />
+                    <Route path="/community" element={<CommunityFeed adminMode={adminMode} />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/privacy" element={<Privacy />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
                     <Route path="/support" element={<Support />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/user/:id" element={<AdminUserDetail />} />
+                    <Route path="/admin-panel" element={<AdminDashboard />} />
+                    <Route path="/admin-panel/user/:id" element={<AdminUserDetail />} />
+                    <Route path="/admin-panel/rating/:id" element={<AdminRatingDetail />} />
+                    <Route path="/admin-panel/reply/:id" element={<AdminReplyDetail />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="*" element={<Box sx={{ p: 4, textAlign: 'center' }}><Typography variant="h5">404 - Page Not Found</Typography><Button component={Link} to="/" sx={{ mt: 2 }}>Back to Home</Button></Box>} />
                 </Routes>

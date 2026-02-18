@@ -45,7 +45,11 @@ interface ProfileData {
     ratings: Rating[];
 }
 
-const PublicProfile: React.FC = () => {
+interface PublicProfileProps {
+    adminMode?: boolean;
+}
+
+const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   const { t } = useTranslation();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
@@ -265,6 +269,15 @@ const PublicProfile: React.FC = () => {
                                               }}>
                                                   {rating.flavor_name}
                                               </Typography>
+                                              {adminMode && (
+                                                  <Button 
+                                                    size="small" fullWidth variant="text" color="secondary"
+                                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/admin-panel/rating/${rating.id}`); }}
+                                                    sx={{ fontSize: '0.6rem', py: 0, textTransform: 'none' }}
+                                                  >
+                                                      Manage
+                                                  </Button>
+                                              )}
                                           </CardContent>
                                       </Link>
                                   </Card>

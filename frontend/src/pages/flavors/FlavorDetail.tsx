@@ -61,7 +61,11 @@ interface Flavor {
   shop_url: string | null;
 }
 
-const FlavorDetail: React.FC = () => {
+interface FlavorDetailProps {
+    adminMode?: boolean;
+}
+
+const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { id } = useParams<{ id: string }>();
@@ -403,7 +407,18 @@ const FlavorDetail: React.FC = () => {
                                                     </Typography>
                                                 </Box>
                                             </Box>
-                                            <RatingBadge score={rating.score} />
+                                            <Stack direction="row" spacing={1} alignItems="center">
+                                                <RatingBadge score={rating.score} />
+                                                {adminMode && (
+                                                    <Button 
+                                                        size="small" variant="outlined" color="secondary"
+                                                        onClick={() => navigate(`/admin-panel/rating/${rating.id}`)}
+                                                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                                                    >
+                                                        {t('admin.manageRating')}
+                                                    </Button>
+                                                )}
+                                            </Stack>
                                         </Box>
 
                                         {rating.comment ? (
@@ -456,6 +471,15 @@ const FlavorDetail: React.FC = () => {
                                                             <Button size="small" sx={{ minWidth: 0, py: 0, fontSize: '0.7rem', fontWeight: 'bold' }} onClick={() => { setEditingReplyId(reply.id); setEditReplyText(reply.text); }}>{t('common.edit')}</Button>
                                                             <Button size="small" color="error" sx={{ minWidth: 0, py: 0, fontSize: '0.7rem', fontWeight: 'bold' }} onClick={() => handleDeleteReply(reply.id)}>{t('common.delete')}</Button>
                                                         </Box>
+                                                    )}
+                                                    {adminMode && (
+                                                        <Button 
+                                                            size="small" variant="text" color="secondary"
+                                                            onClick={() => navigate(`/admin-panel/reply/${reply.id}`)}
+                                                            sx={{ minWidth: 0, py: 0, fontSize: '0.7rem', fontWeight: 'bold' }}
+                                                        >
+                                                            {t('admin.manageReply')}
+                                                        </Button>
                                                     )}
                                                 </Box>
                                                 {editingReplyId === reply.id ? (
