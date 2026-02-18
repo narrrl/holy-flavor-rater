@@ -8,12 +8,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from rest_framework.pagination import PageNumberPagination
-from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, ProfileComment
+from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, ProfileComment, Banner
 from .serializers import (
     UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, 
     ReplySerializer, NotificationSerializer, TicketSerializer, 
     TicketMessageSerializer, AdminUserListSerializer, AdminUserDetailSerializer,
-    ProfileCommentSerializer
+    ProfileCommentSerializer, BannerSerializer
 )
 
 def log_user_ip(user, request):
@@ -684,6 +684,31 @@ class TicketViewSet(viewsets.ModelViewSet):
         if not request.user.is_superuser:
             raise permissions.PermissionDenied("Only admins can delete tickets.")
         return super().destroy(request, *args, **kwargs)
+
+class BannerViewSet(viewsets.ModelViewSet):
+    queryset = Banner.objects.all()
+    serializer_class = BannerSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'active']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        active_banner = Banner.objects.filter(is_active=True).first()
+        if active_banner:
+            serializer = self.get_serializer(active_banner)
+            return Response(serializer.data)
+        return Response(None)
+
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        banner = self.get_object()
+        banner.is_active = True
+        banner.save()
+        return Response({'status': 'banner activated'})
 
 class AdminViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAdminUser]
