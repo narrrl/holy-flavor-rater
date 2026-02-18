@@ -274,57 +274,71 @@ const AdminDashboard: React.FC = () => {
             {currentTab === 2 && (
                 <Box>
                     <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>{t('admin.banners')}</Typography>
-                    <Grid container spacing={3}>
-                        {banners.map((banner) => (
-                            <Grid size={{ xs: 12, md: 4 }} key={banner.id}>
-                                <Card sx={{ borderRadius: 3, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                    {banner.is_active && (
-                                        <Chip 
-                                            icon={<CheckCircleIcon />} 
-                                            label="Active" 
-                                            color="success" 
-                                            size="small"
-                                            sx={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}
-                                        />
-                                    )}
-                                    <CardContent sx={{ flexGrow: 1 }}>
-                                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{banner.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{banner.description}</Typography>
-                                        
-                                        <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
-                                            <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>Settings:</Typography>
-                                            <pre style={{ margin: 0, fontSize: '0.7rem', overflow: 'auto' }}>
-                                                {JSON.stringify(banner.settings, null, 2)}
-                                            </pre>
+                    
+                    {banners.length === 0 ? (
+                        <Card variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
+                            <Typography color="text.secondary">No banner models found in the database.</Typography>
+                            <Button 
+                                variant="outlined" 
+                                sx={{ mt: 2 }} 
+                                onClick={fetchData}
+                            >
+                                Retry Loading
+                            </Button>
+                        </Card>
+                    ) : (
+                        <Grid container spacing={3}>
+                            {banners.map((banner) => (
+                                <Grid size={{ xs: 12, md: 4 }} key={banner.id}>
+                                    <Card sx={{ borderRadius: 3, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                        {banner.is_active && (
+                                            <Chip 
+                                                icon={<CheckCircleIcon />} 
+                                                label="Active" 
+                                                color="success" 
+                                                size="small"
+                                                sx={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}
+                                            />
+                                        )}
+                                        <CardContent sx={{ flexGrow: 1 }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{banner.name}</Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>{banner.description}</Typography>
+                                            
+                                            <Box sx={{ mt: 2, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 1 }}>Settings:</Typography>
+                                                <pre style={{ margin: 0, fontSize: '0.7rem', overflow: 'auto' }}>
+                                                    {JSON.stringify(banner.settings, null, 2)}
+                                                </pre>
+                                            </Box>
+                                        </CardContent>
+                                        <Box sx={{ p: 2, pt: 0 }}>
+                                            <Stack direction="row" spacing={1}>
+                                                <Button 
+                                                    fullWidth 
+                                                    variant="outlined" 
+                                                    startIcon={<EditIcon />}
+                                                    onClick={() => {
+                                                        setSelectedBanner(banner);
+                                                        setIsSettingsDialogOpen(true);
+                                                    }}
+                                                >
+                                                    Edit Settings
+                                                </Button>
+                                                <Button 
+                                                    fullWidth 
+                                                    variant={banner.is_active ? "outlined" : "contained"} 
+                                                    disabled={banner.is_active}
+                                                    onClick={() => handleActivateBanner(banner.id)}
+                                                >
+                                                    {banner.is_active ? "Currently Active" : "Set as Active"}
+                                                </Button>
+                                            </Stack>
                                         </Box>
-                                    </CardContent>
-                                    <Box sx={{ p: 2, pt: 0 }}>
-                                        <Stack direction="row" spacing={1}>
-                                            <Button 
-                                                fullWidth 
-                                                variant="outlined" 
-                                                startIcon={<EditIcon />}
-                                                onClick={() => {
-                                                    setSelectedBanner(banner);
-                                                    setIsSettingsDialogOpen(true);
-                                                }}
-                                            >
-                                                Edit Settings
-                                            </Button>
-                                            <Button 
-                                                fullWidth 
-                                                variant={banner.is_active ? "outlined" : "contained"} 
-                                                disabled={banner.is_active}
-                                                onClick={() => handleActivateBanner(banner.id)}
-                                            >
-                                                {banner.is_active ? "Currently Active" : "Set as Active"}
-                                            </Button>
-                                        </Stack>
-                                    </Box>
-                                </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
+                                    </Card>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
                 </Box>
             )}
 
