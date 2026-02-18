@@ -68,22 +68,30 @@ const AdminDashboard: React.FC = () => {
     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
     const fetchData = async () => {
+        setLoading(true);
         try {
-            const [statsRes, usersRes, bannersRes] = await Promise.all([
-                api.get('admin-custom/stats/'),
-                api.get('admin-custom/users/'),
-                api.get('banners/')
-            ]);
+            const statsRes = await api.get('admin-custom/stats/');
             setStats(statsRes.data);
-            setUsers(usersRes.data);
-            // Handle both paginated and non-paginated responses
-            setBanners(Array.isArray(bannersRes.data) ? bannersRes.data : (bannersRes.data.results || []));
         } catch (err) {
-            console.error(err);
-            navigate('/');
-        } finally {
-            setLoading(false);
+            console.error('Stats fetch error:', err);
         }
+
+        try {
+            const usersRes = await api.get('admin-custom/users/');
+            setUsers(usersRes.data);
+        } catch (err) {
+            console.error('Users fetch error:', err);
+        }
+
+        try {
+            const bannersRes = await api.get('banners/');
+            const bannersData = Array.isArray(bannersRes.data) ? bannersRes.data : (bannersRes.data.results || []);
+            setBanners(bannersData);
+        } catch (err) {
+            console.error('Banners fetch error:', err);
+        }
+        
+        setLoading(false);
     };
 
     const handleActivateBanner = async (id: number) => {
