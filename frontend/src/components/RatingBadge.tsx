@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 
 interface RatingBadgeProps {
     score: number;
@@ -15,32 +15,32 @@ const RatingBadge: React.FC<RatingBadgeProps> = ({ score, size = 'medium', sx })
     return (
         <Box sx={{ 
             display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            bgcolor: alpha(theme.palette.primary.main, 0.1),
-            color: 'primary.main',
-            px: isLarge ? 2.5 : (isSmall ? 1 : 1.5), 
-            py: isLarge ? 0.8 : (isSmall ? 0.2 : 0.5), 
-            borderRadius: isLarge ? 2.5 : (isSmall ? 1 : 2),
-            minWidth: isLarge ? 70 : (isSmall ? 40 : 50),
-            border: '1px solid',
-            borderColor: alpha(theme.palette.primary.main, 0.2),
-            lineHeight: 1,
+            flexDirection: 'row', 
+            alignItems: 'baseline',
+            gap: 0.5,
+            bgcolor: 'primary.main',
+            color: 'primary.contrastText',
+            px: isLarge ? 2 : (isSmall ? 1 : 1.5), 
+            py: isLarge ? 0.8 : (isSmall ? 0.3 : 0.5), 
+            borderRadius: 1.5,
+            minWidth: 'fit-content',
+            boxShadow: theme.palette.mode === 'dark' 
+                ? '0 4px 12px rgba(0,0,0,0.4)' 
+                : '0 2px 8px rgba(0,0,0,0.1)',
             ...sx
         }}>
             <Typography 
                 variant={isLarge ? "h5" : (isSmall ? "caption" : "subtitle1")} 
                 sx={{ fontWeight: '900', lineHeight: 1 }}
             >
-                {typeof score === 'number' ? score.toFixed(isLarge ? 1 : 0) : score}
+                {typeof score === 'number' ? (isLarge ? score.toFixed(1) : score.toFixed(0)) : score}
             </Typography>
             <Typography 
                 variant="caption" 
                 sx={{ 
-                    fontSize: isLarge ? '0.7rem' : (isSmall ? '0.5rem' : '0.6rem'), 
-                    fontWeight: 'bold', 
-                    opacity: 0.8,
-                    mt: 0.2
+                    fontSize: isLarge ? '0.75rem' : (isSmall ? '0.55rem' : '0.65rem'), 
+                    fontWeight: '900', 
+                    opacity: 0.9,
                 }}
             >
                 / 10

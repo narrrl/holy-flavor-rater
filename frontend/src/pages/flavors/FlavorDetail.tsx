@@ -295,7 +295,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                           </Box>
 
                           <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}>
-                              {flavor.description}
+                              <RichText text={flavor.description} />
                           </Typography>
 
                           {flavor.shop_url && (

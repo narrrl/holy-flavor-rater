@@ -143,7 +143,7 @@ export const getTheme = (mode: CatppuccinTheme) => {
       }
     },
     shape: {
-        borderRadius: 12,
+        borderRadius: 8,
     },
     typography: {
       fontFamily: '"Plus Jakarta Sans", "Inter", "Roboto", sans-serif',
@@ -193,7 +193,7 @@ export const getTheme = (mode: CatppuccinTheme) => {
                     backdropFilter: 'blur(12px)',
                     border: '1px solid',
                     borderColor: alpha(palette.text.hex, 0.1),
-                    borderRadius: '20px',
+                    borderRadius: '12px',
                     transition: 'all 0.2s ease-in-out',
                 }
             }
@@ -212,7 +212,7 @@ export const getTheme = (mode: CatppuccinTheme) => {
         MuiButton: {
             styleOverrides: {
                 root: {
-                    borderRadius: '10px',
+                    borderRadius: '8px',
                     padding: '8px 20px',
                 },
                 containedPrimary: {
@@ -228,6 +228,14 @@ export const getTheme = (mode: CatppuccinTheme) => {
                 root: {
                     minHeight: '48px',
                     fontWeight: 700,
+                    borderRadius: '8px',
+                }
+            }
+        },
+        MuiOutlinedInput: {
+            styleOverrides: {
+                root: {
+                    borderRadius: '8px',
                 }
             }
         }
