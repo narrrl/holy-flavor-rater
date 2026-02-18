@@ -1,0 +1,50 @@
+{
+  "name": "Hextech Corruption",
+  "slug": "hextech-corruption",
+  "description": "An organic, cellular anomaly pattern inspired by the Hextech corruption in Arcane. Features glowing iridescent cores and a warping void shell.",
+  "settings": {
+    "cellCount": 40,
+    "shimmerSpeed": 0.015,
+    "glowIntensity": 0.9,
+    "instability": 0.6,
+    "shellDarkness": 0.85
+  },
+  "schema": [
+    {
+      "key": "cellCount",
+      "label": "Anomaly Density",
+      "type": "slider",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "description": "Number of organic cells in the corruption pattern."
+    },
+    {
+      "key": "shimmerSpeed",
+      "label": "Shimmer Pulse",
+      "type": "slider",
+      "min": 0.005,
+      "max": 0.05,
+      "step": 0.005,
+      "description": "How fast the internal cores pulse and shimmer."
+    },
+    {
+      "key": "instability",
+      "label": "Core Instability",
+      "type": "slider",
+      "min": 0.1,
+      "max": 2.0,
+      "step": 0.1,
+      "description": "How much the cells warp and distort over time."
+    },
+    {
+      "key": "shellDarkness",
+      "label": "Shell Contrast",
+      "type": "slider",
+      "min": 0.5,
+      "max": 1.0,
+      "step": 0.05,
+      "description": "How dark the outer 'void' shell appears against the glowing cores."
+    }
+  ]
+}
