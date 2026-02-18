@@ -1,0 +1,8 @@
+{
+  "name": "Matrix Code",
+  "slug": "matrix",
+  "description": "A matrix-style falling code banner using the username.",
+  "settings": {
+    "opacity": 0.6
+  }
+}

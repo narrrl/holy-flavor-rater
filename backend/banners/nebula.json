@@ -1,0 +1,13 @@
+{
+  "name": "Nebula Cloud",
+  "slug": "nebula",
+  "description": "An interactive space-themed nebular cloud with fluid movement.",
+  "settings": {
+    "particleCount": 300,
+    "speed": 0.005,
+    "opacity": 0.8,
+    "attractionForce": 0.25,
+    "cloudSize": 14,
+    "returnSpeed": 0.02
+  }
+}
