@@ -170,11 +170,22 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
 
             ctx.clearRect(0, 0, width, height);
             
-            // 1. Deep Space Night Sky Gradient
+            // 1. Dynamic Celestial Background
+            const isLight = theme.palette.mode === 'light';
             const skyGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
-            skyGrad.addColorStop(0, '#0a0a1a'); // Dark Midnight Blue
-            skyGrad.addColorStop(0.5, '#05050d'); // Near Black
-            skyGrad.addColorStop(1, '#020205'); // Deep Space
+            
+            if (isLight) {
+                // Soft Midnight/Deep Primary for light mode
+                skyGrad.addColorStop(0, alpha(colors[0], 0.4)); 
+                skyGrad.addColorStop(0.6, alpha(colors[0], 0.7));
+                skyGrad.addColorStop(1, alpha(colors[0], 0.9));
+            } else {
+                // True Deep Space for dark mode
+                skyGrad.addColorStop(0, '#0a0a1a'); 
+                skyGrad.addColorStop(0.5, '#05050d'); 
+                skyGrad.addColorStop(1, '#020205'); 
+            }
+            
             ctx.fillStyle = skyGrad;
             ctx.fillRect(0, 0, width, height);
 
