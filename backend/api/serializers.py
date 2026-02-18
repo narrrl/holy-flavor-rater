@@ -9,7 +9,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class BannerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banner
-        fields = ['id', 'name', 'slug', 'description', 'is_active', 'settings', 'schema', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'slug', 'description', 'is_active', 'is_enabled', 'settings', 'schema', 'created_at', 'updated_at']
 
 class ReplySerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
@@ -87,10 +87,11 @@ class UserSerializer(serializers.ModelSerializer):
     is_following = serializers.SerializerMethodField()
     unread_notifications_count = serializers.SerializerMethodField()
     is_superuser = serializers.BooleanField(read_only=True)
+    selected_banner_slug = serializers.CharField(source='selected_banner.slug', read_only=True, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'theme', 'language', 'avatar', 'following_count', 'followers_count', 'is_following', 'unread_notifications_count', 'is_superuser']
+        fields = ['id', 'username', 'email', 'theme', 'language', 'avatar', 'following_count', 'followers_count', 'is_following', 'unread_notifications_count', 'is_superuser', 'selected_banner', 'selected_banner_slug']
 
     def get_avatar(self, obj):
         if obj.avatar:
