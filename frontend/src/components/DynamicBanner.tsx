@@ -4,6 +4,7 @@ import GenerativeBanner from './GenerativeBanner';
 import NebulaBanner from './NebulaBanner';
 import FirefliesBanner from './FirefliesBanner';
 import HextechBanner from './HextechBanner';
+import HextechCorruptionBanner from './HextechCorruptionBanner';
 
 interface Banner {
     id: number;
@@ -92,6 +93,10 @@ const DynamicBanner: React.FC<DynamicBannerProps> = (props) => {
 
     if (banner.slug === 'hextech') {
         return <HextechBanner {...props} settings={banner.settings} />;
+    }
+
+    if (banner.slug === 'hextech-corruption') {
+        return <HextechCorruptionBanner {...props} settings={banner.settings} />;
     }
 
     // Fallback
