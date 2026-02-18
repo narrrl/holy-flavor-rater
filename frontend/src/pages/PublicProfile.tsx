@@ -121,8 +121,30 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           img.onload = () => {
               const colorThief = new ColorThief();
               try {
-                  const colors = colorThief.getPalette(img, 3);
-                  setPalette(colors.map(c => `rgb(${c[0]}, ${c[1]}, ${c[2]})`));
+                  const palette = colorThief.getPalette(img, 10);
+                  
+                  // Filter for colors that are neither too dark nor too bright (washed out)
+                  // and prefer higher saturation
+                  const processed = palette.map(c => {
+                      const r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+                      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                      const l = (max + min) / 2;
+                      const s = max === min ? 0 : (l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min));
+                      return { rgb: `rgb(${c[0]}, ${c[1]}, ${c[2]})`, l, s };
+                  });
+
+                  // Sort by saturation (highest first) then filter by luminance (0.3 - 0.8 range)
+                  const vibrant = processed
+                      .filter(c => c.l > 0.2 && c.l < 0.85) // Avoid pure black/white
+                      .sort((a, b) => b.s - a.s); // Prefer colorful ones
+
+                  if (vibrant.length >= 2) {
+                      setPalette([vibrant[0].rgb, vibrant[1].rgb]);
+                  } else if (vibrant.length === 1) {
+                      setPalette([vibrant[0].rgb, vibrant[0].rgb]);
+                  } else {
+                      setPalette([]);
+                  }
               } catch (e) {
                   setPalette([]);
               }
@@ -206,15 +228,17 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   const bannerColors = [
       palette[0] || theme.palette.primary.main,
       palette[1] || theme.palette.secondary.main,
-      theme.palette.primary.main,
-      theme.palette.secondary.main
+      theme.palette.secondary.main,
+      theme.palette.primary.main
   ];
 
   const abstractBanner = `
-    radial-gradient(at 0% 0%, ${alpha(bannerColors[0], 0.6)} 0px, transparent 50%),
-    radial-gradient(at 100% 0%, ${alpha(bannerColors[1], 0.4)} 0px, transparent 50%),
-    radial-gradient(at 50% 100%, ${alpha(bannerColors[2], 0.3)} 0px, transparent 50%),
-    linear-gradient(135deg, ${alpha(bannerColors[0], 0.1)} 0%, ${alpha(bannerColors[3], 0.1)} 100%)
+    radial-gradient(at 0% 0%, ${alpha(bannerColors[0], 0.8)} 0px, transparent 55%),
+    radial-gradient(at 100% 0%, ${alpha(bannerColors[1], 0.7)} 0px, transparent 55%),
+    radial-gradient(at 100% 100%, ${alpha(bannerColors[2], 0.6)} 0px, transparent 55%),
+    radial-gradient(at 0% 100%, ${alpha(bannerColors[3], 0.5)} 0px, transparent 55%),
+    radial-gradient(at 50% 50%, ${alpha(bannerColors[0], 0.4)} 0px, transparent 60%),
+    linear-gradient(135deg, ${alpha(bannerColors[0], 0.2)} 0%, ${alpha(bannerColors[1], 0.2)} 100%)
   `;
 
   const handleGoBack = () => {
