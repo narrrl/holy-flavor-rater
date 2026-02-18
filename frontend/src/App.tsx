@@ -73,13 +73,14 @@ interface Notification {
     id: number;
     actor_username: string;
     actor_avatar: string | null;
-    notification_type: 'reply' | 'mention';
+    notification_type: 'reply' | 'mention' | 'ticket_new' | 'ticket_reply' | 'profile_comment';
     rating: number | null;
     reply: number | null;
     is_read: boolean;
     created_at: string;
     flavor_name: string | null;
     flavor_id: number | null;
+    profile_owner_username: string | null;
 }
 
 const GlobalSearch = () => {
@@ -494,16 +495,13 @@ const App: React.FC = () => {
                 </Box>
             ) : (
                 notifications.map(n => {
-                    let message = "";
-                    if (n.notification_type === 'reply') message = `replied to your review on ${n.flavor_name}`;
-                    else if (n.notification_type === 'mention') message = `mentioned you on ${n.flavor_name}`;
-                    else if (n.notification_type === 'ticket_new') message = t('community.notifTicketNew');
-                    else if (n.notification_type === 'ticket_reply') message = user?.is_superuser ? t('community.notifTicketReplyAdmin') : t('community.notifTicketReply');
-
                     const handleClick = () => {
                         if (n.notification_type.startsWith('ticket')) {
                             handleNotificationClick(n);
                             navigate('/support');
+                        } else if (n.notification_type === 'profile_comment') {
+                            handleNotificationClick(n);
+                            navigate(`/profile/${user?.username}`);
                         } else {
                             handleNotificationClick(n);
                         }
@@ -530,7 +528,13 @@ const App: React.FC = () => {
                             </Avatar>
                             <Box sx={{ flex: 1 }}>
                                 <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
-                                    <strong>{n.actor_username}</strong> {message}
+                                    <strong>{n.actor_username}</strong> {
+                                        n.notification_type === 'reply' ? `replied to your review on ${n.flavor_name}` :
+                                        n.notification_type === 'mention' ? `mentioned you on ${n.flavor_name}` :
+                                        n.notification_type === 'profile_comment' ? `left a message on your guestbook` :
+                                        n.notification_type === 'ticket_new' ? t('community.notifTicketNew') :
+                                        user?.is_superuser ? t('community.notifTicketReplyAdmin') : t('community.notifTicketReply')
+                                    }
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
                                     {formatDate(n.created_at)}

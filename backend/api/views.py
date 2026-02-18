@@ -381,6 +381,16 @@ class UserViewSet(viewsets.ModelViewSet):
             author=request.user,
             text=text
         )
+
+        # Notify profile owner
+        if profile_owner != request.user:
+            Notification.objects.create(
+                recipient=profile_owner,
+                actor=request.user,
+                notification_type='profile_comment',
+                profile_comment=comment
+            )
+
         return Response(ProfileCommentSerializer(comment, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['delete'], url_path='delete_comment/(?P<comment_id>[^/.]+)', permission_classes=[permissions.IsAuthenticated])

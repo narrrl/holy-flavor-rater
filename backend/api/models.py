@@ -128,6 +128,7 @@ class Notification(models.Model):
         ('mention', 'Mention'),
         ('ticket_new', 'New Ticket'),
         ('ticket_reply', 'Ticket Reply'),
+        ('profile_comment', 'Profile Comment'),
     ]
     recipient = models.ForeignKey(User, related_name='notifications', on_delete=models.CASCADE)
     actor = models.ForeignKey(User, related_name='actions', on_delete=models.CASCADE)
@@ -135,6 +136,7 @@ class Notification(models.Model):
     rating = models.ForeignKey(Rating, on_delete=models.CASCADE, null=True, blank=True)
     reply = models.ForeignKey(Reply, on_delete=models.CASCADE, null=True, blank=True)
     ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE, null=True, blank=True)
+    profile_comment = models.ForeignKey('ProfileComment', on_delete=models.CASCADE, null=True, blank=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
