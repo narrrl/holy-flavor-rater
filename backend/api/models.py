@@ -56,6 +56,7 @@ class Category(models.Model):
 
     class Meta:
         verbose_name_plural = "Categories"
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -77,6 +78,7 @@ class Flavor(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['name', 'category'], name='unique_flavor_name_per_category')
         ]
+        ordering = ['name']
 
     def __str__(self):
         return f"{self.name} ({self.category.name})"
