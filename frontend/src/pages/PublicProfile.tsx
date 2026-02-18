@@ -177,7 +177,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                         <Button 
                             variant="outlined" 
                             color="secondary"
-                            onClick={() => navigate(`/admin/user/${data.id}`)}
+                            onClick={() => navigate(`/admin-panel/user/${data.id}`)}
                             sx={{ borderRadius: 4, px: 4 }}
                         >
                             {t('admin.manageUser')}
