@@ -299,12 +299,12 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                                                 <RichText text={rating.comment} />
                                             </Typography>
                                         ) : (
-                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('dashboard.noRatings')}</Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>No comment provided.</Typography>
                                         )}
                                     </Box>
                                     <Link to={`/flavor/${rating.flavor}`} style={{ flexShrink: 0 }}>
-                                        <Box sx={{ width: 70, height: 70, borderRadius: 2, overflow: 'hidden', bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}>
-                                            <Box component="img" src={rating.flavor_image || undefined} sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 0.5 }} />
+                                        <Box sx={{ width: 70, height: 70, borderRadius: 1, overflow: 'hidden', bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+                                            <Box component="img" src={rating.flavor_image || undefined} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         </Box>
                                     </Link>
                                 </Box>
@@ -376,7 +376,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   
                   {/* Notifications Widget */}
-                  <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                  <Card elevation={0} sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
                           <NotificationsIcon color="primary" fontSize="small" />
                           <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('community.notifications')}</Typography>
@@ -406,7 +406,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                   </Card>
 
                   {/* Following Widget */}
-                  <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                  <Card elevation={0} sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
                           <PeopleIcon color="primary" fontSize="small" />
                           <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('nav.following')}</Typography>
@@ -417,6 +417,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                                 value={followingSearch}
                                 onChange={(e) => setFollowingSearch(e.target.value)}
                                 InputProps={{ startAdornment: <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} /> }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                             />
                       </Box>
                       <List disablePadding sx={{ maxHeight: 250, overflowY: 'auto' }}>
@@ -430,7 +431,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                   </Card>
 
                   {/* Top Rated by Circle */}
-                  <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
+                  <Card elevation={0} sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
                       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: alpha('#000', 0.02), display: 'flex', alignItems: 'center', gap: 1 }}>
                           <WhatshotIcon color="error" fontSize="small" />
                           <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{t('community.topRated')}</Typography>
@@ -439,7 +440,9 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                           {topFollowed.map((flavor, idx) => (
                               <ListItemButton key={flavor.id} component={Link} to={`/flavor/${flavor.id}`}>
                                   <Box sx={{ mr: 2, fontWeight: 'bold', color: 'text.secondary', width: 15 }}>{idx + 1}</Box>
-                                  <Avatar src={flavor.image_url} variant="rounded" sx={{ width: 32, height: 32, mr: 2, bgcolor: 'transparent' }} imgProps={{ sx: { objectFit: 'contain' } }} />
+                                  <Box sx={{ width: 32, height: 32, mr: 2, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, overflow: 'hidden', flexShrink: 0 }}>
+                                      <Box component="img" src={flavor.image_url} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  </Box>
                                   <ListItemText 
                                     primary={flavor.name} 
                                     primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold', noWrap: true }}
