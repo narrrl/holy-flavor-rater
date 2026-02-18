@@ -129,11 +129,11 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
             
             // Physics Update
             nodes.forEach((node) => {
-                // Return force (Elasticity)
+                // Return force (Elasticity) - slightly slower return
                 const dxBase = node.baseX - node.x;
                 const dyBase = node.baseY - node.y;
-                node.vx += dxBase * 0.008;
-                node.vy += dyBase * 0.008;
+                node.vx += dxBase * 0.005;
+                node.vy += dyBase * 0.005;
 
                 // Mouse interaction
                 const dxMouse = mouse.x - node.x;
@@ -141,26 +141,26 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
                 
                 if (mouse.down) {
-                    // Grab and drag effect - wider range
-                    const dragDist = 350;
+                    // Grab and drag effect - less strong
+                    const dragDist = 300;
                     if (distMouse < dragDist) {
                         const power = (dragDist - distMouse) / dragDist;
-                        node.vx += dxMouse * power * 0.15;
-                        node.vy += dyMouse * power * 0.15;
+                        node.vx += dxMouse * power * 0.08;
+                        node.vy += dyMouse * power * 0.08;
                     }
                 } else {
-                    // Hover disturbance - pushing effect
-                    const hoverDist = 180;
+                    // Hover disturbance - less strong pushing effect
+                    const hoverDist = 150;
                     if (distMouse < hoverDist) {
                         const power = (hoverDist - distMouse) / hoverDist;
-                        node.vx -= dxMouse * power * 0.04;
-                        node.vy -= dyMouse * power * 0.04;
+                        node.vx -= dxMouse * power * 0.02;
+                        node.vy -= dyMouse * power * 0.02;
                     }
                 }
 
-                // Damping (Friction)
-                node.vx *= 0.9;
-                node.vy *= 0.9;
+                // Damping (Friction) - stronger damping for less "fast" feel
+                node.vx *= 0.88;
+                node.vy *= 0.88;
 
                 // Update Position
                 node.x += node.vx;
@@ -258,7 +258,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 width: '100%',
                 height: '100%',
                 pointerEvents: 'none',
-                zIndex: 5,
+                zIndex: 1,
                 mixBlendMode: 'screen'
             }} 
         />
