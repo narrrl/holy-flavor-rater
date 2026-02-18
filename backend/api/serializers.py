@@ -179,10 +179,11 @@ class NotificationSerializer(serializers.ModelSerializer):
     actor_avatar = serializers.SerializerMethodField()
     flavor_name = serializers.SerializerMethodField()
     flavor_id = serializers.SerializerMethodField()
+    profile_owner_username = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
-        fields = ['id', 'actor_username', 'actor_avatar', 'notification_type', 'rating', 'reply', 'ticket', 'is_read', 'created_at', 'flavor_name', 'flavor_id']
+        fields = ['id', 'actor_username', 'actor_avatar', 'notification_type', 'rating', 'reply', 'ticket', 'profile_comment', 'profile_owner_username', 'is_read', 'created_at', 'flavor_name', 'flavor_id']
 
     def get_actor_avatar(self, obj):
         if obj.actor.avatar:
@@ -204,4 +205,9 @@ class NotificationSerializer(serializers.ModelSerializer):
             return obj.rating.flavor.id
         if obj.reply:
             return obj.reply.rating.flavor.id
+        return None
+
+    def get_profile_owner_username(self, obj):
+        if obj.profile_comment:
+            return obj.profile_comment.profile_owner.username
         return None
