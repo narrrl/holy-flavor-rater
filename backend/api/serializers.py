@@ -136,6 +136,23 @@ class TicketSerializer(serializers.ModelSerializer):
             return obj.user.avatar.url
         return None
 
+class ProfileCommentSerializer(serializers.ModelSerializer):
+    author_username = serializers.CharField(source='author.username', read_only=True)
+    author_avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        from .models import ProfileComment
+        model = ProfileComment
+        fields = ['id', 'author_username', 'author_avatar', 'text', 'created_at']
+
+    def get_author_avatar(self, obj):
+        if obj.author.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.author.avatar.url)
+            return obj.author.avatar.url
+        return None
+
 class AdminUserListSerializer(serializers.ModelSerializer):
     ips = serializers.SerializerMethodField()
     
