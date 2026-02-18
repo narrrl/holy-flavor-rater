@@ -37,18 +37,26 @@ class Command(BaseCommand):
 
                     if not created:
                         # Sync missing settings from JSON to DB without overwriting existing keys
-                        db_settings = banner.settings or {}
-                        json_settings = data.get('settings', {})
+                                                db_settings = banner.settings or {}
+                                                json_settings = data.get('settings', {})
+                                                json_schema = data.get('schema', [])
+                                                
+                                                updated = False
+                                                # Sync missing settings
+                                                for key, value in json_settings.items():
+                                                    if key not in db_settings:
+                                                        db_settings[key] = value
+                                                        updated = True
+                                                
+                                                # Always sync schema as it represents the UI structure
+                                                if banner.schema != json_schema:
+                                                    banner.schema = json_schema
+                                                    updated = True
+                                                    
+                                                if updated:
+                                                    banner.settings = db_settings
+                                                    banner.save()
                         
-                        updated = False
-                        for key, value in json_settings.items():
-                            if key not in db_settings:
-                                db_settings[key] = value
-                                updated = True
-                        
-                        if updated:
-                            banner.settings = db_settings
-                            banner.save()
                             self.stdout.write(self.style.SUCCESS(f"Synced new settings for banner '{slug}' from {filename}"))
                     else:
                         self.stdout.write(self.style.SUCCESS(f"Created new banner '{slug}' from {filename}"))

@@ -197,6 +197,7 @@ class Banner(models.Model):
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=False)
     settings = models.JSONField(default=dict, blank=True)
+    schema = models.JSONField(default=list, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

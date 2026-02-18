@@ -50,6 +50,7 @@ interface Banner {
     description: string;
     is_active: boolean;
     settings: any;
+    schema: any[];
 }
 
 const AdminDashboard: React.FC = () => {
