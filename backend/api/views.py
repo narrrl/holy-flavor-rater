@@ -306,7 +306,7 @@ class UserViewSet(viewsets.ModelViewSet):
             send_mail(
                 'Verify your Holy Flavors account',
                 f'Hi {username},\n\nYour verification code is: {code}',
-                'noreply@holyflavors.com',
+                settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False,
             )
@@ -430,7 +430,7 @@ class UserViewSet(viewsets.ModelViewSet):
             send_mail(
                 'Confirm your new email',
                 f'Hi {user.username},\n\nYour confirmation code is: {code}',
-                'noreply@holyflavors.com',
+                settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False,
             )
@@ -488,7 +488,7 @@ class UserViewSet(viewsets.ModelViewSet):
         send_mail(
             'Password Reset Request',
             f'Hi {user.username},\n\nYour password reset code is: {code}',
-            'noreply@holyflavors.com',
+            settings.DEFAULT_FROM_EMAIL,
             [email],
             fail_silently=False,
         )
@@ -525,7 +525,7 @@ class UserViewSet(viewsets.ModelViewSet):
         send_mail(
             'Confirm Account Deletion - Holy Flavors Archive',
             f'Hi {user.username},\n\nYou requested to delete your account. This action is permanent.\n\nYour deletion code is: {code}',
-            'noreply@holyflavors.com',
+            settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
         )
@@ -659,7 +659,7 @@ class AdminViewSet(viewsets.ViewSet):
             send_mail(
                 'Holy Flavors Admin Test Email',
                 f'This is a test email sent to {request.user.email} from the Holy Flavors Admin Interface.',
-                'noreply@holyflavors.com',
+                settings.DEFAULT_FROM_EMAIL,
                 [request.user.email],
                 fail_silently=False,
             )

@@ -206,6 +206,8 @@ EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'false').lower() == 'true'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 EMAIL_SKIP_CERT_VERIFICATION = os.environ.get('EMAIL_SKIP_CERT_VERIFICATION', 'false').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 if EMAIL_HOST:
     EMAIL_BACKEND = 'api.email_backend.InsecureEmailBackend'
