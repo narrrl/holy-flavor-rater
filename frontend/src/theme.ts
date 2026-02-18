@@ -70,13 +70,13 @@ export const getTheme = (mode: CatppuccinTheme) => {
       };
   } else if (mode === 't0p_sai') {
       palette = {
-          base: { hex: '#ffffff' }, 
-          surface0: { hex: '#f8f8f8' }, 
-          crust: { hex: '#e8e8e8' }, 
-          text: { hex: '#231f20' }, 
-          subtext0: { hex: '#666666' },
-          primary: { hex: '#00d7ff' }, // Sai Cyan
-          secondary: { hex: '#ff8ad8' }, // Sai Pink
+          base: { hex: '#fdf2f8' }, // Very light SAI Pink
+          surface0: { hex: '#ffffff' }, 
+          crust: { hex: '#fce7f3' }, // SAI Pink accent
+          text: { hex: '#1e1b4b' }, 
+          subtext0: { hex: '#4b5563' },
+          primary: { hex: '#00d7ff' }, // SAI Cyan
+          secondary: { hex: '#ff8ad8' }, // SAI Pink
       };
   } else if (mode === 't0p_trench') {
       palette = {
