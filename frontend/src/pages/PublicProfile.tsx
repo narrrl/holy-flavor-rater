@@ -258,7 +258,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
               }
           }} />
           
-          <CardContent sx={{ pt: 0, px: { xs: 2, md: 5 }, pb: 4 }}>
+          <CardContent sx={{ pt: 0, px: { xs: 2, md: 5 }, pb: { xs: 2, md: 4 } }}>
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 } }}>
                   <Box sx={{ 
                       position: 'relative',
@@ -427,7 +427,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
 
                                   <Grid container spacing={3}>
                                       {items.map((rating: Rating) => (
-                                          <Grid key={rating.id} size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }}>
+                                          <Grid key={rating.id} size={{ xs: 6, sm: 4, lg: 2.4 }}>
                                               <Card sx={{ 
                                                   height: '100%', borderRadius: 1, border: '1px solid', borderColor: 'divider',
                                                   bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
@@ -555,7 +555,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                       <Grid size={12}><Typography variant="h6" color="text.secondary" sx={{ py: 12, textAlign: 'center', fontWeight: 'bold' }}>No followers yet.</Typography></Grid>
                   ) : (
                       data.followers.map(user => (
-                          <Grid key={user.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                          <Grid key={user.id} size={{ xs: 12, sm: 6, lg: 4 }}>
                               <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', transition: 'all 0.3s ease', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-4px)' } }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', p: 2, gap: 2 }}>
                                       <Avatar component={Link} to={`/profile/${user.username}`} src={user.avatar || undefined} sx={{ width: 56, height: 56, cursor: 'pointer', border: '2px solid', borderColor: 'divider' }}>{user.username.charAt(0)}</Avatar>
@@ -588,7 +588,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                       <Grid size={12}><Typography variant="h6" color="text.secondary" sx={{ py: 12, textAlign: 'center', fontWeight: 'bold' }}>Not following anyone yet.</Typography></Grid>
                   ) : (
                       data.following.map(user => (
-                          <Grid key={user.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                          <Grid key={user.id} size={{ xs: 12, sm: 6, lg: 4 }}>
                               <Card sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', transition: 'all 0.3s ease', '&:hover': { borderColor: 'primary.main', transform: 'translateY(-4px)' } }}>
                                   <Box sx={{ display: 'flex', alignItems: 'center', p: 2, gap: 2 }}>
                                       <Avatar component={Link} to={`/profile/${user.username}`} src={user.avatar || undefined} sx={{ width: 56, height: 56, cursor: 'pointer', border: '2px solid', borderColor: 'divider' }}>{user.username.charAt(0)}</Avatar>

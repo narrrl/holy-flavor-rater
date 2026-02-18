@@ -222,7 +222,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
 
       <Grid container spacing={4}>
           {/* Main Feed Column */}
-          <Grid size={{ xs: 12, md: 8 }}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             {ratings.length === 0 ? (
                 <Box sx={{ 
                     p: 6, 
@@ -255,7 +255,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                                 borderColor: (theme) => alpha(theme.palette.primary.main, 0.2)
                             }
                         }}>
-                            <CardContent sx={{ p: 3 }}>
+                            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                                 {/* User Info */}
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                     <Box sx={{ display: 'flex', gap: 2 }}>
@@ -372,7 +372,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
           </Grid>
 
           {/* Sidebar Column */}
-          <Grid size={{ xs: 12, md: 4 }}>
+          <Grid size={{ xs: 12, lg: 4 }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                   
                   {/* Notifications Widget */}
