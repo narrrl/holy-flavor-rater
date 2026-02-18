@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Typography, TextField, Button, Box, Paper, Tab, Tabs, Alert, Container } from '@mui/material';
+import { Typography, TextField, Button, Paper, Tab, Tabs, Alert, Container } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
 import api from '../api';
@@ -218,8 +218,6 @@ const Login: React.FC<LoginProps> = () => {
       );
   };
 
-  const adminUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/').replace('/api/', '/admin/');
-
   return (
     <Container maxWidth="xs" sx={{ py: 8 }}>
       <Button 
@@ -239,11 +237,6 @@ const Login: React.FC<LoginProps> = () => {
         {message && <Alert severity={message.type} sx={{ mb: 2 }}>{message.text}</Alert>}
         {renderContent()}
       </Paper>
-      <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2" color="text.secondary">
-              Admin? Use <a href={adminUrl} target="_blank" rel="noreferrer">Django Admin</a>
-          </Typography>
-      </Box>
     </Container>
   );
 };
