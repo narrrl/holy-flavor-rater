@@ -10,6 +10,7 @@ import {
   Avatar,
   Tabs,
   Tab,
+  Paper,
   Grid,
   alpha,
   useTheme,
@@ -26,6 +27,7 @@ import ShareIcon from '@mui/icons-material/Share';
 import CommentIcon from '@mui/icons-material/Comment';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import SearchIcon from '@mui/icons-material/Search';
+import ColorThief from 'colorthief';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api';
@@ -33,6 +35,7 @@ import { useTitle } from '../hooks/useTitle';
 import RatingBadge from '../components/RatingBadge';
 import MentionTextField from '../components/MentionTextField';
 import RichText from '../components/RichText';
+import GenerativeBanner from '../components/GenerativeBanner';
 import { formatDate } from '../utils/date';
 
 interface DashboardData {
@@ -52,6 +55,7 @@ const Dashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+  const [palette, setPalette] = useState<string[]>([]);
   
   // Filtering states for Explore New
   const [exploreCategory, setExploreCategory] = useState<string>('All');
@@ -98,6 +102,42 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+      if (data?.user?.avatar) {
+          const img = new Image();
+          img.crossOrigin = 'Anonymous';
+          img.src = data.user.avatar;
+          img.onload = () => {
+              const colorThief = new ColorThief();
+              try {
+                  const rawPalette = colorThief.getPalette(img, 10);
+                  const processed = rawPalette.map(c => {
+                      const r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+                      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                      const l = (max + min) / 2;
+                      const s = max === min ? 0 : (l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min));
+                      return { rgb: `rgb(${c[0]}, ${c[1]}, ${c[2]})`, l, s };
+                  });
+                  const vibrant = processed
+                      .filter(c => c.l > 0.2 && c.l < 0.85)
+                      .sort((a, b) => b.s - a.s);
+
+                  if (vibrant.length >= 2) {
+                      setPalette([vibrant[0].rgb, vibrant[1].rgb]);
+                  } else if (vibrant.length === 1) {
+                      setPalette([vibrant[0].rgb, vibrant[0].rgb]);
+                  } else {
+                      setPalette([]);
+                  }
+              } catch (e) {
+                  setPalette([]);
+              }
+          };
+      } else {
+          setPalette([]);
+      }
+  }, [data?.user?.avatar]);
 
   // Update Review Logic
   const handleUpdateRating = async (ratingId: number) => {
@@ -210,39 +250,96 @@ const Dashboard: React.FC = () => {
 
       {/* Header Profile Info */}
       <Card elevation={0} sx={{ 
-          borderRadius: 4, 
+          borderRadius: 5, 
           mb: 4, 
           bgcolor: (theme) => alpha(theme.palette.background.paper, 0.6),
-          backdropFilter: 'blur(12px)',
+          backdropFilter: 'blur(20px)',
           border: '1px solid',
-          borderColor: 'divider'
+          borderColor: 'divider',
+          overflow: 'hidden',
+          position: 'relative'
       }}>
-          <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
-              <Grid container spacing={3} alignItems="center">
-                  <Grid size={{ xs: 12, sm: 'auto' }}>
-                      <Avatar src={data.user.avatar || undefined} sx={{ width: 100, height: 100, border: '4px solid', borderColor: 'primary.main' }}>
+          <Box sx={{ 
+              height: { xs: 100, sm: 140 }, 
+              background: `
+                radial-gradient(at 0% 0%, ${alpha(palette[0] || theme.palette.primary.main, 0.8)} 0px, transparent 55%),
+                radial-gradient(at 100% 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.7)} 0px, transparent 55%),
+                radial-gradient(at 50% 100%, ${alpha(theme.palette.primary.main, 0.4)} 0px, transparent 55%),
+                linear-gradient(135deg, ${alpha(palette[0] || theme.palette.primary.main, 0.2)} 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.2)} 100%)
+              `,
+              position: 'relative',
+              overflow: 'hidden'
+          }}>
+              <GenerativeBanner 
+                username={data.user.username} 
+                palette={palette} 
+                ratingsCount={data.rated_count} 
+                followersCount={0} 
+              />
+          </Box>
+
+          <CardContent sx={{ pt: 0, px: { xs: 2, sm: 4 }, pb: 4 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 } }}>
+                  <Box sx={{ 
+                      position: 'relative',
+                      mt: { xs: -6, sm: -8 },
+                      p: 0.5,
+                      borderRadius: '50%',
+                      background: `linear-gradient(135deg, ${palette[0] || theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                      boxShadow: '0 12px 48px rgba(0,0,0,0.25)',
+                      display: 'flex'
+                  }}>
+                      <Avatar 
+                        src={data.user.avatar || undefined} 
+                        sx={{ 
+                            width: { xs: 100, sm: 120 }, 
+                            height: { xs: 100, sm: 120 }, 
+                            border: '4px solid', 
+                            borderColor: (theme) => theme.palette.background.paper,
+                            fontSize: '3rem',
+                            bgcolor: (theme) => theme.palette.background.paper,
+                            color: palette[0] || 'primary.main',
+                        }}
+                      >
                           {!data.user.avatar && data.user.username.charAt(0).toUpperCase()}
                       </Avatar>
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 8, md: 9 }}>
-                      <Typography variant="h3" sx={{ fontWeight: '900', mb: 0.5 }}>{data.user.username}</Typography>
+                  </Box>
+
+                  <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' }, mt: { xs: 1, sm: 4 } }}>
+                      <Typography variant="h3" sx={{ fontWeight: '900', mb: 0.5, letterSpacing: -1 }}>{data.user.username}</Typography>
                       <Typography variant="subtitle1" color="text.secondary" gutterBottom>
                           {t('dashboard.welcome', { username: data.user.username })}
                       </Typography>
                       
-                      <Stack direction="row" spacing={3} sx={{ mt: 2 }}>
-                          <Box>
-                              <Typography variant="h5" sx={{ fontWeight: '900', color: 'primary.main' }}>{data.rated_count}</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>{t('dashboard.myRatings')}</Typography>
-                          </Box>
-                          <Divider orientation="vertical" flexItem />
-                          <Box>
-                              <Typography variant="h5" sx={{ fontWeight: '900' }}>{data.missing_count}</Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 }}>{t('dashboard.missing')}</Typography>
-                          </Box>
-                      </Stack>
-                  </Grid>
-              </Grid>
+                      <Box sx={{ mt: 2 }}>
+                          <Paper 
+                            elevation={0}
+                            sx={{ 
+                                display: 'inline-flex',
+                                bgcolor: (theme: any) => alpha(theme.palette.text.primary, 0.04),
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                backdropFilter: 'blur(8px)'
+                            }}
+                          >
+                              {[
+                                  { label: t('dashboard.myRatings'), val: data.rated_count },
+                                  { label: t('dashboard.missing'), val: data.missing_count }
+                              ].map((stat, i) => (
+                                  <React.Fragment key={stat.label}>
+                                      <Box sx={{ py: 1, width: { xs: 100, sm: 140 }, textAlign: 'center' }}>
+                                          <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1, color: 'text.primary' }}>{stat.val}</Typography>
+                                          <Typography variant="caption" sx={{ fontWeight: '900', textTransform: 'uppercase', opacity: 0.5, fontSize: '0.6rem', letterSpacing: 1 }}>{stat.label}</Typography>
+                                      </Box>
+                                      {i < 1 && <Divider orientation="vertical" flexItem sx={{ borderStyle: 'solid', opacity: 0.1 }} />}
+                                  </React.Fragment>
+                              ))}
+                          </Paper>
+                      </Box>
+                  </Box>
+              </Box>
           </CardContent>
       </Card>
 
