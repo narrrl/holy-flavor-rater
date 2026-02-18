@@ -8,8 +8,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from rest_framework.pagination import PageNumberPagination
-from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP
-from .serializers import UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, ReplySerializer, NotificationSerializer, TicketSerializer, TicketMessageSerializer, AdminUserListSerializer, AdminUserDetailSerializer
+from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, ProfileComment
+from .serializers import (
+    UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, 
+    ReplySerializer, NotificationSerializer, TicketSerializer, 
+    TicketMessageSerializer, AdminUserListSerializer, AdminUserDetailSerializer,
+    ProfileCommentSerializer
+)
 
 def log_user_ip(user, request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -345,17 +350,52 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
             
         ratings = user.ratings.select_related('flavor', 'flavor__category').order_by('-score')
+        comments = user.profile_comments.select_related('author').order_by('-created_at')
+        
+        followers = user.followers.all()
+        following = user.following.all()
         
         return Response({
             'id': user.id,
             'username': user.username,
             'theme': user.theme,
             'avatar': request.build_absolute_uri(user.avatar.url) if user.avatar else None,
-            'following_count': user.following.count(),
-            'followers_count': user.followers.count(),
+            'following_count': following.count(),
+            'followers_count': followers.count(),
             'is_following': request.user.following.filter(pk=user.pk).exists() if request.user.is_authenticated else False,
-            'ratings': RatingSerializer(ratings, many=True, context={'request': request}).data
+            'ratings': RatingSerializer(ratings, many=True, context={'request': request}).data,
+            'comments': ProfileCommentSerializer(comments, many=True, context={'request': request}).data,
+            'followers': UserSerializer(followers, many=True, context={'request': request}).data,
+            'following': UserSerializer(following, many=True, context={'request': request}).data
         })
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def add_comment(self, request, pk=None):
+        profile_owner = self.get_object()
+        text = request.data.get('text')
+        if not text:
+            return Response({'error': 'Text is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        comment = ProfileComment.objects.create(
+            profile_owner=profile_owner,
+            author=request.user,
+            text=text
+        )
+        return Response(ProfileCommentSerializer(comment, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'], url_path='delete_comment/(?P<comment_id>[^/.]+)', permission_classes=[permissions.IsAuthenticated])
+    def delete_comment(self, request, pk=None, comment_id=None):
+        profile_owner = self.get_object()
+        try:
+            comment = ProfileComment.objects.get(pk=comment_id, profile_owner=profile_owner)
+        except ProfileComment.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+            
+        if comment.author != request.user and not request.user.is_superuser and profile_owner != request.user:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+            
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
     def me(self, request):

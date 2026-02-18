@@ -176,3 +176,12 @@ class TicketMessage(models.Model):
 
     class Meta:
         ordering = ['created_at']
+
+class ProfileComment(models.Model):
+    profile_owner = models.ForeignKey(User, related_name='profile_comments', on_delete=models.CASCADE)
+    author = models.ForeignKey(User, related_name='authored_profile_comments', on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
