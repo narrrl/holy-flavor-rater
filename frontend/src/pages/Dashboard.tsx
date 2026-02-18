@@ -18,10 +18,10 @@ import {
   Chip,
   Collapse,
   TextField,
-  InputAdornment,
-  Tooltip
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+    InputAdornment, 
+    Tooltip,
+    useMediaQuery
+  } from '@mui/material';import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShareIcon from '@mui/icons-material/Share';
 import CommentIcon from '@mui/icons-material/Comment';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -47,6 +47,7 @@ const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   useTitle(t('nav.dashboard'));
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -255,43 +256,56 @@ const Dashboard: React.FC = () => {
       {/* TAB 0: MY REVIEWS */}
       {activeTab === 0 && (
           <Box>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mb: 4, alignItems: { xs: 'stretch', md: 'center' } }}>
-                  <Box sx={{ flexGrow: 1, minWidth: { md: 300 } }}>
+              {/* Filter Controls for Reviews */}
+              <Grid container spacing={2} sx={{ mb: 4, alignItems: 'center' }}>
+                  <Grid size={{ xs: 12, md: 4, lg: 5 }}>
                       <TextField 
                         fullWidth size="small" placeholder={t('dashboard.searchRated')} 
                         value={ratedSearch} onChange={e => setRatedSearch(e.target.value)}
                         slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
-                        sx={{ bgcolor: 'background.paper', borderRadius: 1, '& .MuiOutlinedInput-root': { borderRadius: 1, height: 40 } }}
+                        sx={{ 
+                            bgcolor: 'background.paper', 
+                            borderRadius: 1, 
+                            '& .MuiOutlinedInput-root': { borderRadius: 1, height: 44 } 
+                        }}
                       />
-                  </Box>
-                  <Stack direction="row" spacing={0.8} sx={{ overflowX: 'auto', py: 0.5, '&::-webkit-scrollbar': { display: 'none' }, flexShrink: 0 }}>
-                      {ratedCategories.map(cat => (
-                          <Chip 
-                            key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.my_ratings.find(r => r.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
-                            onClick={() => setRatedCategory(cat)}
-                            color={ratedCategory === cat ? 'primary' : 'default'}
-                            variant={ratedCategory === cat ? 'filled' : 'outlined'}
-                            sx={{ fontWeight: 'bold', height: 32, px: 0.5, borderRadius: 1, fontSize: '0.8rem' }}
-                          />
-                      ))}
-                  </Stack>
-                  <Stack direction="row" spacing={0.5} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: 40, alignItems: 'center' }}>
-                      <Button 
-                        size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
-                        onClick={() => setRatedSort('date')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 30, px: 2, fontSize: '0.8rem' }}
-                      >
-                          {t('dashboard.date')}
-                      </Button>
-                      <Button 
-                        size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
-                        onClick={() => setRatedSort('rating')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 30, px: 2, fontSize: '0.8rem' }}
-                      >
-                          {t('dashboard.rating')}
-                      </Button>
-                  </Stack>
-              </Stack>
+                  </Grid>
+                  
+                  <Grid size={{ xs: 12, md: 'auto' }} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                      <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5, px: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
+                          {ratedCategories.map(cat => (
+                              <Chip 
+                                key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.my_ratings.find(r => r.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
+                                onClick={() => setRatedCategory(cat)}
+                                color={ratedCategory === cat ? 'primary' : 'default'}
+                                variant={ratedCategory === cat ? 'filled' : 'outlined'}
+                                sx={{ fontWeight: 'bold', height: 36, px: 0.5, borderRadius: 1, fontSize: '0.85rem' }}
+                              />
+                          ))}
+                      </Stack>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 'auto' }}>
+                      <Stack direction="row" spacing={0.5} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: 44, width: { xs: '100%', md: 'auto' } }}>
+                          <Button 
+                            fullWidth={isMobile}
+                            size="small" variant={ratedSort === 'date' ? 'contained' : 'text'} 
+                            onClick={() => setRatedSort('date')}
+                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, fontSize: '0.85rem' }}
+                          >
+                              {t('dashboard.date')}
+                          </Button>
+                          <Button 
+                            fullWidth={isMobile}
+                            size="small" variant={ratedSort === 'rating' ? 'contained' : 'text'} 
+                            onClick={() => setRatedSort('rating')}
+                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, fontSize: '0.85rem' }}
+                          >
+                              {t('dashboard.rating')}
+                          </Button>
+                      </Stack>
+                  </Grid>
+              </Grid>
 
               <Stack spacing={3}>
                   {filteredAndSortedRated.length === 0 ? (
@@ -416,44 +430,56 @@ const Dashboard: React.FC = () => {
       {/* TAB 1: EXPLORE NEW */}
       {activeTab === 1 && (
           <Box>
-              {/* Filter Controls */}
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} sx={{ mb: 4, alignItems: { xs: 'stretch', md: 'center' } }}>
-                  <Box sx={{ flexGrow: 1, minWidth: { md: 300 } }}>
+              {/* Filter Controls for Explore */}
+              <Grid container spacing={2} sx={{ mb: 4, alignItems: 'center' }}>
+                  <Grid size={{ xs: 12, md: 4, lg: 5 }}>
                       <TextField 
                         fullWidth size="small" placeholder={t('dashboard.searchMissing')} 
                         value={exploreSearch} onChange={e => setExploreSearch(e.target.value)}
                         slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
-                        sx={{ bgcolor: 'background.paper', borderRadius: 1, '& .MuiOutlinedInput-root': { borderRadius: 1, height: 40 } }}
+                        sx={{ 
+                            bgcolor: 'background.paper', 
+                            borderRadius: 1, 
+                            '& .MuiOutlinedInput-root': { borderRadius: 1, height: 44 } 
+                        }}
                       />
-                  </Box>
-                  <Stack direction="row" spacing={0.8} sx={{ overflowX: 'auto', py: 0.5, '&::-webkit-scrollbar': { display: 'none' }, flexShrink: 0 }}>
-                      {exploreCategories.map(cat => (
-                          <Chip 
-                            key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.missing_flavors.find(f => f.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
-                            onClick={() => setExploreCategory(cat)}
-                            color={exploreCategory === cat ? 'primary' : 'default'}
-                            variant={exploreCategory === cat ? 'filled' : 'outlined'}
-                            sx={{ fontWeight: 'bold', height: 32, px: 0.5, borderRadius: 1, fontSize: '0.8rem' }}
-                          />
-                      ))}
-                  </Stack>
-                  <Stack direction="row" spacing={0.5} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: 40, alignItems: 'center' }}>
-                      <Button 
-                        size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
-                        onClick={() => setExploreSort('community')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 30, px: 2, fontSize: '0.8rem' }}
-                      >
-                          {t('dashboard.communityRating')}
-                      </Button>
-                      <Button 
-                        size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
-                        onClick={() => setExploreSort('circle')}
-                        sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 30, px: 2, fontSize: '0.8rem' }}
-                      >
-                          {t('dashboard.circleRating')}
-                      </Button>
-                  </Stack>
-              </Stack>
+                  </Grid>
+                  
+                  <Grid size={{ xs: 12, md: 'auto' }} sx={{ flexGrow: 1, overflow: 'hidden' }}>
+                      <Stack direction="row" spacing={1} sx={{ overflowX: 'auto', py: 0.5, px: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
+                          {exploreCategories.map(cat => (
+                              <Chip 
+                                key={cat} label={cat === 'All' ? t('nav.home').replace('Home', 'All') : t(`categories.${data.missing_flavors.find(f => f.category_name === cat)?.category_slug}`, { defaultValue: cat })} 
+                                onClick={() => setExploreCategory(cat)}
+                                color={exploreCategory === cat ? 'primary' : 'default'}
+                                variant={exploreCategory === cat ? 'filled' : 'outlined'}
+                                sx={{ fontWeight: 'bold', height: 36, px: 0.5, borderRadius: 1, fontSize: '0.85rem' }}
+                              />
+                          ))}
+                      </Stack>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 'auto' }}>
+                      <Stack direction="row" spacing={0.5} sx={{ bgcolor: 'background.paper', p: 0.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', height: 44, width: { xs: '100%', md: 'auto' } }}>
+                          <Button 
+                            fullWidth={isMobile}
+                            size="small" variant={exploreSort === 'community' ? 'contained' : 'text'} 
+                            onClick={() => setExploreSort('community')}
+                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 2, fontSize: '0.85rem' }}
+                          >
+                              {t('dashboard.communityRating')}
+                          </Button>
+                          <Button 
+                            fullWidth={isMobile}
+                            size="small" variant={exploreSort === 'circle' ? 'contained' : 'text'} 
+                            onClick={() => setExploreSort('circle')}
+                            sx={{ textTransform: 'none', fontWeight: 'bold', borderRadius: 0.8, height: 34, px: 2, fontSize: '0.85rem' }}
+                          >
+                              {t('dashboard.circleRating')}
+                          </Button>
+                      </Stack>
+                  </Grid>
+              </Grid>
 
               {filteredMissing.length === 0 ? (
                   <Box sx={{ py: 10, textAlign: 'center' }}>

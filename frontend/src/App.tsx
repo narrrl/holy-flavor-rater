@@ -481,7 +481,7 @@ const App: React.FC = () => {
             onClose={() => setNotifAnchorEl(null)}
             elevation={3}
             sx={{ mt: 1 }}
-            PaperProps={{ sx: { width: 320, maxHeight: 400 } }}
+            PaperProps={{ sx: { width: 320, maxHeight: 400, borderRadius: 1 } }}
         >
             <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Notifications</Typography>
