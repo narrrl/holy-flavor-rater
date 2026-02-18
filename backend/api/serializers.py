@@ -119,12 +119,22 @@ class TicketMessageSerializer(serializers.ModelSerializer):
 
 class TicketSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+    user_avatar = serializers.SerializerMethodField()
     messages = TicketMessageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Ticket
-        fields = ['id', 'user', 'username', 'subject', 'description', 'status', 'created_at', 'updated_at', 'messages']
+        fields = ['id', 'user', 'username', 'user_email', 'user_avatar', 'subject', 'description', 'status', 'created_at', 'updated_at', 'messages']
         read_only_fields = ['status', 'user']
+
+    def get_user_avatar(self, obj):
+        if obj.user.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.user.avatar.url)
+            return obj.user.avatar.url
+        return None
 
 class AdminUserListSerializer(serializers.ModelSerializer):
     ips = serializers.SerializerMethodField()
@@ -155,7 +165,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = ['id', 'actor_username', 'actor_avatar', 'notification_type', 'rating', 'reply', 'is_read', 'created_at', 'flavor_name', 'flavor_id']
+        fields = ['id', 'actor_username', 'actor_avatar', 'notification_type', 'rating', 'reply', 'ticket', 'is_read', 'created_at', 'flavor_name', 'flavor_id']
 
     def get_actor_avatar(self, obj):
         if obj.actor.avatar:
