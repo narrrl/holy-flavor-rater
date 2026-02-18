@@ -599,6 +599,7 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # Missing flavors with community avg and followed circle avg
         missing_flavors = Flavor.objects.exclude(id__in=rated_ids) \
+            .exclude(category__name='Packs and other') \
             .select_related('category') \
             .annotate(
                 average_rating=Avg('ratings__score'),

@@ -5,7 +5,12 @@ set -e
 
 # Apply database migrations
 echo "Applying database migrations..."
+python manage.py makemigrations
 python manage.py migrate
+
+# Create cache table for ratelimiting
+echo "Creating cache table..."
+python manage.py createcachetable
 
 # Collect static files
 echo "Collecting static files..."
@@ -19,6 +24,10 @@ chmod -R 777 django_cache
 # Sync flavors from the API
 echo "Syncing flavors..."
 python manage.py sync_flavors
+
+# Seed legacy flavors if needed
+echo "Seeding legacy flavors..."
+python manage.py seed_legacy_flavors
 
 # Start the server using Gunicorn
 echo "Starting Gunicorn..."
