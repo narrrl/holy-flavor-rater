@@ -689,6 +689,7 @@ class BannerViewSet(viewsets.ModelViewSet):
     queryset = Banner.objects.all()
     serializer_class = BannerSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = None
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'active']:
