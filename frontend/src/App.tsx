@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   ThemeProvider, 
   CssBaseline, 
@@ -206,6 +206,7 @@ const GlobalSearch = () => {
 
 const App: React.FC = () => {
   const { i18n, t } = useTranslation();
+  const navigate = useNavigate();
   const [themeName, setThemeName] = useState<CatppuccinTheme>((localStorage.getItem('theme') as CatppuccinTheme) || 'holy_light');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
@@ -492,35 +493,52 @@ const App: React.FC = () => {
                     <Typography variant="body2" color="text.secondary">No notifications yet</Typography>
                 </Box>
             ) : (
-                notifications.map(n => (
-                    <MenuItem 
-                        key={n.id} 
-                        onClick={() => handleNotificationClick(n)}
-                        sx={{ 
-                            py: 1.5, 
-                            px: 2, 
-                            borderBottom: '1px solid', 
-                            borderColor: 'divider',
-                            bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
-                            whiteSpace: 'normal',
-                            display: 'flex',
-                            gap: 2,
-                            alignItems: 'flex-start'
-                        }}
-                    >
-                        <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
-                            {n.actor_username.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
-                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? 'replied' : 'mentioned you'} on <strong>{n.flavor_name}</strong>
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                {formatDate(n.created_at)}
-                            </Typography>
-                        </Box>
-                    </MenuItem>
-                ))
+                notifications.map(n => {
+                    let message = "";
+                    if (n.notification_type === 'reply') message = `replied to your review on ${n.flavor_name}`;
+                    else if (n.notification_type === 'mention') message = `mentioned you on ${n.flavor_name}`;
+                    else if (n.notification_type === 'ticket_new') message = t('community.notifTicketNew');
+                    else if (n.notification_type === 'ticket_reply') message = user?.is_superuser ? t('community.notifTicketReplyAdmin') : t('community.notifTicketReply');
+
+                    const handleClick = () => {
+                        if (n.notification_type.startsWith('ticket')) {
+                            handleNotificationClick(n);
+                            navigate('/support');
+                        } else {
+                            handleNotificationClick(n);
+                        }
+                    };
+
+                    return (
+                        <MenuItem 
+                            key={n.id} 
+                            onClick={handleClick}
+                            sx={{ 
+                                py: 1.5, 
+                                px: 2, 
+                                borderBottom: '1px solid', 
+                                borderColor: 'divider',
+                                bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
+                                whiteSpace: 'normal',
+                                display: 'flex',
+                                gap: 2,
+                                alignItems: 'flex-start'
+                            }}
+                        >
+                            <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
+                                {n.actor_username.charAt(0).toUpperCase()}
+                            </Avatar>
+                            <Box sx={{ flex: 1 }}>
+                                <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                                    <strong>{n.actor_username}</strong> {message}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                    {formatDate(n.created_at)}
+                                </Typography>
+                            </Box>
+                        </MenuItem>
+                    );
+                })
             )}
         </Menu>
     </>
@@ -529,19 +547,18 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
-        <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
-          <AppBar 
-            position="sticky" 
-            elevation={0} 
-            sx={{ 
-              borderBottom: '1px solid', 
-              borderColor: 'divider',
-              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
-              backdropFilter: 'blur(12px)',
-              color: 'text.primary'
-            }}
-          >
+      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
+        <AppBar 
+          position="sticky" 
+          elevation={0} 
+          sx={{ 
+            borderBottom: '1px solid', 
+            borderColor: 'divider',
+            bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
+            backdropFilter: 'blur(12px)',
+            color: 'text.primary'
+          }}
+        >
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
                 <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mr: 2 }}>
                   <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
@@ -678,7 +695,6 @@ const App: React.FC = () => {
           <Footer />
         </Box>
         <CookieBanner onThemeChange={handleThemeChange} currentTheme={themeName} />
-      </Router>
     </ThemeProvider>
   );
 };

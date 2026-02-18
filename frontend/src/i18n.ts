@@ -125,6 +125,9 @@ const resources = {
         "notifications": "Recent Notifications",
         "notifReply": "replied",
         "notifMention": "mentioned you",
+        "notifTicketNew": "opened a new support ticket",
+        "notifTicketReply": "replied to your support ticket",
+        "notifTicketReplyAdmin": "replied to a support ticket",
         "noNotifications": "No notifications.",
         "searchFriends": "Search friends...",
         "writeReply": "Add a reply...",
@@ -143,7 +146,8 @@ const resources = {
         "in_progress": "In Progress",
         "noTickets": "You haven't opened any tickets yet.",
         "reply": "Send Message",
-        "ticketDetail": "Ticket #{{id}}"
+        "ticketDetail": "Ticket #{{id}}",
+        "unread": "New message"
       },
       "admin": {
         "title": "Admin Control Panel",
@@ -315,6 +319,9 @@ const resources = {
         "notifications": "Neueste Benachrichtigungen",
         "notifReply": "hat geantwortet",
         "notifMention": "hat dich erwähnt",
+        "notifTicketNew": "hat ein neues Support-Ticket eröffnet",
+        "notifTicketReply": "hat auf dein Support-Ticket geantwortet",
+        "notifTicketReplyAdmin": "hat auf ein Support-Ticket geantwortet",
         "noNotifications": "Keine Benachrichtigungen.",
         "searchFriends": "Freunde suchen...",
         "writeReply": "Eine Antwort hinzufügen...",
@@ -333,7 +340,8 @@ const resources = {
         "in_progress": "In Bearbeitung",
         "noTickets": "Du hast noch keine Tickets geöffnet.",
         "reply": "Nachricht senden",
-        "ticketDetail": "Ticket #{{id}}"
+        "ticketDetail": "Ticket #{{id}}",
+        "unread": "Neue Nachricht"
       },
       "admin": {
         "title": "Admin-Kontrollzentrum",

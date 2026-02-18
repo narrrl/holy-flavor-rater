@@ -583,7 +583,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             Notification.objects.create(
                 recipient=admin,
                 actor=self.request.user,
-                notification_type='ticket',
+                notification_type='ticket_new',
                 ticket=ticket
             )
 
@@ -603,7 +603,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                 Notification.objects.create(
                     recipient=ticket.user,
                     actor=request.user,
-                    notification_type='ticket',
+                    notification_type='ticket_reply',
                     ticket=ticket
                 )
         else:
@@ -613,7 +613,7 @@ class TicketViewSet(viewsets.ModelViewSet):
                 Notification.objects.create(
                     recipient=admin,
                     actor=request.user,
-                    notification_type='ticket',
+                    notification_type='ticket_reply',
                     ticket=ticket
                 )
 

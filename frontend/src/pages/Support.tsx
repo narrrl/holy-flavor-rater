@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
     Container, Typography, Box, Card, CardContent, Button, 
     TextField, Stack, Chip, Divider, Collapse, Paper, alpha, CircularProgress,
-    IconButton, Avatar
+    IconButton, Avatar, useTheme
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AddIcon from '@mui/icons-material/Add';
@@ -37,6 +37,7 @@ interface Ticket {
 
 const Support: React.FC = () => {
     const { t } = useTranslation();
+    const theme = useTheme();
     const navigate = useNavigate();
     useTitle(t('support.title'));
     const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -51,15 +52,25 @@ const Support: React.FC = () => {
     const [replyText, setReplyText] = useState<{[key: number]: string}>({});
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [currentUser, setCurrentUser] = useState<any>(null);
+    const [unreadTicketIds, setUnreadTicketIds] = useState<Set<number>>(new Set());
 
     const fetchTickets = async () => {
         try {
-            const [ticketRes, userRes] = await Promise.all([
+            const [ticketRes, userRes, notifRes] = await Promise.all([
                 api.get('tickets/'),
-                api.get('users/me/')
+                api.get('users/me/'),
+                api.get('notifications/')
             ]);
             setTickets(ticketRes.data.results || ticketRes.data);
             setCurrentUser(userRes.data);
+            
+            const notifs = notifRes.data.results || notifRes.data;
+            const unreadIds = new Set<number>(
+                notifs
+                    .filter((n: any) => !n.is_read && n.notification_type.startsWith('ticket') && n.ticket)
+                    .map((n: any) => n.ticket)
+            );
+            setUnreadTicketIds(unreadIds);
         } catch (err) {
             console.error(err);
         } finally {
@@ -70,6 +81,26 @@ const Support: React.FC = () => {
     useEffect(() => {
         fetchTickets();
     }, []);
+
+    const handleExpand = async (ticketId: number) => {
+        if (expandedId === ticketId) {
+            setExpandedId(null);
+            return;
+        }
+        setExpandedId(ticketId);
+        
+        // Mark notifications for this ticket as read
+        if (unreadTicketIds.has(ticketId)) {
+            try {
+                // We'd need an endpoint to mark all for a specific ticket, 
+                // or just rely on the user clicking the notification.
+                // For now, let's just clear it from the local state.
+                const newUnread = new Set(unreadTicketIds);
+                newUnread.delete(ticketId);
+                setUnreadTicketIds(newUnread);
+            } catch (e) {}
+        }
+    };
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -177,18 +208,38 @@ const Support: React.FC = () => {
             ) : (
                 <Stack spacing={2}>
                     {tickets.map((ticket: Ticket) => (
-                        <Card key={ticket.id} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                        <Card key={ticket.id} sx={{ 
+                            borderRadius: 3, 
+                            border: '1px solid', 
+                            borderColor: unreadTicketIds.has(ticket.id) ? 'primary.main' : 'divider',
+                            bgcolor: unreadTicketIds.has(ticket.id) ? alpha(theme.palette.primary.main, 0.02) : 'inherit'
+                        }}>
                             <CardContent sx={{ p: 0 }}>
                                 <Box 
-                                    onClick={() => setExpandedId(expandedId === ticket.id ? null : ticket.id)}
+                                    onClick={() => handleExpand(ticket.id)}
                                     sx={{ p: 2, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
                                 >
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                                        <Box>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>{ticket.subject}</Typography>
-                                            <Typography variant="caption" color="text.secondary">{formatDate(ticket.created_at)}</Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            {unreadTicketIds.has(ticket.id) && (
+                                                <Box sx={{ width: 10, height: 10, bgcolor: 'primary.main', borderRadius: '50%' }} />
+                                            )}
+                                            <Box>
+                                                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                                                    {ticket.subject}
+                                                    {currentUser?.is_superuser && (
+                                                        <Typography component="span" variant="caption" sx={{ ml: 1, color: 'primary.main' }}>
+                                                            ({ticket.username})
+                                                        </Typography>
+                                                    )}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">{formatDate(ticket.created_at)}</Typography>
+                                            </Box>
                                         </Box>
                                         <Stack direction="row" spacing={1} alignItems="center">
+                                            {unreadTicketIds.has(ticket.id) && (
+                                                <Chip label={t('support.unread')} color="primary" size="small" sx={{ fontWeight: 'bold', height: 20, fontSize: '0.6rem' }} />
+                                            )}
                                             <Chip label={t(`support.${ticket.status}`)} color={getStatusColor(ticket.status) as any} size="small" sx={{ fontWeight: 'bold' }} />
                                             {currentUser?.is_superuser && (
                                                 <IconButton size="small" color="error" onClick={(e) => { e.stopPropagation(); handleDeleteTicket(ticket.id); }}>
@@ -204,7 +255,7 @@ const Support: React.FC = () => {
                                                 {ticket.username.charAt(0).toUpperCase()}
                                             </Avatar>
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                                                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                     {ticket.username} • <span style={{ opacity: 0.7 }}>{ticket.user_email}</span>
                                                 </Typography>
                                             </Box>
@@ -220,7 +271,7 @@ const Support: React.FC = () => {
                                                 onClick={(e) => { e.stopPropagation(); navigate(`/admin-panel/user/${ticket.user}`); }}
                                                 sx={{ minWidth: 0, py: 0, textTransform: 'none', fontSize: '0.7rem' }}
                                             >
-                                                Admin User
+                                                {t('admin.manageUser')}
                                             </Button>
                                         </Box>
                                     )}

@@ -124,11 +124,12 @@ class Notification(models.Model):
     TYPE_CHOICES = [
         ('reply', 'Reply'),
         ('mention', 'Mention'),
-        ('ticket', 'Ticket Update'),
+        ('ticket_new', 'New Ticket'),
+        ('ticket_reply', 'Ticket Reply'),
     ]
     recipient = models.ForeignKey(User, related_name='notifications', on_delete=models.CASCADE)
     actor = models.ForeignKey(User, related_name='actions', on_delete=models.CASCADE)
-    notification_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    notification_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     rating = models.ForeignKey(Rating, on_delete=models.CASCADE, null=True, blank=True)
     reply = models.ForeignKey(Reply, on_delete=models.CASCADE, null=True, blank=True)
     ticket = models.ForeignKey('Ticket', on_delete=models.CASCADE, null=True, blank=True)
