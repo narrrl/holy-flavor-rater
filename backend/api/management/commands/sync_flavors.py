@@ -78,7 +78,7 @@ class Command(BaseCommand):
         synced_external_ids = []
 
         for p in products:
-            title = p.get('title')
+            title = p.get('title', '').strip()
             tags = p.get('tags', [])
             if isinstance(tags, str):
                 tags = [t.strip() for t in tags.split(',')]
@@ -119,23 +119,26 @@ class Command(BaseCommand):
             handle = p.get('handle')
             shop_url = f"https://weareholy.com/products/{handle}" if handle else None
 
-            # Find or create
+            # Find or create - be very specific to avoid duplicates
+            # 1. Try external_id
             flavor = Flavor.objects.filter(external_id=p['id']).first()
+            
             if not flavor:
-                # Try to find by name AND category to avoid Milkshake/Iced Tea name collisions
+                # 2. Try exact name match in category
                 flavor = Flavor.objects.filter(name=title, category=category, is_legacy=False).first()
+            
+            if not flavor:
+                # 3. Try case-insensitive name match in category (safety for whitespace/case)
+                flavor = Flavor.objects.filter(name__iexact=title, category=category, is_legacy=False).first()
             
             if not flavor:
                 flavor = Flavor(external_id=p['id'], name=title, category=category, is_legacy=False)
                 created_count += 1
             else:
                 updated_count += 1
-
-            flavor.category = category
-            flavor.description = description
-            flavor.shop_url = shop_url
-            flavor.is_available = is_available
-            flavor.external_id = p['id'] # Ensure ID is set
+                # Ensure external_id is updated if it was missing
+                if not flavor.external_id:
+                    flavor.external_id = p['id']
             
             if image_url:
                 # Check if local file exists

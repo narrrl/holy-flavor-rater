@@ -106,24 +106,62 @@ class FlavorViewSet(viewsets.ModelViewSet):
         # Filter by remaining query words in name or description
         if remaining_query:
             words = remaining_query.split()
+            # Construct a combined OR query for all words to be more permissive (fuzzy-ish)
+            word_query = Q()
             for word in words:
-                flavors = flavors.filter(
-                    Q(name__icontains=word) | Q(description__icontains=word)
-                )
+                if len(word) > 2: # Only filter by words longer than 2 chars to avoid noise
+                    word_query |= Q(name__icontains=word) | Q(description__icontains=word)
+            
+            if word_query:
+                flavors = flavors.filter(word_query)
 
-        # Limit results for performance
-        results = []
-        for f in flavors.order_by('name')[:15]:
-            results.append({
+        # Limit results and deduplicate in Python to be safe against DB inconsistencies
+        results_list = []
+        seen_keys = set()
+        
+        # Priority sorting in Python
+        search_lower = remaining_query.lower()
+        
+        # Order by name, but we'll also try to prioritize exact matches in Python
+        for f in flavors.order_by('name'):
+            # Create a unique key for this flavor (name + category)
+            key = f"{f.name.strip().lower()}|{f.category.slug}"
+            if key in seen_keys:
+                continue
+            
+            seen_keys.add(key)
+            
+            name_lower = f.name.lower()
+            relevance = 0
+            if name_lower == search_lower:
+                relevance = 3
+            elif name_lower.startswith(search_lower):
+                relevance = 2
+            elif search_lower in name_lower:
+                relevance = 1
+                
+            results_list.append({
                 'id': f.id,
                 'name': f.name,
                 'type': 'flavor',
                 'subtitle': f.category.name,
                 'image_url': request.build_absolute_uri(f.image.url) if f.image else f.image_url,
-                'slug': None
+                'slug': None,
+                'relevance': relevance
             })
 
-        return Response(results)
+        # Sort by relevance desc, then name
+        results_list.sort(key=lambda x: (-x['relevance'], x['name']))
+        
+        # Remove relevance helper and limit to 15
+        final_results = []
+        for r in results_list:
+            del r['relevance']
+            final_results.append(r)
+            if len(final_results) >= 15:
+                break
+
+        return Response(final_results)
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def top(self, request):

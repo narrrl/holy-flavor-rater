@@ -28,6 +28,7 @@ import { formatDate } from '../../utils/date';
 import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
 import RatingBadge from '../../components/RatingBadge';
+import StatusBadge from '../../components/StatusBadge';
 
 interface Reply {
     id: number;
@@ -239,31 +240,19 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                       backdropFilter: 'blur(12px)',
                       overflow: 'hidden'
                   }}>
-                      <Box sx={{ 
-                          p: 4, 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          bgcolor: 'action.hover',
-                          position: 'relative',
-                          aspectRatio: '1/1'
-                      }}>
-                          {!flavor.is_available && (
-                                <Chip 
-                                    label={flavor.is_legacy ? "Legacy" : "Out of Stock"} 
-                                    color={flavor.is_legacy ? "warning" : "error"}
-                                    sx={{ 
-                                        position: 'absolute', 
-                                        top: 16, 
-                                        right: 16, 
-                                        fontWeight: '900', 
-                                        borderRadius: 2,
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                                    }}
-                                />
-                          )}
-                          {flavor.image_url ? (
-                              <Box 
+                                                <Box sx={{ 
+                                                p: 4, 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                bgcolor: 'action.hover',
+                                                position: 'relative',
+                                                aspectRatio: '1/1'
+                                            }}>
+                                                <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1 }}>
+                                                    <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} />
+                                                </Box>
+                                                {flavor.image_url ? (                              <Box 
                                 component="img" 
                                 src={flavor.image_url} 
                                 sx={{ 

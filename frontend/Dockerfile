@@ -27,6 +27,10 @@ FROM nginx:stable-alpine
 # Copy built files
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Custom Nginx config to handle React Router (SPA)
 RUN printf 'server {\n\
     listen 80;\n\
@@ -38,4 +42,4 @@ RUN printf 'server {\n\
 }' > /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/entrypoint.sh"]

@@ -6,12 +6,19 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
 from django.views.generic.base import TemplateView
+from django.http import HttpResponse
 import os
+
+def health_check(request):
+    return HttpResponse("OK", content_type="text/plain")
 
 # Clean the admin path
 admin_url = os.environ.get('ADMIN_URL', 'admin').strip('/')
 
 urlpatterns = [
+    # Health check
+    path('health/', health_check, name='health_check'),
+    
     # Robots.txt
     path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
     
