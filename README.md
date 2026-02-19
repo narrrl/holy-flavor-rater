@@ -27,8 +27,8 @@ The easiest way to get the full stack (Backend + Frontend + DB) running behind a
     ```
 2.  **Environment Configuration:**
     ```bash
-    cp .env.example .env.narl.io
-    # Edit .env.narl.io with your SMTP settings and Domain
+    cp .env.example .env
+    # Edit .env with your SMTP settings and Domain
     ```
 3.  **Start Services:**
     ```bash

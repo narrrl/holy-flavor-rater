@@ -8,7 +8,7 @@ services:
       - narl
       - internal
     env_file:
-      - .env.narl.io
+      - .env
     volumes:
       - ./backend:/app
       - ./legacy:/app/legacy
@@ -45,7 +45,7 @@ services:
     networks:
       - narl
     env_file:
-      - .env.narl.io
+      - .env
     depends_on:
       backend:
         condition: service_healthy
