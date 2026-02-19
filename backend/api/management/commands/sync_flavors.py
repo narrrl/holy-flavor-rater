@@ -1,5 +1,5 @@
 import json
-import urllib.request
+import requests
 import re
 import os
 from django.core.management.base import BaseCommand
@@ -32,18 +32,14 @@ class Command(BaseCommand):
             
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=10) as response:
-                content = response.read()
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            response.raise_for_status()
                 
-            if not content:
-                return None
-
             if os.path.exists(filepath):
                 os.remove(filepath)
 
             with open(filepath, 'wb') as f:
-                f.write(content)
+                f.write(response.content)
             
             return f"flavors/{filename}"
         except Exception as e:
@@ -55,9 +51,9 @@ class Command(BaseCommand):
         self.stdout.write(f"Fetching from {url}...")
         
         try:
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
-                data = json.loads(response.read().decode())
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
+            response.raise_for_status()
+            data = response.json()
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Failed to fetch data: {e}"))
             return
