@@ -8,12 +8,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_ratelimit.decorators import ratelimit
 from django.utils.decorators import method_decorator
 from rest_framework.pagination import PageNumberPagination
-from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, ProfileComment, Banner
+from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, ProfileComment, Banner, SystemConfig, Job
 from .serializers import (
     UserSerializer, FlavorSerializer, CategorySerializer, RatingSerializer, 
     ReplySerializer, NotificationSerializer, TicketSerializer, 
     TicketMessageSerializer, AdminUserListSerializer, AdminUserDetailSerializer,
-    ProfileCommentSerializer, BannerSerializer
+    ProfileCommentSerializer, BannerSerializer, SystemConfigSerializer, JobSerializer
 )
 
 def log_user_ip(user, request):
@@ -870,8 +870,8 @@ class AdminViewSet(viewsets.ViewSet):
                 'debug': settings.DEBUG,
                 'allowed_hosts': settings.ALLOWED_HOSTS,
                 'frontend_url': getattr(settings, 'FRONTEND_URL', 'Not set'),
-                'media_root': settings.MEDIA_ROOT,
-                'static_root': settings.STATIC_ROOT,
+                'media_root': str(settings.MEDIA_ROOT),
+                'static_root': str(settings.STATIC_ROOT),
             }
         })
 
