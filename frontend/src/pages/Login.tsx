@@ -16,6 +16,7 @@ const Login: React.FC<LoginProps> = () => {
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [showResend, setShowResend] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [resetStep, setResetStep] = useState(1); // 1: email, 2: code/new pass
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
@@ -31,7 +32,13 @@ const Login: React.FC<LoginProps> = () => {
       localStorage.setItem('token', res.data.token);
       window.location.href = '/';
     } catch (err: any) {
-      setMessage({ type: 'error', text: 'Login failed. Please check your credentials or verify your account.' });
+      const errorMsg = err.response?.data?.non_field_errors?.[0] || t('auth.loginFailed');
+      if (errorMsg.toLowerCase().includes('inactive') || errorMsg.toLowerCase().includes('verify') || errorMsg.includes('disabled')) {
+          setMessage({ type: 'error', text: t('auth.unverifiedError') });
+          setIsVerifying(true);
+      } else {
+          setMessage({ type: 'error', text: errorMsg });
+      }
     }
   };
 
@@ -41,7 +48,7 @@ const Login: React.FC<LoginProps> = () => {
       try {
           await api.post('users/signup/', { username, email, password });
           setIsVerifying(true);
-          setMessage({ type: 'success', text: 'Signup successful! Please enter the verification code sent to your email.' });
+          setMessage({ type: 'success', text: t('auth.signupSuccess') });
       } catch (err: any) {
           setMessage({ type: 'error', text: err.response?.data?.error || 'Signup failed' });
       }
@@ -52,12 +59,24 @@ const Login: React.FC<LoginProps> = () => {
       setMessage(null);
       try {
           await api.post('users/verify_signup/', { username, code: verificationCode });
-          setMessage({ type: 'success', text: 'Account verified! You can now login.' });
+          setMessage({ type: 'success', text: t('auth.verifySuccess') });
           setIsVerifying(false);
           setTab(0);
           setPassword('');
       } catch (err: any) {
           setMessage({ type: 'error', text: err.response?.data?.error || 'Verification failed' });
+          setShowResend(true);
+      }
+  };
+
+  const handleResendCode = async () => {
+      setMessage(null);
+      try {
+          await api.post('users/resend_verification/', { username });
+          setMessage({ type: 'success', text: t('auth.resendSuccess') });
+          setShowResend(false);
+      } catch (err: any) {
+          setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to resend code' });
       }
   };
 
@@ -93,20 +112,26 @@ const Login: React.FC<LoginProps> = () => {
       if (isVerifying) {
           return (
             <form onSubmit={handleVerify}>
-                <Typography variant="h6" gutterBottom>Verify Account</Typography>
-                <Typography variant="body2" sx={{ mb: 2 }}>Enter the code sent to {email}</Typography>
+                <Typography variant="h6" gutterBottom>{t('auth.verifyTitle')}</Typography>
+                <Typography variant="body2" sx={{ mb: 2 }} dangerouslySetInnerHTML={{ __html: t('auth.verifyDesc', { username }) }} />
                 <TextField
                     fullWidth
                     label="Verification Code"
                     margin="normal"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
+                    autoFocus
                 />
                 <Button fullWidth variant="contained" type="submit" sx={{ mt: 2 }}>
                     Verify
                 </Button>
-                <Button fullWidth onClick={() => setIsVerifying(false)} sx={{ mt: 1 }}>
-                    Back to Signup
+                
+                <Button fullWidth variant="outlined" onClick={handleResendCode} sx={{ mt: 2, textTransform: 'none' }}>
+                    {t('auth.resendButton')}
+                </Button>
+
+                <Button fullWidth onClick={() => { setIsVerifying(false); setMessage(null); }} sx={{ mt: 1 }}>
+                    {t('auth.backToAuth')}
                 </Button>
             </form>
           );
@@ -156,8 +181,8 @@ const Login: React.FC<LoginProps> = () => {
       return (
         <>
             <Tabs value={tab} onChange={(_, v) => { setTab(v); setMessage(null); }} sx={{ mb: 2 }}>
-                <Tab label="Login" />
-                <Tab label="Signup" />
+                <Tab label={t('auth.loginTitle')} />
+                <Tab label={t('auth.signupTitle')} />
             </Tabs>
             
             {tab === 0 ? (
@@ -178,10 +203,10 @@ const Login: React.FC<LoginProps> = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 />
                 <Button fullWidth variant="contained" type="submit" sx={{ mt: 2 }}>
-                    Login
+                    {t('auth.loginTitle')}
                 </Button>
                 <Button fullWidth onClick={() => { setIsResetting(true); setMessage(null); }} sx={{ mt: 1, textTransform: 'none' }} size="small">
-                    Forgot Password?
+                    {t('auth.forgotPassword')}
                 </Button>
             </form>
             ) : (
@@ -210,7 +235,7 @@ const Login: React.FC<LoginProps> = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 />
                 <Button fullWidth variant="contained" type="submit" sx={{ mt: 2 }}>
-                Signup
+                    {t('auth.signupTitle')}
                 </Button>
             </form>
             )}

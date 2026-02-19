@@ -323,7 +323,40 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
-        return Response({'status': 'User created, please verify your email'}, status=status.HTTP_201_CREATED)
+        return Response({'status': 'User created, please verify your email', 'username': username, 'email': email}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def resend_verification(self, request):
+        username = request.data.get('username')
+        if not username:
+            return Response({'error': 'Username required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(username=username, is_active=False)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found or already active'}, status=status.HTTP_404_NOT_FOUND)
+            
+        import secrets
+        import string
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
+        user.email_confirmation_code = code
+        user.save()
+        
+        try:
+            send_mail(
+                'Verify your Holy Flavors account',
+                f'Hi {user.username},\n\nYour new verification code is: {code}',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to send email: {e}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+        return Response({'status': 'Verification code resent!'})
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
     def verify_signup(self, request):

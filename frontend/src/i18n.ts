@@ -118,6 +118,20 @@ const resources = {
         "save": "Save",
         "cancel": "Cancel"
       },
+      "auth": {
+        "loginTitle": "Login",
+        "signupTitle": "Signup",
+        "verifyTitle": "Verify Account",
+        "verifyDesc": "Enter the code sent to your email for <strong>{{username}}</strong>.",
+        "resendButton": "Resend Verification Code",
+        "resendSuccess": "A new verification code has been sent to your email.",
+        "verifySuccess": "Account verified! You can now login.",
+        "unverifiedError": "Account not verified. Please verify your account to login.",
+        "loginFailed": "Login failed. Please check your credentials.",
+        "signupSuccess": "Signup successful! Please enter the verification code sent to your email.",
+        "forgotPassword": "Forgot Password?",
+        "backToAuth": "Back to Signup/Login"
+      },
       "community": {
         "title": "Community Activity",
         "subtitle": "Stay updated with your circle's latest ratings and discussions.",
@@ -343,6 +357,20 @@ const resources = {
         "delete": "Löschen",
         "save": "Speichern",
         "cancel": "Abbrechen"
+      },
+      "auth": {
+        "loginTitle": "Anmelden",
+        "signupTitle": "Registrieren",
+        "verifyTitle": "Konto verifizieren",
+        "verifyDesc": "Gib den Code ein, der an deine E-Mail für <strong>{{username}}</strong> gesendet wurde.",
+        "resendButton": "Verifizierungscode erneut senden",
+        "resendSuccess": "Ein neuer Verifizierungscode wurde an deine E-Mail gesendet.",
+        "verifySuccess": "Konto verifiziert! Du kannst dich jetzt anmelden.",
+        "unverifiedError": "Konto nicht verifiziert. Bitte verifiziere dein Konto, um dich anzumelden.",
+        "loginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten.",
+        "signupSuccess": "Registrierung erfolgreich! Bitte gib den Verifizierungscode ein, der an deine E-Mail gesendet wurde.",
+        "forgotPassword": "Passwort vergessen?",
+        "backToAuth": "Zurück zur Anmeldung"
       },
       "community": {
         "title": "Community-Aktivität",
