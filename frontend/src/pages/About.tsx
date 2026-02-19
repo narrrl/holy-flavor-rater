@@ -35,6 +35,9 @@ const About: React.FC = () => {
                 <li>{t('about.featureRate')}</li>
                 <li>{t('about.featureCommunity')}</li>
                 <li>{t('about.featureProfile')}</li>
+                <li>{t('about.featurePersonalize')}</li>
+                <li>{t('about.featureEngage')}</li>
+                <li>{t('about.featureSupport')}</li>
             </Typography>
         </Box>
 
