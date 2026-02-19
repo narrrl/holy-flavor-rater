@@ -19,6 +19,7 @@ import {
   Chip,
   Collapse,
   TextField,
+  Rating as MuiRating,
     InputAdornment, 
     Tooltip,
     useMediaQuery,
@@ -36,9 +37,9 @@ import { useTranslation } from 'react-i18next';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
 import RatingBadge from '../components/RatingBadge';
+import StatusBadge from '../components/StatusBadge';
 import MentionTextField from '../components/MentionTextField';
 import RichText from '../components/RichText';
-import DynamicBanner from '../components/DynamicBanner';
 import { formatDate } from '../utils/date';
 
 interface DashboardData {
@@ -54,7 +55,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
-  useTitle(t('nav.dashboard'));
+  useTitle(t('dashboard.title'));
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -232,14 +233,17 @@ const Dashboard: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       {/* Action Bar */}
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Button 
-            variant="outlined" 
-            onClick={handleGoBack}
-            startIcon={<ArrowBackIcon />}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold', color: 'text.secondary', borderColor: 'divider' }}
-          >
-            {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Button 
+                variant="outlined" 
+                onClick={handleGoBack}
+                startIcon={<ArrowBackIcon />}
+                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold', color: 'text.secondary', borderColor: 'divider' }}
+            >
+                {t('common.back')}
+            </Button>
+            <Typography variant="h5" sx={{ fontWeight: '900', display: { xs: 'none', md: 'block' } }}>{t('dashboard.title')}</Typography>
+          </Box>
           
           <Button 
             variant="contained" 
@@ -263,7 +267,7 @@ const Dashboard: React.FC = () => {
           position: 'relative'
       }}>
           <Box sx={{ 
-              height: { xs: 100, sm: 140 }, 
+              height: { xs: 80, sm: 100 }, 
               position: 'relative',
               overflow: 'hidden'
           }}>
@@ -279,21 +283,13 @@ const Dashboard: React.FC = () => {
                   `,
                   zIndex: 0
               }} />
-              
-              {/* Layer 2: Interactive Generative Art */}
-              <DynamicBanner 
-                username={data.user.username} 
-                palette={palette} 
-                ratingsCount={data.rated_count} 
-                followersCount={0} 
-              />
           </Box>
 
           <CardContent sx={{ pt: 0, px: { xs: 2, sm: 4 }, pb: 4, position: 'relative', zIndex: 2 }}>
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-end' }, gap: { xs: 2, sm: 4 } }}>
                   <Box sx={{ 
                       position: 'relative',
-                      mt: { xs: -6, sm: -8 },
+                      mt: { xs: -5, sm: -6 },
                       p: 0.5,
                       borderRadius: '50%',
                       background: `linear-gradient(135deg, ${palette[0] || theme.palette.primary.main}, ${theme.palette.secondary.main})`,
@@ -303,8 +299,8 @@ const Dashboard: React.FC = () => {
                       <Avatar 
                         src={data.user.avatar || undefined} 
                         sx={{ 
-                            width: { xs: 100, sm: 120 }, 
-                            height: { xs: 100, sm: 120 }, 
+                            width: { xs: 90, sm: 110 }, 
+                            height: { xs: 90, sm: 110 }, 
                             border: '4px solid', 
                             borderColor: (theme) => theme.palette.background.paper,
                             fontSize: '3rem',
@@ -356,7 +352,7 @@ const Dashboard: React.FC = () => {
 
       {/* Tabs Section */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
-        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} textColor="primary" indicatorColor="primary">
+        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} textColor="primary" indicatorColor="primary" variant="fullWidth">
           <Tab label={t('dashboard.myReviews')} sx={{ fontWeight: '900', textTransform: 'none', fontSize: '1.1rem' }} />
           <Tab label={t('dashboard.exploreNew')} sx={{ fontWeight: '900', textTransform: 'none', fontSize: '1.1rem' }} />
         </Tabs>
@@ -422,7 +418,7 @@ const Dashboard: React.FC = () => {
                   {filteredAndSortedRated.length === 0 ? (
                       <Box sx={{ py: 10, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 4, border: '1px dashed', borderColor: 'divider' }}>
                           <Typography variant="h6" color="text.secondary">{t('dashboard.noRatings')}</Typography>
-                          <Button onClick={() => setActiveTab(1)} sx={{ mt: 2 }}>{t('dashboard.exploreFlavors')}</Button>
+                          <Button onClick={() => setActiveTab(1)} variant="contained" sx={{ mt: 2, borderRadius: 2 }}>{t('dashboard.exploreFlavors')}</Button>
                       </Box>
                   ) : (
                       filteredAndSortedRated.map(rating => (
@@ -440,11 +436,9 @@ const Dashboard: React.FC = () => {
                                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{t('dashboard.editingReview', { flavor: rating.flavor_name })}</Typography>
                                           <Stack direction="row" spacing={2} alignItems="center">
                                               <Typography variant="body2">{t('dashboard.newScore')}</Typography>
-                                              <TextField 
-                                                type="number" size="small" 
-                                                slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
-                                                value={editScore} onChange={(e) => setEditScore(Number(e.target.value))} 
-                                                sx={{ width: 80 }}
+                                              <MuiRating 
+                                                max={10} 
+                                                value={editScore} onChange={(_: any, val: number | null) => setEditScore(val || 0)} 
                                               />
                                           </Stack>
                                           <MentionTextField 
@@ -467,9 +461,12 @@ const Dashboard: React.FC = () => {
                                                       <Typography variant="h6" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                                                           <Link to={`/flavor/${rating.flavor}`} style={{ color: 'inherit', textDecoration: 'none' }}>{rating.flavor_name}</Link>
                                                       </Typography>
-                                                      <Typography variant="caption" color="text.secondary" display="block">
-                                                          {t(`categories.${rating.category_slug}`, { defaultValue: rating.category_name })} • {formatDate(rating.created_at)}
-                                                      </Typography>
+                                                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                                                          <Typography variant="caption" color="text.secondary">
+                                                              {t(`categories.${rating.category_slug}`, { defaultValue: rating.category_name })} • {formatDate(rating.created_at)}
+                                                          </Typography>
+                                                          <StatusBadge isLegacy={rating.is_legacy} isAvailable={rating.is_available} size="small" />
+                                                      </Stack>
                                                   </Box>
                                               </Box>
                                               <RatingBadge score={rating.score} size={isMobile ? "medium" : "large"} />
@@ -630,8 +627,9 @@ const Dashboard: React.FC = () => {
                                                 '&:hover': { transform: 'scale(1.1)' }
                                             }} 
                                           />
-                                          <Box sx={{ position: 'absolute', top: 10, left: 10, zIndex: 2 }}>
+                                          <Box sx={{ position: 'absolute', top: 10, left: 10, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
                                               <RatingBadge score={flavor.average_rating || 0} size="small" sx={{ height: 24 }} />
+                                              <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} size="small" />
                                           </Box>
                                           {flavor.followed_average_rating && (
                                               <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}>

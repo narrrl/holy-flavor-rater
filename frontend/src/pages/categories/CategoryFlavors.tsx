@@ -13,6 +13,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
 import RatingBadge from '../../components/RatingBadge';
+import StatusBadge from '../../components/StatusBadge';
 import { useTranslation } from 'react-i18next';
 
 interface Rating {
@@ -114,15 +115,9 @@ const CategoryFlavors: React.FC = () => {
           <Box key={flavor.id}>
             <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
               <Box component={Link} to={`/flavor/${flavor.id}`} sx={{ textDecoration: 'none', color: 'inherit', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                {!flavor.is_available && (
-                    <Box sx={{ 
-                        position: 'absolute', top: 10, right: 10, 
-                        bgcolor: flavor.is_legacy ? 'warning.main' : 'error.main', 
-                        color: 'white', px: 1, borderRadius: 1, fontSize: '0.75rem', zIndex: 1 
-                    }}>
-                        {flavor.is_legacy ? 'Unavailable' : 'Out of Stock'}
-                    </Box>
-                )}
+                <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1 }}>
+                    <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} size="small" />
+                </Box>
                 {flavor.image_url && (
                     <Box 
                         sx={{ 
