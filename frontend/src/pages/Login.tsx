@@ -4,11 +4,13 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { useTitle } from '../hooks/useTitle';
+import { useTranslation } from 'react-i18next';
 
 interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = () => {
+  const { t } = useTranslation();
   useTitle('Login');
   const [tab, setTab] = useState(0);
   const [username, setUsername] = useState('');
@@ -126,7 +128,13 @@ const Login: React.FC<LoginProps> = () => {
                     Verify
                 </Button>
                 
-                <Button fullWidth variant="outlined" onClick={handleResendCode} sx={{ mt: 2, textTransform: 'none' }}>
+                <Button 
+                    fullWidth 
+                    variant={showResend ? "contained" : "outlined"} 
+                    color={showResend ? "secondary" : "primary"}
+                    onClick={handleResendCode} 
+                    sx={{ mt: 2, textTransform: 'none' }}
+                >
                     {t('auth.resendButton')}
                 </Button>
 
