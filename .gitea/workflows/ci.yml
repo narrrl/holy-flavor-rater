@@ -29,6 +29,8 @@ jobs:
 
   backend-check:
     runs-on: ubuntu-latest
+    container:
+      image: catthehacker/ubuntu:act-latest
     steps:
       - uses: actions/checkout@v6
 

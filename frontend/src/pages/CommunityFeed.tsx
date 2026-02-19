@@ -70,7 +70,7 @@ interface Notification {
     id: number;
     actor_username: string;
     actor_avatar: string | null;
-    notification_type: 'reply' | 'mention';
+    notification_type: 'reply' | 'mention' | 'follow' | 'ticket_new' | 'ticket_reply' | 'profile_comment';
     rating: number | null;
     reply: number | null;
     is_read: boolean;
