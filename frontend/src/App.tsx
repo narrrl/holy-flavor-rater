@@ -167,6 +167,12 @@ const GlobalSearch = () => {
                             '& .MuiOutlinedInput-root': {
                                 color: 'inherit',
                                 '& fieldset': { border: 'none' },
+                                '&:hover fieldset': { border: 'none' },
+                                '&.Mui-focused fieldset': { border: 'none' },
+                                outline: 'none'
+                            },
+                            '& .MuiInputBase-input': {
+                                outline: 'none'
                             }
                         }}
                         InputProps={{
