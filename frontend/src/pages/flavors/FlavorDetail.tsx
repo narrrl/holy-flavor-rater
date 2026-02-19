@@ -86,6 +86,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   
   // Product Edit state (Admin)
   const [isAdminEditing, setIsAdminEditing] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [editFlavorData, setEditFlavorData] = useState({
       name: '',
       description: '',
@@ -145,6 +146,26 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
           fetchFlavor();
       } catch (err) {
           alert('Admin update failed');
+      }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+          setUploadingImage(true);
+          await api.patch(`flavors/${id}/`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          fetchFlavor();
+      } catch (err) {
+          alert('Image upload failed');
+      } finally {
+          setUploadingImage(false);
       }
   };
 
@@ -337,6 +358,14 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                                     value={editFlavorData.shop_url} 
                                     onChange={(e) => setEditFlavorData({...editFlavorData, shop_url: e.target.value})} 
                                   />
+                                  
+                                  <Box>
+                                      <Button variant="outlined" component="label" size="small" fullWidth disabled={uploadingImage}>
+                                          {uploadingImage ? 'Uploading...' : 'Upload Custom Image'}
+                                          <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                                      </Button>
+                                  </Box>
+
                                   <FormControlLabel 
                                     control={<Switch checked={editFlavorData.is_available} onChange={(e) => setEditFlavorData({...editFlavorData, is_available: e.target.checked})} />} 
                                     label="In Stock" 
