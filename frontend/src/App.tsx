@@ -55,6 +55,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const Login = lazy(() => import('./pages/Login'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Support = lazy(() => import('./pages/Support'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'));
 const AdminRatingDetail = lazy(() => import('./pages/AdminRatingDetail'));
@@ -696,6 +697,7 @@ const App: React.FC = () => {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
                     <Route path="/support" element={<Support />} />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/admin-panel" element={<AdminDashboard />} />
                     <Route path="/admin-panel/user/:id" element={<AdminUserDetail />} />
                     <Route path="/admin-panel/rating/:id" element={<AdminRatingDetail />} />

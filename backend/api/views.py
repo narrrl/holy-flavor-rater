@@ -307,10 +307,12 @@ class UserViewSet(viewsets.ModelViewSet):
             email_confirmation_code=code
         )
         
+        verification_link = f"{settings.FRONTEND_URL}/verify-email?username={username}&code={code}"
+        
         try:
             send_mail(
                 'Verify your Holy Flavors account',
-                f'Hi {username},\n\nYour verification code is: {code}',
+                f'Hi {username},\n\nYour verification code is: {code}\n\nAlternatively, you can complete your registration by clicking the link below:\n{verification_link}\n\nWelcome to the archive!',
                 settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False,
@@ -342,10 +344,12 @@ class UserViewSet(viewsets.ModelViewSet):
         user.email_confirmation_code = code
         user.save()
         
+        verification_link = f"{settings.FRONTEND_URL}/verify-email?username={user.username}&code={code}"
+
         try:
             send_mail(
                 'Verify your Holy Flavors account',
-                f'Hi {user.username},\n\nYour new verification code is: {code}',
+                f'Hi {user.username},\n\nYour new verification code is: {code}\n\nAlternatively, you can complete your registration by clicking the link below:\n{verification_link}',
                 settings.DEFAULT_FROM_EMAIL,
                 [user.email],
                 fail_silently=False,
