@@ -55,6 +55,7 @@ const Privacy = lazy(() => import('./pages/Privacy'));
 const Login = lazy(() => import('./pages/Login'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Support = lazy(() => import('./pages/Support'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'));
 const AdminRatingDetail = lazy(() => import('./pages/AdminRatingDetail'));
@@ -73,7 +74,7 @@ interface Notification {
     id: number;
     actor_username: string;
     actor_avatar: string | null;
-    notification_type: 'reply' | 'mention' | 'ticket_new' | 'ticket_reply' | 'profile_comment';
+    notification_type: 'reply' | 'mention' | 'follow' | 'ticket_new' | 'ticket_reply' | 'profile_comment';
     rating: number | null;
     reply: number | null;
     is_read: boolean;
@@ -511,6 +512,9 @@ const App: React.FC = () => {
                         } else if (n.notification_type === 'profile_comment') {
                             handleNotificationClick(n);
                             navigate(`/profile/${user?.username}`);
+                        } else if (n.notification_type === 'follow') {
+                            handleNotificationClick(n);
+                            navigate(`/profile/${n.actor_username}`);
                         } else {
                             handleNotificationClick(n);
                         }
@@ -540,6 +544,7 @@ const App: React.FC = () => {
                                     <strong>{n.actor_username}</strong> {
                                         n.notification_type === 'reply' ? `replied to your review on ${n.flavor_name}` :
                                         n.notification_type === 'mention' ? `mentioned you on ${n.flavor_name}` :
+                                        n.notification_type === 'follow' ? t('community.notifFollow') :
                                         n.notification_type === 'profile_comment' ? `left a message on your guestbook` :
                                         n.notification_type === 'ticket_new' ? t('community.notifTicketNew') :
                                         user?.is_superuser ? t('community.notifTicketReplyAdmin') : t('community.notifTicketReply')
@@ -696,6 +701,7 @@ const App: React.FC = () => {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/settings" element={<Settings themeName={themeName} onThemeChange={handleThemeChange} />} />
                     <Route path="/support" element={<Support />} />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/admin-panel" element={<AdminDashboard />} />
                     <Route path="/admin-panel/user/:id" element={<AdminUserDetail />} />
                     <Route path="/admin-panel/rating/:id" element={<AdminRatingDetail />} />

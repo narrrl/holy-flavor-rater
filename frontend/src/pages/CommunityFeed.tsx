@@ -70,7 +70,7 @@ interface Notification {
     id: number;
     actor_username: string;
     actor_avatar: string | null;
-    notification_type: 'reply' | 'mention';
+    notification_type: 'reply' | 'mention' | 'follow' | 'ticket_new' | 'ticket_reply' | 'profile_comment';
     rating: number | null;
     reply: number | null;
     is_read: boolean;
@@ -385,22 +385,37 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                           {notifications.length === 0 ? (
                               <Box sx={{ p: 3, textAlign: 'center' }}><Typography variant="body2" color="text.secondary">{t('community.noNotifications')}</Typography></Box>
                           ) : (
-                              notifications.map(n => (
-                                  <ListItemButton key={n.id} onClick={() => n.flavor_id && navigate(`/flavor/${n.flavor_id}`)} sx={{ py: 1.5 }}>
-                                      <ListItemAvatar sx={{ minWidth: 40 }}>
-                                          <Avatar src={n.actor_avatar || undefined} sx={{ width: 30, height: 30, fontSize: '0.8rem' }}>{n.actor_username.charAt(0)}</Avatar>
-                                      </ListItemAvatar>
-                                      <ListItemText 
-                                        primary={
-                                            <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                                                <strong>{n.actor_username}</strong> {n.notification_type === 'reply' ? t('community.notifReply') : t('community.notifMention')}
-                                            </Typography>
-                                        }
-                                        secondary={formatTimestamp(n.created_at)}
-                                        secondaryTypographyProps={{ sx: { fontSize: '0.7rem' } }}
-                                      />
-                                  </ListItemButton>
-                              ))
+                              notifications.map(n => {
+                                  const handleClick = () => {
+                                      if (n.notification_type === 'follow') {
+                                          navigate(`/profile/${n.actor_username}`);
+                                      } else if (n.flavor_id) {
+                                          navigate(`/flavor/${n.flavor_id}`);
+                                      }
+                                  };
+
+                                  return (
+                                      <ListItemButton key={n.id} onClick={handleClick} sx={{ py: 1.5 }}>
+                                          <ListItemAvatar sx={{ minWidth: 40 }}>
+                                              <Avatar src={n.actor_avatar || undefined} sx={{ width: 30, height: 30, fontSize: '0.8rem' }}>{n.actor_username.charAt(0)}</Avatar>
+                                          </ListItemAvatar>
+                                          <ListItemText 
+                                            primary={
+                                                <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                                                    <strong>{n.actor_username}</strong> {
+                                                        n.notification_type === 'reply' ? t('community.notifReply') : 
+                                                        n.notification_type === 'mention' ? t('community.notifMention') :
+                                                        n.notification_type === 'follow' ? t('community.notifFollow') :
+                                                        n.notification_type
+                                                    }
+                                                </Typography>
+                                            }
+                                            secondary={formatTimestamp(n.created_at)}
+                                            secondaryTypographyProps={{ sx: { fontSize: '0.7rem' } }}
+                                          />
+                                      </ListItemButton>
+                                  );
+                              })
                           )}
                       </List>
                   </Card>

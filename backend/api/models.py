@@ -128,6 +128,7 @@ class Notification(models.Model):
     TYPE_CHOICES = [
         ('reply', 'Reply'),
         ('mention', 'Mention'),
+        ('follow', 'Follow'),
         ('ticket_new', 'New Ticket'),
         ('ticket_reply', 'Ticket Reply'),
         ('profile_comment', 'Profile Comment'),

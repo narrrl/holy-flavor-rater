@@ -307,10 +307,12 @@ class UserViewSet(viewsets.ModelViewSet):
             email_confirmation_code=code
         )
         
+        verification_link = f"{settings.FRONTEND_URL}/verify-email?username={username}&code={code}"
+        
         try:
             send_mail(
                 'Verify your Holy Flavors account',
-                f'Hi {username},\n\nYour verification code is: {code}',
+                f'Hi {username},\n\nYour verification code is: {code}\n\nAlternatively, you can complete your registration by clicking the link below:\n{verification_link}\n\nWelcome to the archive!',
                 settings.DEFAULT_FROM_EMAIL,
                 [email],
                 fail_silently=False,
@@ -323,7 +325,42 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
-        return Response({'status': 'User created, please verify your email'}, status=status.HTTP_201_CREATED)
+        return Response({'status': 'User created, please verify your email', 'username': username, 'email': email}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
+    def resend_verification(self, request):
+        username = request.data.get('username')
+        if not username:
+            return Response({'error': 'Username required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(username=username, is_active=False)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found or already active'}, status=status.HTTP_404_NOT_FOUND)
+            
+        import secrets
+        import string
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
+        user.email_confirmation_code = code
+        user.save()
+        
+        verification_link = f"{settings.FRONTEND_URL}/verify-email?username={user.username}&code={code}"
+
+        try:
+            send_mail(
+                'Verify your Holy Flavors account',
+                f'Hi {user.username},\n\nYour new verification code is: {code}\n\nAlternatively, you can complete your registration by clicking the link below:\n{verification_link}',
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to send email: {e}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+            
+        return Response({'status': 'Verification code resent!'})
 
     @action(detail=False, methods=['post'], permission_classes=[permissions.AllowAny])
     def verify_signup(self, request):
@@ -516,7 +553,16 @@ class UserViewSet(viewsets.ModelViewSet):
         user_to_follow = self.get_object()
         if user_to_follow == request.user:
             return Response({'error': 'You cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
-        request.user.following.add(user_to_follow)
+        
+        if not request.user.following.filter(pk=user_to_follow.pk).exists():
+            request.user.following.add(user_to_follow)
+            # Notify the user being followed
+            Notification.objects.create(
+                recipient=user_to_follow,
+                actor=request.user,
+                notification_type='follow'
+            )
+        
         return Response({'status': 'followed'})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
