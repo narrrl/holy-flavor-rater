@@ -628,29 +628,25 @@ const Dashboard: React.FC = () => {
                                             }} 
                                           />
                                           <Box sx={{ position: 'absolute', top: 10, left: 10, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                              <RatingBadge score={flavor.average_rating || 0} size="small" sx={{ height: 24 }} />
+                                              <Tooltip title={exploreSort === 'community' ? t('dashboard.communityRating') : t('dashboard.circleRating')}>
+                                                  <Box>
+                                                      <RatingBadge 
+                                                        score={exploreSort === 'community' ? (flavor.average_rating || 0) : (flavor.followed_average_rating || 0)} 
+                                                        size="small" 
+                                                        sx={{ 
+                                                            height: 24,
+                                                            bgcolor: exploreSort === 'circle' ? 'secondary.main' : 'primary.main',
+                                                            '& .MuiTypography-root': {
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 0.5
+                                                            }
+                                                        }} 
+                                                      />
+                                                  </Box>
+                                              </Tooltip>
                                               <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} size="small" />
                                           </Box>
-                                          {flavor.followed_average_rating && (
-                                              <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 2 }}>
-                                                  <Tooltip title={t('dashboard.circleAvg')}>
-                                                      <Box sx={{ 
-                                                          bgcolor: alpha(theme.palette.secondary.main, 0.9), 
-                                                          color: 'white', 
-                                                          px: 1, 
-                                                          borderRadius: 2, 
-                                                          display: 'flex', 
-                                                          alignItems: 'center', 
-                                                          gap: 0.5, 
-                                                          boxShadow: 2,
-                                                          height: 24
-                                                      }}>
-                                                          <VerifiedIcon sx={{ fontSize: '0.8rem' }} />
-                                                          <Typography variant="caption" sx={{ fontWeight: '900', lineHeight: 1 }}>{flavor.followed_average_rating.toFixed(1)}</Typography>
-                                                      </Box>
-                                                  </Tooltip>
-                                              </Box>
-                                          )}
                                       </Box>
                                       <CardContent sx={{ p: 2 }}>
                                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
