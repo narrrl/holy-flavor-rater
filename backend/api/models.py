@@ -241,7 +241,7 @@ class SystemConfig(models.Model):
 class Job(models.Model):
     """Tracks background jobs, their status and scheduling."""
     JOB_TYPES = [
-        ('sync_flavors', 'Sync Shopify Flavors'),
+        ('sync_flavors', 'Sync Holy Flavors'),
         ('cleanup_duplicates', 'Cleanup Duplicate Flavors'),
         ('backup_db', 'Database Backup'),
         ('seed_legacy', 'Seed Legacy Data'),

@@ -26,8 +26,17 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-zos99ue2a89!4jrv4g@_b
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
-ALLOWED_HOSTS_STRING = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1,backend,holy.narl.io')
-ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STRING.split(',')]
+# Simplification: Use a single DOMAIN variable to derive multiple settings
+DOMAIN = os.environ.get('DOMAIN', 'holy.narl.io')
+
+# Helper to build lists from env or defaults
+def get_env_list(var_name, default_list):
+    val = os.environ.get(var_name)
+    if val:
+        return [item.strip() for item in val.split(',')]
+    return default_list
+
+ALLOWED_HOSTS = get_env_list('ALLOWED_HOSTS', ['localhost', '127.0.0.1', 'backend', 'worker', DOMAIN])
 
 
 # Application definition
@@ -166,8 +175,7 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
 
 # Read CSRF trusted origins from environment variable
-CSRF_TRUSTED_ORIGINS_STRING = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://holy.narl.io,http://localhost:5173')
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STRING.split(',')]
+CSRF_TRUSTED_ORIGINS = get_env_list('CSRF_TRUSTED_ORIGINS', [f'https://{DOMAIN}', 'http://localhost:5173'])
 
 # Custom User Model
 AUTH_USER_MODEL = 'api.User'
@@ -188,10 +196,9 @@ REST_FRAMEWORK = {
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS_STRING = os.environ.get('CORS_ALLOWED_ORIGINS', 'https://holy.narl.io,http://localhost:5173,http://127.0.0.1:5173')
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS_STRING.split(',')]
+CORS_ALLOWED_ORIGINS = get_env_list('CORS_ALLOWED_ORIGINS', [f'https://{DOMAIN}', 'http://localhost:5173', 'http://127.0.0.1:5173'])
 
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://holy.narl.io').rstrip('/')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', f'https://{DOMAIN}').rstrip('/')
 
 import os
 # ... (near top of file)

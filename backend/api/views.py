@@ -919,7 +919,14 @@ class AdminViewSet(viewsets.ViewSet):
             
             if next_run is not None:
                 from django.utils.dateparse import parse_datetime
-                job.next_run = parse_datetime(next_run)
+                from django.utils import timezone
+                parsed_dt = parse_datetime(next_run)
+                if parsed_dt:
+                    # If it's naive (has no timezone info), assume it's local time
+                    if timezone.is_naive(parsed_dt):
+                        job.next_run = timezone.make_aware(parsed_dt, timezone.get_current_timezone())
+                    else:
+                        job.next_run = parsed_dt
             elif interval is not None and job.interval_hours > 0 and not job.next_run:
                 from django.utils import timezone
                 job.next_run = timezone.now()
