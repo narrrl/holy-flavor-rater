@@ -512,6 +512,9 @@ const App: React.FC = () => {
                         } else if (n.notification_type === 'profile_comment') {
                             handleNotificationClick(n);
                             navigate(`/profile/${user?.username}`);
+                        } else if (n.notification_type === 'follow') {
+                            handleNotificationClick(n);
+                            navigate(`/profile/${n.actor_username}`);
                         } else {
                             handleNotificationClick(n);
                         }
@@ -541,6 +544,7 @@ const App: React.FC = () => {
                                     <strong>{n.actor_username}</strong> {
                                         n.notification_type === 'reply' ? `replied to your review on ${n.flavor_name}` :
                                         n.notification_type === 'mention' ? `mentioned you on ${n.flavor_name}` :
+                                        n.notification_type === 'follow' ? t('community.notifFollow') :
                                         n.notification_type === 'profile_comment' ? `left a message on your guestbook` :
                                         n.notification_type === 'ticket_new' ? t('community.notifTicketNew') :
                                         user?.is_superuser ? t('community.notifTicketReplyAdmin') : t('community.notifTicketReply')

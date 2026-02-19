@@ -553,7 +553,16 @@ class UserViewSet(viewsets.ModelViewSet):
         user_to_follow = self.get_object()
         if user_to_follow == request.user:
             return Response({'error': 'You cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
-        request.user.following.add(user_to_follow)
+        
+        if not request.user.following.filter(pk=user_to_follow.pk).exists():
+            request.user.following.add(user_to_follow)
+            # Notify the user being followed
+            Notification.objects.create(
+                recipient=user_to_follow,
+                actor=request.user,
+                notification_type='follow'
+            )
+        
         return Response({'status': 'followed'})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
