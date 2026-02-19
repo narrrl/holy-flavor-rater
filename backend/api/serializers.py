@@ -75,7 +75,10 @@ class FlavorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Flavor
-        fields = ['id', 'name', 'category', 'category_name', 'category_slug', 'description', 'average_rating', 'followed_average_rating', 'user_rating', 'ratings', 'image_url', 'is_available', 'is_legacy', 'shop_url']
+        fields = ['id', 'name', 'category', 'category_name', 'category_slug', 'description', 'average_rating', 'followed_average_rating', 'user_rating', 'ratings', 'image_url', 'image', 'is_available', 'is_legacy', 'shop_url']
+        extra_kwargs = {
+            'image': {'write_only': True}
+        }
 
     def get_image_url(self, obj):
         if obj.image:

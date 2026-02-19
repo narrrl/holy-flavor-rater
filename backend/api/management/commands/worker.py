@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from django.core.management.base import BaseCommand
 from django.core.management import call_command
 from django.utils import timezone
+from django.db import models
 from api.models import Job
 from io import StringIO
 
@@ -70,5 +71,3 @@ class Command(BaseCommand):
         job.error_message = error
         job.save()
         self.stdout.write(self.style.SUCCESS(f"Job finished: {job.status}"))
-
-from django.db import models # Needed for the Q object inside handle
