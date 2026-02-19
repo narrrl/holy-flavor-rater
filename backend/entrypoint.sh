@@ -25,6 +25,10 @@ chmod -R 777 django_cache
 echo "Syncing flavors..."
 python manage.py sync_flavors
 
+# Merge any duplicates that might have been created
+echo "Cleaning up duplicates..."
+python manage.py cleanup_duplicates
+
 # Seed legacy flavors if needed
 echo "Seeding legacy flavors..."
 python manage.py seed_legacy_flavors
