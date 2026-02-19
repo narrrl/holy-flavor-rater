@@ -39,10 +39,18 @@ class Command(BaseCommand):
         self.stdout.write(f"Executing Job: {job.get_name_display()}...")
         job.status = 'running'
         job.last_run = timezone.now()
+        job.last_output = "" # Reset output for new run
         job.save()
 
         # Capture management command output
-        out = StringIO()
+        class LiveStream(StringIO):
+            def write(self, s):
+                super().write(s)
+                # Periodically update the DB with current output
+                job.last_output = self.getvalue()
+                job.save(update_fields=['last_output'])
+            
+        out = LiveStream()
         error = ""
         
         try:
@@ -51,7 +59,7 @@ class Command(BaseCommand):
             elif job.name == 'cleanup_duplicates':
                 call_command('cleanup_duplicates', stdout=out)
             elif job.name == 'backup_db':
-                call_command('backup_db', stdout=out)
+                call_command('backup_db', '--full', stdout=out)
             elif job.name == 'seed_legacy':
                 call_command('seed_legacy_flavors', stdout=out)
             

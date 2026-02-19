@@ -912,13 +912,19 @@ class AdminViewSet(viewsets.ViewSet):
         try:
             job = Job.objects.get(pk=pk)
             interval = request.data.get('interval_hours')
+            next_run = request.data.get('next_run')
+            
             if interval is not None:
                 job.interval_hours = int(interval)
-                # If we just enabled it, set next_run
-                if job.interval_hours > 0 and not job.next_run:
-                    from django.utils import timezone
-                    job.next_run = timezone.now()
-                job.save()
+            
+            if next_run is not None:
+                from django.utils.dateparse import parse_datetime
+                job.next_run = parse_datetime(next_run)
+            elif interval is not None and job.interval_hours > 0 and not job.next_run:
+                from django.utils import timezone
+                job.next_run = timezone.now()
+                
+            job.save()
             return Response(JobSerializer(job).data)
         except Job.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
