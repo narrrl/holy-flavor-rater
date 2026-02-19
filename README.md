@@ -104,6 +104,34 @@ bash scripts/install-hooks.sh
 - `python manage.py sync_flavors`: Syncs the latest products from the official Holy Energy API.
 - `python manage.py cleanup_duplicates`: Merges duplicate entries and maintains rating integrity.
 - `python manage.py seed_banners`: Updates procedurally generated banner configurations from JSON.
+- `python manage.py backup_db`: Creates a consistent SQLite snapshot.
+
+---
+
+## 💾 Backups & Restoration
+
+### Create a Backup
+To create a full snapshot of your database and user-uploaded media:
+```bash
+bash scripts/backup.sh
+```
+This will create a `.tar.gz` file in `backend/backups/`.
+
+**Automating with Cron:**
+Add this to your `crontab -e` to backup every night at 2:00 AM:
+```bash
+0 2 * * * /path/to/Holy-Flavor-Rater/scripts/backup.sh
+```
+
+### Restore from Backup
+1. Extract the archive: `tar -xzf backup_filename.tar.gz`
+2. Stop the containers: `docker-compose down`
+3. Replace the current files:
+   ```bash
+   cp extracted_folder/db.sqlite3 backend/db.sqlite3
+   cp -r extracted_folder/media/* backend/media/
+   ```
+4. Restart: `docker-compose up -d`
 
 ---
 
