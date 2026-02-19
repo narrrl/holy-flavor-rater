@@ -37,6 +37,11 @@ python manage.py seed_legacy_flavors
 echo "Syncing banner configurations..."
 python manage.py seed_banners
 
+if [ "$#" -gt 0 ]; then
+    echo "Executing custom command: $@"
+    exec "$@"
+fi
+
 # Start the server using Gunicorn
 echo "Starting Gunicorn..."
 exec gunicorn holy_backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120

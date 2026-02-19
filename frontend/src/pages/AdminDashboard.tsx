@@ -100,8 +100,8 @@ const AdminDashboard: React.FC = () => {
     const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
     const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (silent = false) => {
+        if (!silent) setLoading(true);
         try {
             const [statsRes, usersRes, bannersRes, jobsRes, configRes] = await Promise.all([
                 api.get('admin-custom/stats/'),
@@ -123,8 +123,17 @@ const AdminDashboard: React.FC = () => {
             console.error('Data fetch error:', err);
         }
         
-        setLoading(false);
+        if (!silent) setLoading(false);
     };
+
+    // Poll for job updates if any are running or pending
+    useEffect(() => {
+        const anyRunning = jobs.some(j => j.status === 'running' || j.status === 'pending');
+        if (anyRunning && currentTab === 3) {
+            const interval = setInterval(() => fetchData(true), 3000);
+            return () => clearInterval(interval);
+        }
+    }, [jobs, currentTab]);
 
     const handleUpdateConfig = async (key: string, value: any) => {
         try {
@@ -138,17 +147,18 @@ const AdminDashboard: React.FC = () => {
     const handleTriggerJob = async (id: number) => {
         try {
             await api.post(`admin-custom/${id}/trigger_job/`);
-            alert('Job queued successfully');
-            fetchData();
+            fetchData(true);
         } catch (err) {
             alert('Failed to trigger job');
         }
     };
 
-    const handleUpdateJobSchedule = async (id: number, interval: number) => {
+    const handleUpdateJobSchedule = async (id: number, interval: number, nextRun?: string) => {
         try {
-            await api.patch(`admin-custom/${id}/update_job_schedule/`, { interval_hours: interval });
-            fetchData();
+            const data: any = { interval_hours: interval };
+            if (nextRun) data.next_run = nextRun;
+            await api.patch(`admin-custom/${id}/update_job_schedule/`, data);
+            fetchData(true);
         } catch (err) {
             alert('Failed to update schedule');
         }
@@ -417,7 +427,7 @@ const AdminDashboard: React.FC = () => {
                             <Button 
                                 variant="outlined" 
                                 sx={{ mt: 2 }} 
-                                onClick={fetchData}
+                                onClick={() => fetchData()}
                             >
                                 Retry Loading
                             </Button>
@@ -485,9 +495,10 @@ const AdminDashboard: React.FC = () => {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{job.name_display}</Typography>
                                         <Chip 
-                                            label={job.status.toUpperCase()} 
+                                            label={job.status === 'pending' ? 'QUEUED' : job.status.toUpperCase()} 
                                             size="small" 
                                             color={job.status === 'completed' ? 'success' : job.status === 'running' ? 'info' : job.status === 'failed' ? 'error' : 'default'} 
+                                            variant={job.status === 'running' ? 'filled' : 'outlined'}
                                         />
                                     </Box>
                                     
@@ -498,7 +509,13 @@ const AdminDashboard: React.FC = () => {
                                         </Grid>
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <Typography variant="caption" color="text.secondary" display="block">Next Run</Typography>
-                                            <Typography variant="body2">{job.next_run ? formatDate(job.next_run) : (job.interval_hours > 0 ? 'Pending' : 'Disabled')}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="body2">{job.next_run ? formatDate(job.next_run) : (job.interval_hours > 0 ? 'Queued...' : 'Disabled')}</Typography>
+                                                <Button size="small" onClick={() => {
+                                                    const val = prompt('Set next run (YYYY-MM-DD HH:MM):', job.next_run ? job.next_run.substring(0, 16).replace('T', ' ') : '');
+                                                    if (val !== null) handleUpdateJobSchedule(job.id, job.interval_hours, val);
+                                                }}>Edit</Button>
+                                            </Box>
                                         </Grid>
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <Typography variant="caption" color="text.secondary" display="block">Interval (Hours)</Typography>
