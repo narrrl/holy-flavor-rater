@@ -145,8 +145,9 @@ const HextechBanner: React.FC<HextechBannerProps> = ({ username, palette, settin
             const isLight = theme.palette.mode === 'light';
             const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             if (isLight) {
-                bgGrad.addColorStop(0, alpha(brightColors[0], 0.4));
-                bgGrad.addColorStop(1, alpha(brightColors[0], 0.9));
+                // For light themes, use a deeper, more saturated version of the theme color
+                bgGrad.addColorStop(0, alpha(brightColors[2] || brightColors[0], 0.65));
+                bgGrad.addColorStop(1, alpha(brightColors[2] || brightColors[0], 0.95));
             } else {
                 bgGrad.addColorStop(0, '#0a051a'); // Arcane Purple tint
                 bgGrad.addColorStop(1, '#020105');

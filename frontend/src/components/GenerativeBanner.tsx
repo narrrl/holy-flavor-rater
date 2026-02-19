@@ -269,7 +269,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({ username, palette, 
                 height: '100%',
                 pointerEvents: 'none',
                 zIndex: 1,
-                mixBlendMode: 'screen'
+                mixBlendMode: theme.palette.mode === 'light' ? 'multiply' : 'screen'
             }} 
         />
     );

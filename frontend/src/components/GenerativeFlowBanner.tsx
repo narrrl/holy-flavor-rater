@@ -140,8 +140,9 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
             const isLight = theme.palette.mode === 'light';
             const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             if (isLight) {
-                bgGrad.addColorStop(0, alpha(brightColors[0], 0.4));
-                bgGrad.addColorStop(1, alpha(brightColors[0], 0.9));
+                // For light themes, use a deeper, more saturated version of the theme color
+                bgGrad.addColorStop(0, alpha(brightColors[brightColors.length - 1] || brightColors[0], 0.6));
+                bgGrad.addColorStop(1, alpha(brightColors[brightColors.length - 1] || brightColors[0], 0.9));
             } else {
                 bgGrad.addColorStop(0, '#0a0a1a');
                 bgGrad.addColorStop(1, '#020205');
