@@ -32,7 +32,23 @@ services:
       retries: 5
       start_period: 30s
 
-  # --- Frontend Service ---
+  worker:
+    build:
+      context: ./backend
+    container_name: holy-worker
+    command: python manage.py worker
+    restart: unless-stopped
+    networks:
+      - internal
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+      - ./legacy:/app/legacy
+    depends_on:
+      backend:
+        condition: service_healthy
+
   frontend:
     build:
       context: ./frontend

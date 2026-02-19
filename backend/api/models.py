@@ -216,3 +216,51 @@ class Banner(models.Model):
 
     def __str__(self):
         return self.name
+
+class SystemConfig(models.Model):
+    """Singleton model for application-wide settings editable via UI."""
+    site_name = models.CharField(max_length=100, default="Holy Flavors Archive")
+    maintenance_mode = models.BooleanField(default=False)
+    allow_new_signups = models.BooleanField(default=True)
+    require_email_verification = models.BooleanField(default=True)
+    
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        self.pk = 1 # Force singleton
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    class Meta:
+        verbose_name = "System Configuration"
+
+class Job(models.Model):
+    """Tracks background jobs, their status and scheduling."""
+    JOB_TYPES = [
+        ('sync_flavors', 'Sync Shopify Flavors'),
+        ('cleanup_duplicates', 'Cleanup Duplicate Flavors'),
+        ('backup_db', 'Database Backup'),
+        ('seed_legacy', 'Seed Legacy Data'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('running', 'Running'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    
+    name = models.CharField(max_length=100, choices=JOB_TYPES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    last_run = models.DateTimeField(null=True, blank=True)
+    next_run = models.DateTimeField(null=True, blank=True)
+    interval_hours = models.IntegerField(default=0, help_text="Set to 0 to disable periodic run.")
+    
+    last_output = models.TextField(blank=True)
+    error_message = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.get_name_display()} ({self.status})"

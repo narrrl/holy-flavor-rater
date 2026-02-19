@@ -3,7 +3,8 @@ import {
     Container, Typography, Box, Grid, Card, CardContent, Button, 
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     Paper, Stack, alpha, CircularProgress, Chip, TextField, IconButton,
-    useMediaQuery, Tabs, Tab
+    useMediaQuery, Tabs, Tab, List, ListItem, ListItemText, Switch, Divider,
+    Alert
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
@@ -11,6 +12,9 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
 import WallpaperIcon from '@mui/icons-material/Wallpaper';
+import TerminalIcon from '@mui/icons-material/Terminal';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import InfoIcon from '@mui/icons-material/Info';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
@@ -29,6 +33,13 @@ interface Stats {
         use_tls: boolean;
         use_ssl: boolean;
         skip_verify: boolean;
+    };
+    server_info: {
+        debug: boolean;
+        allowed_hosts: string[];
+        frontend_url: string;
+        media_root: string;
+        static_root: string;
     };
 }
 
@@ -54,6 +65,25 @@ interface Banner {
     schema: any[];
 }
 
+interface Job {
+    id: number;
+    name: string;
+    name_display: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    last_run: string | null;
+    next_run: string | null;
+    interval_hours: number;
+    last_output: string;
+    error_message: string;
+}
+
+interface SystemConfig {
+    site_name: string;
+    maintenance_mode: boolean;
+    allow_new_signups: boolean;
+    require_email_verification: boolean;
+}
+
 const AdminDashboard: React.FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -62,6 +92,8 @@ const AdminDashboard: React.FC = () => {
     const [stats, setStats] = useState<Stats | null>(null);
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [banners, setBanners] = useState<Banner[]>([]);
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [config, setConfig] = useState<SystemConfig | null>(null);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [currentTab, setCurrentTab] = useState(0);
@@ -71,28 +103,55 @@ const AdminDashboard: React.FC = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const statsRes = await api.get('admin-custom/stats/');
+            const [statsRes, usersRes, bannersRes, jobsRes, configRes] = await Promise.all([
+                api.get('admin-custom/stats/'),
+                api.get('admin-custom/users/'),
+                api.get('banners/'),
+                api.get('admin-custom/jobs/'),
+                api.get('admin-custom/config/')
+            ]);
+            
             setStats(statsRes.data);
-        } catch (err) {
-            console.error('Stats fetch error:', err);
-        }
-
-        try {
-            const usersRes = await api.get('admin-custom/users/');
             setUsers(usersRes.data);
-        } catch (err) {
-            console.error('Users fetch error:', err);
-        }
-
-        try {
-            const bannersRes = await api.get('banners/');
+            
             const bannersData = Array.isArray(bannersRes.data) ? bannersRes.data : (bannersRes.data.results || []);
             setBanners(bannersData);
+            
+            setJobs(jobsRes.data);
+            setConfig(configRes.data);
         } catch (err) {
-            console.error('Banners fetch error:', err);
+            console.error('Data fetch error:', err);
         }
         
         setLoading(false);
+    };
+
+    const handleUpdateConfig = async (key: string, value: any) => {
+        try {
+            const res = await api.patch('admin-custom/config/', { [key]: value });
+            setConfig(res.data);
+        } catch (err) {
+            alert('Failed to update configuration');
+        }
+    };
+
+    const handleTriggerJob = async (id: number) => {
+        try {
+            await api.post(`admin-custom/${id}/trigger_job/`);
+            alert('Job queued successfully');
+            fetchData();
+        } catch (err) {
+            alert('Failed to trigger job');
+        }
+    };
+
+    const handleUpdateJobSchedule = async (id: number, interval: number) => {
+        try {
+            await api.patch(`admin-custom/${id}/update_job_schedule/`, { interval_hours: interval });
+            fetchData();
+        } catch (err) {
+            alert('Failed to update schedule');
+        }
     };
 
     const handleActivateBanner = async (id: number) => {
@@ -154,46 +213,113 @@ const AdminDashboard: React.FC = () => {
                 <Tab icon={<SettingsIcon />} label={t('admin.overview')} iconPosition="start" />
                 <Tab icon={<PeopleIcon />} label={t('admin.users')} iconPosition="start" />
                 <Tab icon={<WallpaperIcon />} label={t('admin.banners')} iconPosition="start" />
+                <Tab icon={<TerminalIcon />} label="Jobs & Workers" iconPosition="start" />
             </Tabs>
 
             {currentTab === 0 && (
-                <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 6 }}>
-                    <Grid size={{ xs: 6, md: 3 }}>
-                        <Card sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) }}>
-                            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
-                                <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>{t('admin.totalUsers')}</Typography>
-                                <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold' }}>{stats?.total_users}</Typography>
-                            </CardContent>
-                        </Card>
+                <Box>
+                    <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 6 }}>
+                        <Grid size={{ xs: 6, md: 3 }}>
+                            <Card sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) }}>
+                                <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                                    <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>{t('admin.totalUsers')}</Typography>
+                                    <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold' }}>{stats?.total_users}</Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 3 }}>
+                            <Card sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.1) }}>
+                                <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                                    <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>{t('admin.openTickets')}</Typography>
+                                    <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', color: 'error.main' }}>{stats?.open_tickets}</Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Card variant="outlined">
+                                <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                                    <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} spacing={2}>
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{t('admin.config')}: SMTP</Typography>
+                                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                                {stats?.email_config.host}:{stats?.email_config.port} • 
+                                                TLS: {String(stats?.email_config.use_tls)} • 
+                                                Insecure: {String(stats?.email_config.skip_verify)}
+                                            </Typography>
+                                        </Box>
+                                        <Button variant="outlined" fullWidth={isMobile} startIcon={<EmailIcon />} onClick={handleSendTestEmail} size="small">
+                                            {t('admin.sendTestEmail')}
+                                        </Button>
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+                        </Grid>
                     </Grid>
-                    <Grid size={{ xs: 6, md: 3 }}>
-                        <Card sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.1) }}>
-                            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
-                                <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>{t('admin.openTickets')}</Typography>
-                                <Typography variant={isMobile ? "h5" : "h4"} sx={{ fontWeight: 'bold', color: 'error.main' }}>{stats?.open_tickets}</Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                        <Card variant="outlined">
-                            <CardContent sx={{ p: isMobile ? 2 : 3 }}>
-                                <Stack direction={isMobile ? "column" : "row"} justifyContent="space-between" alignItems={isMobile ? "flex-start" : "center"} spacing={2}>
+
+                    <Grid container spacing={4}>
+                        {/* Live Config */}
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>System Configuration (Live)</Typography>
+                            <Paper variant="outlined" sx={{ p: 0, borderRadius: 3, overflow: 'hidden' }}>
+                                <List disablePadding>
+                                    {[
+                                        { key: 'site_name', label: 'Site Name', type: 'text' },
+                                        { key: 'maintenance_mode', label: 'Maintenance Mode', type: 'switch' },
+                                        { key: 'allow_new_signups', label: 'Allow Signups', type: 'switch' },
+                                        { key: 'require_email_verification', label: 'Require Email Verify', type: 'switch' }
+                                    ].map((item, idx) => (
+                                        <ListItem key={item.key} divider={idx < 3} sx={{ py: 2 }}>
+                                            <ListItemText 
+                                                primary={item.label} 
+                                                secondary={item.type === 'text' ? (config as any)?.[item.key] : null}
+                                            />
+                                            {item.type === 'switch' ? (
+                                                <Switch 
+                                                    checked={(config as any)?.[item.key] || false}
+                                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleUpdateConfig(item.key, e.target.checked)}
+                                                />
+                                            ) : (
+                                                <Button size="small" onClick={() => {
+                                                    const val = prompt(`Enter new value for ${item.label}:`, (config as any)?.[item.key]);
+                                                    if (val !== null) handleUpdateConfig(item.key, val);
+                                                }}>Edit</Button>
+                                            )}
+                                        </ListItem>
+                                    ))}
+                                </List>
+                            </Paper>
+                        </Grid>
+
+                        {/* Environment Info */}
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Environment Info (.env)</Typography>
+                            <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: alpha('#000', 0.02) }}>
+                                <Stack spacing={2.5}>
                                     <Box>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>{t('admin.config')}: SMTP</Typography>
-                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                            {stats?.email_config.host}:{stats?.email_config.port} • 
-                                            TLS: {String(stats?.email_config.use_tls)} • 
-                                            Insecure: {String(stats?.email_config.skip_verify)}
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}>API Status</Typography>
+                                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>DEBUG={String(stats?.server_info.debug)}</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}>Frontend URL</Typography>
+                                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{stats?.server_info.frontend_url}</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}>Allowed Hosts</Typography>
+                                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{stats?.server_info.allowed_hosts.join(', ')}</Typography>
+                                    </Box>
+                                    <Divider />
+                                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                                        <InfoIcon fontSize="small" color="primary" />
+                                        <Typography variant="caption" color="text.secondary">
+                                            These values are read from your server environment or .env file. 
+                                            To change them, you must update the file and restart the backend container.
                                         </Typography>
                                     </Box>
-                                    <Button variant="outlined" fullWidth={isMobile} startIcon={<EmailIcon />} onClick={handleSendTestEmail} size="small">
-                                        {t('admin.sendTestEmail')}
-                                    </Button>
                                 </Stack>
-                            </CardContent>
-                        </Card>
+                            </Paper>
+                        </Grid>
                     </Grid>
-                </Grid>
+                </Box>
             )}
 
             {currentTab === 1 && (
@@ -349,6 +475,74 @@ const AdminDashboard: React.FC = () => {
                 </Box>
             )}
 
+            {currentTab === 3 && (
+                <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>Background Worker Jobs</Typography>
+                    <Stack spacing={3}>
+                        {jobs.map(job => (
+                            <Card key={job.id} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{job.name_display}</Typography>
+                                        <Chip 
+                                            label={job.status.toUpperCase()} 
+                                            size="small" 
+                                            color={job.status === 'completed' ? 'success' : job.status === 'running' ? 'info' : job.status === 'failed' ? 'error' : 'default'} 
+                                        />
+                                    </Box>
+                                    
+                                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                                        <Grid size={{ xs: 12, md: 4 }}>
+                                            <Typography variant="caption" color="text.secondary" display="block">Last Run</Typography>
+                                            <Typography variant="body2">{job.last_run ? formatDate(job.last_run) : 'Never'}</Typography>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, md: 4 }}>
+                                            <Typography variant="caption" color="text.secondary" display="block">Next Run</Typography>
+                                            <Typography variant="body2">{job.next_run ? formatDate(job.next_run) : (job.interval_hours > 0 ? 'Pending' : 'Disabled')}</Typography>
+                                        </Grid>
+                                        <Grid size={{ xs: 12, md: 4 }}>
+                                            <Typography variant="caption" color="text.secondary" display="block">Interval (Hours)</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{job.interval_hours}h</Typography>
+                                                <Button size="small" onClick={() => {
+                                                    const val = prompt('Set interval in hours (0 to disable):', String(job.interval_hours));
+                                                    if (val !== null) handleUpdateJobSchedule(job.id, parseInt(val));
+                                                }}>Change</Button>
+                                            </Box>
+                                        </Grid>
+                                    </Grid>
+
+                                    {job.last_output && (
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>Last Run Output</Typography>
+                                            <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', color: '#d4d4d4', borderRadius: 2, maxHeight: 150, overflowY: 'auto', border: '1px solid #333' }}>
+                                                <pre style={{ margin: 0, fontSize: '0.75rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>{job.last_output}</pre>
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    {job.error_message && (
+                                        <Box sx={{ mb: 2 }}>
+                                            <Typography variant="caption" color="error" display="block" gutterBottom>Last Error</Typography>
+                                            <Alert severity="error" sx={{ py: 0 }}>{job.error_message}</Alert>
+                                        </Box>
+                                    )}
+
+                                    <Button 
+                                        variant="contained" 
+                                        startIcon={<PlayArrowIcon />} 
+                                        disabled={job.status === 'running'}
+                                        onClick={() => handleTriggerJob(job.id)}
+                                    >
+                                        Trigger Now
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Stack>
+                </Box>
+            )}
+
             <BannerSettingsDialog 
                 open={isSettingsDialogOpen} 
                 onClose={() => {
@@ -363,3 +557,4 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
+

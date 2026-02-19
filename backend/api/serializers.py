@@ -1,10 +1,23 @@
 from rest_framework import serializers
-from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, Banner
+from .models import User, Flavor, Category, Rating, Reply, Notification, Ticket, TicketMessage, UserIP, Banner, SystemConfig, Job
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'slug']
+
+class SystemConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SystemConfig
+        fields = ['site_name', 'maintenance_mode', 'allow_new_signups', 'require_email_verification', 'updated_at']
+
+class JobSerializer(serializers.ModelSerializer):
+    name_display = serializers.CharField(source='get_name_display', read_only=True)
+    
+    class Meta:
+        model = Job
+        fields = ['id', 'name', 'name_display', 'status', 'last_run', 'next_run', 'interval_hours', 'last_output', 'error_message']
+        read_only_fields = ['status', 'last_run', 'next_run', 'last_output', 'error_message']
 
 class BannerSerializer(serializers.ModelSerializer):
     class Meta:
