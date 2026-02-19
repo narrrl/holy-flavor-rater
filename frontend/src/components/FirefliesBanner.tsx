@@ -141,8 +141,10 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
             const isLight = theme.palette.mode === 'light';
             const bgGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             if (isLight) {
-                bgGrad.addColorStop(0, alpha(brightColors[0], 0.5));
-                bgGrad.addColorStop(1, alpha(brightColors[0], 0.95));
+                // For light themes, we still need a "dusk/night" feel for fireflies to make sense.
+                // We use a deeper, more saturated version of the theme's colors.
+                bgGrad.addColorStop(0, alpha(brightColors[2] || '#1a1a2e', 0.85));
+                bgGrad.addColorStop(1, alpha(brightColors[2] || '#16213e', 1.0));
             } else {
                 bgGrad.addColorStop(0, '#141a2a'); // Noticeable blue-grey tint
                 bgGrad.addColorStop(1, '#05080f');

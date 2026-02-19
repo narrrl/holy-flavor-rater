@@ -175,10 +175,10 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({ username, palette, ratingsC
             const skyGrad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             
             if (isLight) {
-                // Vibrant Deep Primary for light mode
-                skyGrad.addColorStop(0, alpha(colors[0], 0.6)); 
-                skyGrad.addColorStop(0.5, alpha(colors[0], 0.8));
-                skyGrad.addColorStop(1, alpha(colors[0], 1.0));
+                // Vibrant Deep Primary for light mode - but dark enough for glowing gas to pop
+                skyGrad.addColorStop(0, alpha(colors[colors.length - 1], 0.7)); 
+                skyGrad.addColorStop(0.5, alpha(colors[colors.length - 1], 0.9));
+                skyGrad.addColorStop(1, alpha(colors[colors.length - 1], 1.0));
             } else {
                 // True Deep Space with visible tints for dark mode
                 skyGrad.addColorStop(0, '#1a1a3a'); // More blue/purple tint
