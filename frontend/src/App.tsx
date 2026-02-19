@@ -573,7 +573,7 @@ const App: React.FC = () => {
           }}
         >
             <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
-                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mr: 2 }}>
+                <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', mr: { xs: 0, sm: 2 }, display: { xs: 'none', sm: 'block' } }}>
                   <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
                       <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Holy Flavors Archive</Box>
                       <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>HFA</Box>
