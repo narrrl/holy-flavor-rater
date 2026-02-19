@@ -43,6 +43,7 @@ services:
     command: python manage.py worker
     restart: unless-stopped
     networks:
+      - narl
       - internal
     dns:
       - 8.8.8.8

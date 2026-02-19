@@ -1,6 +1,6 @@
 import json
 import os
-import urllib.request
+import requests
 from django.core.management.base import BaseCommand
 from django.core.files import File
 from django.conf import settings
@@ -24,18 +24,14 @@ class Command(BaseCommand):
             
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req, timeout=10) as response:
-                content = response.read()
-                
-            if not content:
-                return None
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            response.raise_for_status()
 
             if os.path.exists(filepath):
                 os.remove(filepath)
 
             with open(filepath, 'wb') as f:
-                f.write(content)
+                f.write(response.content)
             
             return f"flavors/{filename}"
         except Exception as e:
