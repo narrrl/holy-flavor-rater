@@ -23,6 +23,12 @@ services:
       - "traefik.http.routers.holy-energy-backend.entrypoints=websecure"
       - "traefik.http.routers.holy-energy-backend.tls.certresolver=https_resolver"
       - "traefik.http.services.holy-energy-backend.loadbalancer.server.port=8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   frontend:
     build:
@@ -41,7 +47,8 @@ services:
     env_file:
       - .env.narl.io
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=narl"
