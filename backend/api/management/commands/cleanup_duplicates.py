@@ -31,14 +31,16 @@ class Command(BaseCommand):
             
             for other in others:
                 # Re-assign ratings
-                Rating.objects.filter(flavor=other).update(flavor=keep)
-                # Note: This might trigger unique constraint errors on Rating (user, flavor)
-                # if the user rated both duplicates. We'll handle that if needed.
+                for rating in Rating.objects.filter(flavor=other):
+                    try:
+                        rating.flavor = keep
+                        rating.save()
+                    except Exception:
+                        # User already has a rating for the 'keep' flavor
+                        # Delete the duplicate rating instead
+                        rating.delete()
                 
-                # Re-assign other related models if any (e.g. notifications, etc.)
-                # In our case, Rating is the main one.
-                
-                # Delete the duplicate
+                # Delete the duplicate flavor
                 other.delete()
 
         self.stdout.write(self.style.SUCCESS("Finished cleaning up duplicates."))

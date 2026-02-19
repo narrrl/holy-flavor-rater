@@ -54,5 +54,8 @@ class Command(BaseCommand):
             if os.path.isfile(file_path):
                 file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
                 if file_time < cutoff:
-                    os.remove(file_path)
-                    self.stdout.write(f"  -> Deleted: {filename}")
+                    try:
+                        os.remove(file_path)
+                        self.stdout.write(self.style.SUCCESS(f"  -> Deleted old backup: {filename}"))
+                    except Exception as e:
+                        self.stdout.write(self.style.WARNING(f"  -> Failed to delete {filename}: {e}"))

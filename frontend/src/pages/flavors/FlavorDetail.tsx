@@ -16,7 +16,11 @@ import {
   Stack,
   alpha,
   useTheme,
-  Collapse
+  Collapse,
+  TextField,
+  FormControlLabel,
+  Switch,
+  Divider
 } from '@mui/material';
 import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
@@ -24,6 +28,9 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import CommentIcon from '@mui/icons-material/Comment';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { formatDate } from '../../utils/date';
 import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
@@ -77,6 +84,16 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const [expandedReplies, setExpandedReplies] = useState<{[key: number]: boolean}>({});
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   
+  // Product Edit state (Admin)
+  const [isAdminEditing, setIsAdminEditing] = useState(false);
+  const [editFlavorData, setEditFlavorData] = useState({
+      name: '',
+      description: '',
+      shop_url: '',
+      is_available: true,
+      is_legacy: false
+  });
+
   // Rating form state
   const [newScore, setNewScore] = useState<number | null>(null);
   const [newComment, setNewComment] = useState('');
@@ -94,6 +111,13 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
     try {
       const res = await api.get(`flavors/${id}/`);
       setFlavor(res.data);
+      setEditFlavorData({
+          name: res.data.name,
+          description: res.data.description,
+          shop_url: res.data.shop_url || '',
+          is_available: res.data.is_available,
+          is_legacy: res.data.is_legacy
+      });
     } catch (err) {
       console.error(err);
     } finally {
@@ -113,6 +137,16 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   }, [id]);
 
   useTitle(flavor?.name || t('common.loading'));
+
+  const handleAdminUpdate = async () => {
+      try {
+          await api.patch(`flavors/${id}/`, editFlavorData);
+          setIsAdminEditing(false);
+          fetchFlavor();
+      } catch (err) {
+          alert('Admin update failed');
+      }
+  };
 
   const handleRatingSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -267,27 +301,77 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                           )}
                       </Box>
                       <CardContent sx={{ p: 3 }}>
-                          <Chip 
-                            label={flavor.category_name} 
-                            size="small" 
-                            sx={{ mb: 2, fontWeight: 'bold', bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' }} 
-                          />
-                          <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, lineHeight: 1.2 }}>
-                              {flavor.name}
-                          </Typography>
-                          
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                              <RatingBadge score={flavor.average_rating || 0} size="large" />
-                              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                                  {flavor.ratings.length} {t('common.reviews')}
-                              </Typography>
-                          </Box>
+                          {adminMode && (
+                              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                                  {!isAdminEditing ? (
+                                      <Button startIcon={<EditIcon />} size="small" onClick={() => setIsAdminEditing(true)}>
+                                          Edit Product (Admin)
+                                      </Button>
+                                  ) : (
+                                      <Stack direction="row" spacing={1}>
+                                          <Button startIcon={<SaveIcon />} size="small" color="success" variant="contained" onClick={handleAdminUpdate}>
+                                              Save
+                                          </Button>
+                                          <Button startIcon={<CancelIcon />} size="small" onClick={() => setIsAdminEditing(false)}>
+                                              Cancel
+                                          </Button>
+                                      </Stack>
+                                  )}
+                              </Box>
+                          )}
 
-                          <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}>
-                              <RichText text={flavor.description} />
-                          </Typography>
+                          {isAdminEditing ? (
+                              <Stack spacing={2} sx={{ mb: 2 }}>
+                                  <TextField 
+                                    label="Name" fullWidth size="small" 
+                                    value={editFlavorData.name} 
+                                    onChange={(e) => setEditFlavorData({...editFlavorData, name: e.target.value})} 
+                                  />
+                                  <TextField 
+                                    label="Description" fullWidth size="small" multiline rows={4}
+                                    value={editFlavorData.description} 
+                                    onChange={(e) => setEditFlavorData({...editFlavorData, description: e.target.value})} 
+                                  />
+                                  <TextField 
+                                    label="Shop URL" fullWidth size="small"
+                                    value={editFlavorData.shop_url} 
+                                    onChange={(e) => setEditFlavorData({...editFlavorData, shop_url: e.target.value})} 
+                                  />
+                                  <FormControlLabel 
+                                    control={<Switch checked={editFlavorData.is_available} onChange={(e) => setEditFlavorData({...editFlavorData, is_available: e.target.checked})} />} 
+                                    label="In Stock" 
+                                  />
+                                  <FormControlLabel 
+                                    control={<Switch checked={editFlavorData.is_legacy} onChange={(e) => setEditFlavorData({...editFlavorData, is_legacy: e.target.checked})} />} 
+                                    label="Legacy / Limited" 
+                                  />
+                                  <Divider sx={{ my: 1 }} />
+                              </Stack>
+                          ) : (
+                              <>
+                                <Chip 
+                                    label={flavor.category_name} 
+                                    size="small" 
+                                    sx={{ mb: 2, fontWeight: 'bold', bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' }} 
+                                />
+                                <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, lineHeight: 1.2 }}>
+                                    {flavor.name}
+                                </Typography>
+                                
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                                    <RatingBadge score={flavor.average_rating || 0} size="large" />
+                                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                                        {flavor.ratings.length} {t('common.reviews')}
+                                    </Typography>
+                                </Box>
 
-                          {flavor.shop_url && (
+                                <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}>
+                                    <RichText text={flavor.description} />
+                                </Typography>
+                              </>
+                          )}
+
+                          {flavor.shop_url && !isAdminEditing && (
                               <Button 
                                 variant="contained" 
                                 fullWidth

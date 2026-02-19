@@ -865,8 +865,63 @@ class AdminViewSet(viewsets.ViewSet):
                 'use_tls': getattr(settings, 'EMAIL_USE_TLS', False),
                 'use_ssl': getattr(settings, 'EMAIL_USE_SSL', False),
                 'skip_verify': getattr(settings, 'EMAIL_SKIP_CERT_VERIFICATION', False),
+            },
+            'server_info': {
+                'debug': settings.DEBUG,
+                'allowed_hosts': settings.ALLOWED_HOSTS,
+                'frontend_url': getattr(settings, 'FRONTEND_URL', 'Not set'),
+                'media_root': settings.MEDIA_ROOT,
+                'static_root': settings.STATIC_ROOT,
             }
         })
+
+    @action(detail=False, methods=['get', 'patch'])
+    def config(self, request):
+        config = SystemConfig.get_solo()
+        if request.method == 'PATCH':
+            serializer = SystemConfigSerializer(config, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        
+        serializer = SystemConfigSerializer(config)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def jobs(self, request):
+        # Ensure all jobs exist
+        for job_type, label in Job.JOB_TYPES:
+            Job.objects.get_or_create(name=job_type)
+            
+        jobs = Job.objects.all().order_by('name')
+        serializer = JobSerializer(jobs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def trigger_job(self, request, pk=None):
+        try:
+            job = Job.objects.get(pk=pk)
+            job.status = 'pending'
+            job.save()
+            return Response({'status': 'Job queued'})
+        except Job.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['patch'])
+    def update_job_schedule(self, request, pk=None):
+        try:
+            job = Job.objects.get(pk=pk)
+            interval = request.data.get('interval_hours')
+            if interval is not None:
+                job.interval_hours = int(interval)
+                # If we just enabled it, set next_run
+                if job.interval_hours > 0 and not job.next_run:
+                    from django.utils import timezone
+                    job.next_run = timezone.now()
+                job.save()
+            return Response(JobSerializer(job).data)
+        except Job.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['post'])
     def send_test_email(self, request):
