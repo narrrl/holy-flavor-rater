@@ -103,13 +103,9 @@ class Command(BaseCommand):
                         cat = cat_map['packs']
                     else:
                         cat = cat_map['energy'] # Ultimate fallback
-                # Try to find existing flavor by name and category regardless of legacy status
-                flavor = Flavor.objects.filter(name=name, category=cat).first()
-                
-                # If it exists and is an active Shopify product, skip legacy processing
-                if flavor and not flavor.is_legacy:
-                    self.stdout.write(f"Skipping active flavor: {name}")
-                    continue
+
+                # Try to find existing flavor by name and category
+                flavor = Flavor.objects.filter(name=name, category=cat, is_legacy=True).first()
                 
                 if not flavor:
                     flavor = Flavor(

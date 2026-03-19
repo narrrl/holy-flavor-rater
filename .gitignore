@@ -40,5 +40,5 @@ Thumbs.db
 !.env.example
 frontend/.env*
 backend/django_cache/
-backend/backups/
 backend/media/
+backend/backups/
