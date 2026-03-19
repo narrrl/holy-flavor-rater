@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-zos99ue2a89!4jrv4g@_b
 DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
 
 # Simplification: Use a single DOMAIN variable to derive multiple settings
-DOMAIN = os.environ.get('DOMAIN', 'holy.narl.io')
+DOMAIN = os.environ.get('DOMAIN', 'localhost')
 
 # Helper to build lists from env or defaults
 def get_env_list(var_name, default_list):

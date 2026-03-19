@@ -14,10 +14,18 @@ db.sqlite3
 __pycache__/
 *.py[cod]
 *$py.class
+backend/**/__pycache__/
+
+# Django specific
+backend/staticfiles/
+backend/media/
+backend/django_cache/
+backend/backups/
 
 # React/Vite build
 dist/
 dist-ssr/
+frontend/dist/
 *.local
 
 # Logs
@@ -39,6 +47,3 @@ Thumbs.db
 .env.*
 !.env.example
 frontend/.env*
-backend/django_cache/
-backend/media/
-backend/backups/
