@@ -23,7 +23,7 @@ class Command(BaseCommand):
             # or those where next_run has passed.
             now = timezone.now()
             jobs_to_run = Job.objects.filter(
-                status__in=['pending', 'failed']
+                ~models.Q(status='running')
             ).filter(
                 # Run if pending OR (next_run is set AND has passed)
                 models.Q(status='pending') | 

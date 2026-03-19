@@ -4,7 +4,7 @@ import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     Paper, Stack, alpha, CircularProgress, Chip, TextField, IconButton,
     useMediaQuery, Tabs, Tab, List, ListItem, ListItemText, Switch, Divider,
-    Alert
+    Alert, Select, MenuItem, FormControl
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
@@ -509,23 +509,24 @@ const AdminDashboard: React.FC = () => {
                                         </Grid>
                                         <Grid size={{ xs: 12, md: 4 }}>
                                             <Typography variant="caption" color="text.secondary" display="block">Next Run</Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2">{job.next_run ? formatDate(job.next_run) : (job.interval_hours > 0 ? 'Queued...' : 'Disabled')}</Typography>
-                                                <Button size="small" onClick={() => {
-                                                    const val = prompt('Set next run (YYYY-MM-DD HH:MM):', job.next_run ? job.next_run.substring(0, 16).replace('T', ' ') : '');
-                                                    if (val !== null) handleUpdateJobSchedule(job.id, job.interval_hours, val);
-                                                }}>Edit</Button>
-                                            </Box>
+                                            <Typography variant="body2">{job.next_run ? formatDate(job.next_run) : (job.interval_hours > 0 ? 'Queued...' : 'Disabled')}</Typography>
                                         </Grid>
                                         <Grid size={{ xs: 12, md: 4 }}>
-                                            <Typography variant="caption" color="text.secondary" display="block">Interval (Hours)</Typography>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{job.interval_hours}h</Typography>
-                                                <Button size="small" onClick={() => {
-                                                    const val = prompt('Set interval in hours (0 to disable):', String(job.interval_hours));
-                                                    if (val !== null) handleUpdateJobSchedule(job.id, parseInt(val));
-                                                }}>Change</Button>
-                                            </Box>
+                                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>Schedule</Typography>
+                                            <FormControl size="small" fullWidth>
+                                                <Select
+                                                    value={job.interval_hours}
+                                                    onChange={(e) => handleUpdateJobSchedule(job.id, Number(e.target.value))}
+                                                    sx={{ height: 32, fontSize: '0.875rem' }}
+                                                >
+                                                    <MenuItem value={0}>Disabled</MenuItem>
+                                                    <MenuItem value={1}>Hourly</MenuItem>
+                                                    <MenuItem value={6}>Every 6 Hours</MenuItem>
+                                                    <MenuItem value={12}>Every 12 Hours</MenuItem>
+                                                    <MenuItem value={24}>Daily</MenuItem>
+                                                    <MenuItem value={168}>Weekly</MenuItem>
+                                                </Select>
+                                            </FormControl>
                                         </Grid>
                                     </Grid>
 
