@@ -121,11 +121,13 @@ class Command(BaseCommand):
             
             if not flavor:
                 # 2. Try exact name match in category
-                flavor = Flavor.objects.filter(name=title, category=category, is_legacy=False).first()
+                # REMOVED: is_legacy=False
+                flavor = Flavor.objects.filter(name=title, category=category).first()
             
             if not flavor:
                 # 3. Try case-insensitive name match in category (safety for whitespace/case)
-                flavor = Flavor.objects.filter(name__iexact=title, category=category, is_legacy=False).first()
+                # REMOVED: is_legacy=False
+                flavor = Flavor.objects.filter(name__iexact=title, category=category).first()
             
             if not flavor:
                 flavor = Flavor(external_id=p['id'], name=title, category=category, is_legacy=False)
@@ -135,6 +137,10 @@ class Command(BaseCommand):
                 # Ensure external_id is updated if it was missing
                 if not flavor.external_id:
                     flavor.external_id = p['id']
+                
+                # Reactivate the flavor if it was previously marked as legacy
+                if flavor.is_legacy:
+                    flavor.is_legacy = False
             
             if image_url:
                 # Check if local file exists
