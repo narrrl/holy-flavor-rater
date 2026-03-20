@@ -142,6 +142,14 @@ class Command(BaseCommand):
                 if flavor.is_legacy:
                     flavor.is_legacy = False
             
+            # Ensure all synced fields are accurately reflected
+            if flavor.name != title and not Flavor.objects.filter(name=title, category=category).exclude(pk=flavor.pk).exists():
+                flavor.name = title
+            
+            flavor.description = description
+            flavor.shop_url = shop_url
+            flavor.is_available = is_available
+            
             if image_url:
                 # Check if local file exists
                 file_exists = False
