@@ -1,41 +1,45 @@
 import json
 import os
+
 import requests
-from django.core.management.base import BaseCommand
-from django.core.files import File
 from django.conf import settings
+from django.core.management.base import BaseCommand
 from django.utils.text import slugify
+
 from api.models import Category, Flavor
 
+
 class Command(BaseCommand):
-    help = 'Adds legacy flavors from JSON files in the legacy/ folder'
+    help = "Adds legacy flavors from JSON files in the legacy/ folder"
 
     def download_image(self, url, flavor_name):
         if not url:
             return None
         try:
             safe_name = slugify(flavor_name)
-            ext = url.split('.')[-1].split('?')[0].lower()
-            if ext not in ['jpg', 'jpeg', 'png', 'webp', 'gif']:
-                ext = 'png'
-            
+            ext = url.split(".")[-1].split("?")[0].lower()
+            if ext not in ["jpg", "jpeg", "png", "webp", "gif"]:
+                ext = "png"
+
             filename = f"legacy_{safe_name}.{ext}"
-            filepath = os.path.join(settings.MEDIA_ROOT, 'flavors', filename)
-            
+            filepath = os.path.join(settings.MEDIA_ROOT, "flavors", filename)
+
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
             response.raise_for_status()
 
             if os.path.exists(filepath):
                 os.remove(filepath)
 
-            with open(filepath, 'wb') as f:
+            with open(filepath, "wb") as f:
                 f.write(response.content)
-            
+
             return f"flavors/{filename}"
         except Exception as e:
-            self.stdout.write(self.style.WARNING(f"Failed to download image for {flavor_name}: {e}"))
+            self.stdout.write(
+                self.style.WARNING(f"Failed to download image for {flavor_name}: {e}")
+            )
             return None
 
     def handle(self, *args, **options):
@@ -43,88 +47,103 @@ class Command(BaseCommand):
         # Instead, we update existing entries.
 
         cat_map = {
-            'energy': Category.objects.get_or_create(name='Energy', defaults={'slug': 'energy'})[0],
-            'hydration': Category.objects.get_or_create(name='Hydration', defaults={'slug': 'hydration'})[0],
-            'iced-tea': Category.objects.get_or_create(name='Iced Tea', defaults={'slug': 'iced-tea'})[0],
-            'milkshake': Category.objects.get_or_create(name='Milkshake', defaults={'slug': 'milkshake'})[0],
-            'packs': Category.objects.get_or_create(name='Packs and other', defaults={'slug': 'packs-and-other'})[0],
+            "energy": Category.objects.get_or_create(name="Energy", defaults={"slug": "energy"})[0],
+            "hydration": Category.objects.get_or_create(
+                name="Hydration", defaults={"slug": "hydration"}
+            )[0],
+            "iced-tea": Category.objects.get_or_create(
+                name="Iced Tea", defaults={"slug": "iced-tea"}
+            )[0],
+            "milkshake": Category.objects.get_or_create(
+                name="Milkshake", defaults={"slug": "milkshake"}
+            )[0],
+            "packs": Category.objects.get_or_create(
+                name="Packs and other", defaults={"slug": "packs-and-other"}
+            )[0],
         }
 
-        legacy_dir = os.path.join(settings.BASE_DIR, 'legacy')
+        legacy_dir = os.path.join(settings.BASE_DIR, "legacy")
         if not os.path.exists(legacy_dir):
-            legacy_dir = os.path.join(settings.BASE_DIR, '..', 'legacy')
-            
+            legacy_dir = os.path.join(settings.BASE_DIR, "..", "legacy")
+
         if not os.path.exists(legacy_dir):
-            self.stdout.write(self.style.ERROR(f"Legacy directory not found."))
+            self.stdout.write(self.style.ERROR("Legacy directory not found."))
             return
 
-        json_files = [f for f in os.listdir(legacy_dir) if f.endswith('.json')]
+        json_files = [f for f in os.listdir(legacy_dir) if f.endswith(".json")]
         processed_count = 0
 
         for json_file in json_files:
             file_path = os.path.join(legacy_dir, json_file)
             file_lower = json_file.lower()
-            
+
             # Determine category from filename
-            if 'energy' in file_lower:
-                file_cat = cat_map['energy']
-            elif 'iced_tea' in file_lower or 'iced-tea' in file_lower:
-                file_cat = cat_map['iced-tea']
-            elif 'hydration' in file_lower:
-                file_cat = cat_map['hydration']
-            elif 'milkshake' in file_lower:
-                file_cat = cat_map['milkshake']
+            if "energy" in file_lower:
+                file_cat = cat_map["energy"]
+            elif "iced_tea" in file_lower or "iced-tea" in file_lower:
+                file_cat = cat_map["iced-tea"]
+            elif "hydration" in file_lower:
+                file_cat = cat_map["hydration"]
+            elif "milkshake" in file_lower:
+                file_cat = cat_map["milkshake"]
             else:
                 file_cat = None
 
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, encoding="utf-8") as f:
                 data_list = json.load(f)
-            
+
             for data in data_list:
-                name = data.get('Name')
-                desc = data.get('Beschreibung')
-                taste = data.get('Geschmack')
-                status_text = data.get('Status')
-                image_url = data.get('Bild_URL')
+                name = data.get("Name")
+                desc = data.get("Beschreibung")
+                taste = data.get("Geschmack")
+                status_text = data.get("Status")
+                image_url = data.get("Bild_URL")
 
                 full_desc = f"**Geschmack:** {taste}\n\n{desc}\n\n**Status:** {status_text}"
-                
+
                 # Determine final category
                 cat = file_cat
                 if not cat:
                     # Fallback to name/desc detection if filename was ambiguous
                     if "hydration" in name.lower() or "hydration" in desc.lower():
-                        cat = cat_map['hydration']
+                        cat = cat_map["hydration"]
                     elif "iced tea" in name.lower() or "eistee" in name.lower():
-                        cat = cat_map['iced-tea']
+                        cat = cat_map["iced-tea"]
                     elif "milkshake" in name.lower():
-                        cat = cat_map['milkshake']
-                    elif any(k in name.lower() for k in ['bundle', 'set', 'box', 'probe', 'sample', 'taster', 'shaker', 'starter']):
-                        cat = cat_map['packs']
+                        cat = cat_map["milkshake"]
+                    elif any(
+                        k in name.lower()
+                        for k in [
+                            "bundle",
+                            "set",
+                            "box",
+                            "probe",
+                            "sample",
+                            "taster",
+                            "shaker",
+                            "starter",
+                        ]
+                    ):
+                        cat = cat_map["packs"]
                     else:
-                        cat = cat_map['energy'] # Ultimate fallback
+                        cat = cat_map["energy"]  # Ultimate fallback
 
                 # Try to find existing flavor by name and category regardless of legacy status
                 flavor = Flavor.objects.filter(name__iexact=name, category=cat).first()
-                
+
                 # If it exists and is an active Shopify product, skip legacy processing
                 if flavor and not flavor.is_legacy:
                     self.stdout.write(f"Skipping active flavor: {name}")
                     continue
-                
+
                 if not flavor:
-                    flavor = Flavor(
-                        name=name,
-                        category=cat,
-                        is_legacy=True,
-                        external_id=None
-                    )
+                    flavor = Flavor(name=name, category=cat, is_legacy=True, external_id=None)
                     self.stdout.write(f"Adding new legacy flavor: {name}")
                 else:
                     self.stdout.write(f"Updating legacy flavor: {name}")
 
                 flavor.description = full_desc
-                flavor.is_available = False # Legacy is always unavailable via API
+                flavor.is_available = False  # Legacy is always unavailable via API
 
                 if image_url:
                     # Check if local file exists
@@ -140,9 +159,11 @@ class Command(BaseCommand):
                         if rel_path:
                             flavor.image = rel_path
                             self.stdout.write(f"  -> Updated image for: {name}")
-                
+
                 flavor.image_url = image_url
                 flavor.save()
                 processed_count += 1
 
-        self.stdout.write(self.style.SUCCESS(f"Finished! Processed {processed_count} legacy flavors."))
+        self.stdout.write(
+            self.style.SUCCESS(f"Finished! Processed {processed_count} legacy flavors.")
+        )

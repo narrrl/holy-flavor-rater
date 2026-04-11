@@ -1,6 +1,8 @@
 import ssl
-from django.core.mail.backends.smtp import EmailBackend
+
 from django.conf import settings
+from django.core.mail.backends.smtp import EmailBackend
+
 
 class InsecureEmailBackend(EmailBackend):
     """
@@ -8,9 +10,10 @@ class InsecureEmailBackend(EmailBackend):
     Useful for local development or internal SMTP servers with self-signed certificates.
     Set EMAIL_SKIP_CERT_VERIFICATION = True in settings to use.
     """
+
     @property
     def ssl_context(self):
-        if getattr(settings, 'EMAIL_SKIP_CERT_VERIFICATION', False):
+        if getattr(settings, "EMAIL_SKIP_CERT_VERIFICATION", False):
             # The most robust way to bypass verification for self-signed certs
             context = ssl._create_unverified_context()
             return context

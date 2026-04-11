@@ -1,0 +1,145 @@
+from django.conf import settings
+from django.core.mail import send_mail
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.request import Request
+from rest_framework.response import Response
+
+from api.models import Job, Rating, Reply, SystemConfig, Ticket, User
+from api.serializers import (
+    AdminUserDetailSerializer,
+    AdminUserListSerializer,
+    JobSerializer,
+    SystemConfigSerializer,
+)
+
+
+class AdminViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    @action(detail=False, methods=["get"])
+    def stats(self, request: Request) -> Response:
+        return Response(
+            {
+                "total_users": User.objects.count(),
+                "total_ratings": Rating.objects.count(),
+                "total_replies": Reply.objects.count(),
+                "open_tickets": Ticket.objects.filter(status="open").count(),
+                "email_config": {
+                    "host": getattr(settings, "EMAIL_HOST", "None"),
+                    "port": getattr(settings, "EMAIL_PORT", "None"),
+                    "use_tls": getattr(settings, "EMAIL_USE_TLS", False),
+                    "use_ssl": getattr(settings, "EMAIL_USE_SSL", False),
+                    "skip_verify": getattr(settings, "EMAIL_SKIP_CERT_VERIFICATION", False),
+                },
+                "server_info": {
+                    "debug": settings.DEBUG,
+                    "allowed_hosts": settings.ALLOWED_HOSTS,
+                    "frontend_url": getattr(settings, "FRONTEND_URL", "Not set"),
+                    "media_root": str(settings.MEDIA_ROOT),
+                    "static_root": str(settings.STATIC_ROOT),
+                },
+            }
+        )
+
+    @action(detail=False, methods=["get", "patch"])
+    def config(self, request: Request) -> Response:
+        config = SystemConfig.get_solo()
+        if request.method == "PATCH":
+            serializer = SystemConfigSerializer(config, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(SystemConfigSerializer(config).data)
+
+    @action(detail=False, methods=["get"])
+    def jobs(self, request: Request) -> Response:
+        for job_type, _ in Job.JOB_TYPES:
+            Job.objects.get_or_create(name=job_type)
+
+        jobs = Job.objects.all().order_by("name")
+        return Response(JobSerializer(jobs, many=True).data)
+
+    @action(detail=True, methods=["post"])
+    def trigger_job(self, request: Request, pk=None) -> Response:
+        try:
+            job = Job.objects.get(pk=pk)
+            job.status = "pending"
+            job.save()
+            return Response({"status": "Job queued"})
+        except Job.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=["patch"])
+    def update_job_schedule(self, request: Request, pk=None) -> Response:
+        try:
+            job = Job.objects.get(pk=pk)
+            interval = request.data.get("interval_hours")
+            next_run = request.data.get("next_run")
+
+            if interval is not None:
+                job.interval_hours = int(interval)
+
+            if next_run is not None:
+                from django.utils import timezone
+                from django.utils.dateparse import parse_datetime
+
+                parsed_dt = parse_datetime(next_run)
+                if parsed_dt:
+                    if timezone.is_naive(parsed_dt):
+                        job.next_run = timezone.make_aware(
+                            parsed_dt, timezone.get_current_timezone()
+                        )
+                    else:
+                        job.next_run = parsed_dt
+            elif interval is not None and job.interval_hours > 0 and not job.next_run:
+                from django.utils import timezone
+
+                job.next_run = timezone.now()
+
+            job.save()
+            return Response(JobSerializer(job).data)
+        except Job.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=["post"])
+    def send_test_email(self, request: Request) -> Response:
+        try:
+            send_mail(
+                "Holy Flavors Admin Test Email",
+                (
+                    f"This is a test email sent to {request.user.email} from the "
+                    f"Holy Flavors Admin Interface."
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [request.user.email],
+                fail_silently=False,
+            )
+            return Response({"status": "Test email sent!"})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=["get"])
+    def users(self, request: Request) -> Response:
+        users = User.objects.all().prefetch_related("ips").order_by("-date_joined")
+        return Response(AdminUserListSerializer(users, many=True).data)
+
+    @action(detail=True, methods=["get", "patch", "delete"])
+    def user_detail(self, request: Request, pk=None) -> Response:
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == "GET":
+            return Response(AdminUserDetailSerializer(user, context={"request": request}).data)
+        elif request.method == "PATCH":
+            is_active = request.data.get("is_active")
+            if is_active is not None:
+                user.is_active = is_active
+                user.save()
+            return Response(AdminUserDetailSerializer(user, context={"request": request}).data)
+        elif request.method == "DELETE":
+            user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)

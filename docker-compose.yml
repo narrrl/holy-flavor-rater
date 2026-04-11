@@ -1,4 +1,19 @@
 services:
+  # --- Redis (Celery broker + result backend) ---
+  redis:
+    image: redis:7-alpine
+    container_name: holy-redis
+    restart: unless-stopped
+    networks:
+      - holy-net
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   # --- Backend Service ---
   backend:
     build:
@@ -17,6 +32,12 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DOMAIN=${DOMAIN:-localhost}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-holy_backend.settings.prod}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 10s
@@ -28,18 +49,49 @@ services:
     build:
       context: ./backend
     container_name: holy-worker
-    command: python manage.py worker
+    command: celery -A holy_backend worker -l info
     restart: unless-stopped
     networks:
       - holy-net
     env_file:
       - .env
     environment:
+      - PYTHONUNBUFFERED=1
       - DOMAIN=${DOMAIN:-localhost}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-holy_backend.settings.prod}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
     volumes:
       - ./backend:/app
       - ./legacy:/app/legacy
     depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: ./backend
+    container_name: holy-beat
+    command: celery -A holy_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    restart: unless-stopped
+    networks:
+      - holy-net
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DOMAIN=${DOMAIN:-localhost}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-holy_backend.settings.prod}
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+    volumes:
+      - ./backend:/app
+      - ./legacy:/app/legacy
+    depends_on:
+      redis:
+        condition: service_healthy
       backend:
         condition: service_healthy
 
@@ -71,3 +123,4 @@ networks:
 
 volumes:
   db_data:
+  redis_data:
