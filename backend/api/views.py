@@ -165,7 +165,11 @@ class FlavorViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.AllowAny])
     def top(self, request):
-        top_flavors = self.get_queryset().filter(ratings__isnull=False).distinct()[:10]
+        queryset = self.get_queryset().filter(ratings__isnull=False)
+        category_slug = request.query_params.get('category')
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+        top_flavors = queryset.distinct()[:10]
         serializer = self.get_serializer(top_flavors, many=True)
         return Response(serializer.data)
 

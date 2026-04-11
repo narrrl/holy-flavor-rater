@@ -11,7 +11,9 @@ import {
   Chip,
   Container,
   IconButton,
-  alpha
+  alpha,
+  Tabs,
+  Tab
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -24,6 +26,12 @@ import { formatDate } from '../utils/date';
 import RatingBadge from '../components/RatingBadge';
 import StatusBadge from '../components/StatusBadge';
 import { useNavigate } from 'react-router-dom';
+
+interface Category {
+    id: number;
+    name: string;
+    slug: string;
+}
 
 interface Flavor {
     id: number;
@@ -61,9 +69,13 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
   const [allFlavors, setAllFlavors] = useState<Flavor[]>([]);
   const [feedRatings, setFeedRatings] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [categoryLoading, setCategoryLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isFirstRun = useRef(true);
   const location = useLocation();
   
   const query = new URLSearchParams(location.search).get('q') || '';
@@ -81,7 +93,8 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
             const requests: any[] = [
                 api.get('flavors/top/'),
                 api.get('ratings/recent/'),
-                api.get('flavors/newest/')
+                api.get('flavors/newest/'),
+                api.get('categories/')
             ];
             
             if (isLoggedIn) {
@@ -93,9 +106,10 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
             setTopFlavors(Array.isArray(results[0].data) ? results[0].data : (results[0].data.results || []));
             setRecentReviews(Array.isArray(results[1].data) ? results[1].data : (results[1].data.results || []));
             setNewestFlavors(Array.isArray(results[2].data) ? results[2].data : (results[2].data.results || []));
+            setCategories(Array.isArray(results[3].data) ? results[3].data : (results[3].data.results || []));
             
-            if (isLoggedIn && results[3]) {
-                const feedData = Array.isArray(results[3].data) ? results[3].data : (results[3].data.results || []);
+            if (isLoggedIn && results[4]) {
+                const feedData = Array.isArray(results[4].data) ? results[4].data : (results[4].data.results || []);
                 setFeedRatings(feedData.slice(0, 6)); // Show top 6 on home
             }
         }
@@ -107,6 +121,35 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
     };
     fetchData();
   }, [query, isLoggedIn]);
+
+  useEffect(() => {
+    if (query) return; // Don't refetch if we are in search mode
+
+    const fetchTopFlavors = async () => {
+        setCategoryLoading(true);
+        try {
+            const url = selectedCategorySlug ? `flavors/top/?category=${selectedCategorySlug}` : 'flavors/top/';
+            const res = await api.get(url);
+            setTopFlavors(Array.isArray(res.data) ? res.data : (res.data.results || []));
+            setActiveIndex(0); // Reset carousel
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setCategoryLoading(false);
+        }
+    };
+
+    if (isFirstRun.current) {
+        isFirstRun.current = false;
+        return;
+    }
+
+    fetchTopFlavors();
+  }, [selectedCategorySlug, query]);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
+    setSelectedCategorySlug(newValue);
+  };
 
   const startTimer = () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -379,7 +422,41 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
                         </Box>
                     </Box>
 
-                    <Card sx={{ 
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+                        <Tabs 
+                            value={selectedCategorySlug} 
+                            onChange={handleTabChange} 
+                            variant="scrollable"
+                            scrollButtons="auto"
+                            aria-label="hall of fame categories"
+                            sx={{
+                                '& .MuiTab-root': {
+                                    fontWeight: 'bold',
+                                    minWidth: 100,
+                                }
+                            }}
+                        >
+                            <Tab label="All Flavors" value="" />
+                            {categories.map((cat) => (
+                                <Tab key={cat.id} label={cat.name} value={cat.slug} />
+                            ))}
+                        </Tabs>
+                    </Box>
+
+                    <Box sx={{ position: 'relative', minHeight: { xs: 400, md: 500 } }}>
+                        {categoryLoading && (
+                            <Box sx={{ 
+                                position: 'absolute', 
+                                top: 0, left: 0, right: 0, bottom: 0, 
+                                display: 'flex', justifyContent: 'center', alignItems: 'center', 
+                                bgcolor: 'rgba(255,255,255,0.5)', 
+                                zIndex: 2,
+                                borderRadius: 4
+                            }}>
+                                <CircularProgress />
+                            </Box>
+                        )}
+                        <Card sx={{ 
                         display: 'flex', 
                         flexDirection: { xs: 'column', md: 'row' }, 
                         height: { xs: 'auto', md: 500 },
@@ -457,10 +534,11 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
                             >
                                 {t('home.viewAllReviews')}
                             </Button>
-                        </CardContent>
-                    </Card>
-                    
-                    {/* Progress Indicators */}
+                            </CardContent>
+                            </Card>
+                            </Box>
+
+                            {/* Progress Indicators */}
                     <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, gap: 1 }}>
                         {topFlavors.map((_, i) => (
                             <Box 
