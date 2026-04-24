@@ -684,13 +684,15 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
             sx={{
               display: 'grid',
               gridTemplateColumns: {
-                xs: 'repeat(2, 1fr)',
-                sm: 'repeat(3, 1fr)',
-                md: 'repeat(4, 1fr)',
-                lg: 'repeat(5, 1fr)',
-                xl: 'repeat(6, 1fr)',
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(3, minmax(0, 1fr))',
+                md: 'repeat(4, minmax(0, 1fr))',
+                lg: 'repeat(5, minmax(0, 1fr))',
+                xl: 'repeat(6, minmax(0, 1fr))',
               },
               gap: 2,
+              width: '100%',
+              minWidth: 0,
             }}
           >
             {newestFlavors.map((flavor) => (

@@ -1,3 +1,5 @@
+import json
+
 from django.conf import settings
 from django.core.mail import send_mail
 from rest_framework import permissions, status, viewsets
@@ -12,6 +14,46 @@ from api.serializers import (
     JobSerializer,
     SystemConfigSerializer,
 )
+
+JOB_TASK_MAP = {
+    "sync_flavors": "api.sync_flavors",
+    "cleanup_duplicates": "api.cleanup_duplicates",
+    "backup_db": "api.backup_db",
+    "seed_legacy": "api.seed_legacy",
+}
+
+
+def _sync_periodic_task(job: Job) -> None:
+    """Create/update a django_celery_beat PeriodicTask for this Job.
+
+    Called when the admin changes interval_hours. interval_hours == 0 disables
+    the schedule (PeriodicTask.enabled=False).
+    """
+    from django_celery_beat.models import IntervalSchedule, PeriodicTask
+
+    task_name = JOB_TASK_MAP.get(job.name)
+    if not task_name:
+        return
+
+    periodic_name = f"job:{job.name}"
+
+    if job.interval_hours <= 0:
+        PeriodicTask.objects.filter(name=periodic_name).update(enabled=False)
+        return
+
+    schedule, _ = IntervalSchedule.objects.get_or_create(
+        every=job.interval_hours,
+        period=IntervalSchedule.HOURS,
+    )
+    PeriodicTask.objects.update_or_create(
+        name=periodic_name,
+        defaults={
+            "interval": schedule,
+            "task": task_name,
+            "enabled": True,
+            "kwargs": json.dumps({}),
+        },
+    )
 
 
 class AdminViewSet(viewsets.ViewSet):
@@ -63,13 +105,26 @@ class AdminViewSet(viewsets.ViewSet):
 
     @action(detail=True, methods=["post"])
     def trigger_job(self, request: Request, pk=None) -> Response:
+        from celery import current_app
+
         try:
             job = Job.objects.get(pk=pk)
-            job.status = "pending"
-            job.save()
-            return Response({"status": "Job queued"})
         except Job.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        task_name = JOB_TASK_MAP.get(job.name)
+        if not task_name:
+            return Response(
+                {"error": f"No celery task registered for {job.name}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        job.status = "pending"
+        job.error_message = ""
+        job.save(update_fields=["status", "error_message"])
+
+        current_app.send_task(task_name)
+        return Response({"status": "Job queued", "task": task_name})
 
     @action(detail=True, methods=["patch"])
     def update_job_schedule(self, request: Request, pk=None) -> Response:
@@ -99,6 +154,7 @@ class AdminViewSet(viewsets.ViewSet):
                 job.next_run = timezone.now()
 
             job.save()
+            _sync_periodic_task(job)
             return Response(JobSerializer(job).data)
         except Job.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

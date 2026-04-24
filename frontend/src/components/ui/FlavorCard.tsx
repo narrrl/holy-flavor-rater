@@ -57,7 +57,7 @@ export const FlavorCard = ({
         <Box
           sx={{
             width: '100%',
-            aspectRatio: compact ? '16/10' : '1/1',
+            aspectRatio: '1 / 1',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
