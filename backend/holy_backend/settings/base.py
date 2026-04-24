@@ -87,10 +87,12 @@ DATABASES = {
     }
 }
 
+DJANGO_CACHE_URL = os.environ.get("DJANGO_CACHE_URL", "redis://redis:6379/1")
+
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.db.DatabaseCache",
-        "LOCATION": "django_ratelimit_cache",
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": DJANGO_CACHE_URL,
     }
 }
 
@@ -189,3 +191,7 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "false").lower() == "true"
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_RESULT_EXPIRES = 3600

@@ -18,15 +18,10 @@ fi
 echo "Applying database migrations..."
 python manage.py migrate --noinput
 
-echo "Creating cache table..."
-python manage.py createcachetable
-
 echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
 mkdir -p media/flavors
-mkdir -p django_cache
-chmod -R 777 django_cache
 
 # One-shot seed jobs. These should run on image first boot, not on every
 # restart. A marker file on the bind-mounted volume gates them.
@@ -40,8 +35,6 @@ if [ ! -f "$SEED_MARKER" ]; then
     touch "$SEED_MARKER"
 else
     echo "Seed marker present — skipping seed commands. Trigger them from /admin if needed."
-    # Banners are cheap + config-driven; always re-sync them.
-    python manage.py seed_banners || echo "seed_banners failed (non-fatal)"
 fi
 
 if [ "$#" -gt 0 ]; then

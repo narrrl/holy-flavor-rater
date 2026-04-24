@@ -8,7 +8,6 @@ status/output/timestamps so the admin UI keeps working.
 
 from __future__ import annotations
 
-from datetime import timedelta
 from io import StringIO
 from typing import Any
 
@@ -22,7 +21,12 @@ logger = get_task_logger(__name__)
 
 
 def _run_command_job(job_name: str, command: str, *args: str) -> str:
-    """Run a management command and mirror status/output into the Job row."""
+    """Run a management command and mirror status/output into the Job row.
+
+    Scheduling (next_run) is owned by django_celery_beat.PeriodicTask; the Job
+    serializer derives next_run from it. This function only writes execution
+    state: status, last_run, last_output, error_message.
+    """
     from api.models import Job
 
     job, _ = Job.objects.get_or_create(name=job_name)
@@ -43,16 +47,18 @@ def _run_command_job(job_name: str, command: str, *args: str) -> str:
         raise
     finally:
         job.last_output = out.getvalue()
-        if job.interval_hours > 0:
-            job.next_run = timezone.now() + timedelta(hours=job.interval_hours)
-        else:
-            job.next_run = None
-        job.save()
+        job.save(update_fields=["status", "last_output", "error_message"])
 
     return job.last_output
 
 
-@shared_task(name="api.sync_flavors")
+@shared_task(
+    name="api.sync_flavors",
+    autoretry_for=(Exception,),
+    retry_backoff=60,
+    retry_backoff_max=600,
+    retry_kwargs={"max_retries": 2},
+)
 def sync_flavors_task() -> str:
     return _run_command_job("sync_flavors", "sync_flavors")
 
@@ -70,6 +76,11 @@ def backup_db_task() -> str:
 @shared_task(name="api.seed_legacy")
 def seed_legacy_task() -> str:
     return _run_command_job("seed_legacy", "seed_legacy_flavors")
+
+
+@shared_task(name="api.seed_banners")
+def seed_banners_task() -> str:
+    return _run_command_job("seed_banners", "seed_banners")
 
 
 @shared_task(

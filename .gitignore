@@ -21,6 +21,7 @@ backend/staticfiles/
 backend/media/
 backend/django_cache/
 backend/backups/
+backend/.seeded
 
 # React/Vite build
 dist/

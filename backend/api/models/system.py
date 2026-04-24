@@ -56,6 +56,7 @@ class Job(models.Model):
         ("cleanup_duplicates", "Cleanup Duplicate Flavors"),
         ("backup_db", "Database Backup"),
         ("seed_legacy", "Seed Legacy Data"),
+        ("seed_banners", "Seed Banner Configurations"),
     ]
     STATUS_CHOICES = [
         ("pending", "Pending"),

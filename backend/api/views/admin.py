@@ -20,6 +20,7 @@ JOB_TASK_MAP = {
     "cleanup_duplicates": "api.cleanup_duplicates",
     "backup_db": "api.backup_db",
     "seed_legacy": "api.seed_legacy",
+    "seed_banners": "api.seed_banners",
 }
 
 
@@ -130,34 +131,16 @@ class AdminViewSet(viewsets.ViewSet):
     def update_job_schedule(self, request: Request, pk=None) -> Response:
         try:
             job = Job.objects.get(pk=pk)
-            interval = request.data.get("interval_hours")
-            next_run = request.data.get("next_run")
-
-            if interval is not None:
-                job.interval_hours = int(interval)
-
-            if next_run is not None:
-                from django.utils import timezone
-                from django.utils.dateparse import parse_datetime
-
-                parsed_dt = parse_datetime(next_run)
-                if parsed_dt:
-                    if timezone.is_naive(parsed_dt):
-                        job.next_run = timezone.make_aware(
-                            parsed_dt, timezone.get_current_timezone()
-                        )
-                    else:
-                        job.next_run = parsed_dt
-            elif interval is not None and job.interval_hours > 0 and not job.next_run:
-                from django.utils import timezone
-
-                job.next_run = timezone.now()
-
-            job.save()
-            _sync_periodic_task(job)
-            return Response(JobSerializer(job).data)
         except Job.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        interval = request.data.get("interval_hours")
+        if interval is not None:
+            job.interval_hours = int(interval)
+            job.save(update_fields=["interval_hours"])
+
+        _sync_periodic_task(job)
+        return Response(JobSerializer(job).data)
 
     @action(detail=False, methods=["post"])
     def send_test_email(self, request: Request) -> Response:
