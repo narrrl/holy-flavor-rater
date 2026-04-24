@@ -40,6 +40,8 @@ import MentionTextField from '../components/MentionTextField';
 import RichText from '../components/RichText';
 import { formatDate } from '../utils/date';
 import { PageShell, GlassCard, GlassSurface, EmptyState } from '../components/ui';
+import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface Reply {
   id: number;
@@ -108,12 +110,14 @@ const Dashboard: React.FC = () => {
 
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<number, boolean>>({});
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
 
   const shareUrl = data ? `${window.location.origin}/profile/${data.user.username}` : '';
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
-    alert(t('dashboard.copySuccess'));
+    notify({ message: t('dashboard.copySuccess'), severity: 'success' });
   };
 
   const handleGoBack = () => {
@@ -175,17 +179,17 @@ const Dashboard: React.FC = () => {
       setEditingRatingId(null);
       fetchData();
     } catch {
-      alert('Failed to update review');
+      notify({ message: 'Failed to update review', severity: 'error' });
     }
   };
 
   const handleDeleteRating = async (ratingId: number) => {
-    if (!confirm('Delete this review?')) return;
+    if (!(await confirm({ message: 'Delete this review?', danger: true }))) return;
     try {
       await api.delete(`ratings/${ratingId}/`);
       fetchData();
     } catch {
-      alert('Failed to delete review');
+      notify({ message: 'Failed to delete review', severity: 'error' });
     }
   };
 
@@ -198,17 +202,17 @@ const Dashboard: React.FC = () => {
       setExpandedReplies({ ...expandedReplies, [ratingId]: true });
       fetchData();
     } catch {
-      alert('Failed to send reply');
+      notify({ message: 'Failed to send reply', severity: 'error' });
     }
   };
 
   const handleDeleteReply = async (replyId: number) => {
-    if (!confirm('Delete this reply?')) return;
+    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
       await api.delete(`replies/${replyId}/`);
       fetchData();
     } catch {
-      alert('Failed to delete reply');
+      notify({ message: 'Failed to delete reply', severity: 'error' });
     }
   };
 

@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { useTitle } from '../hooks/useTitle';
 import type { CatppuccinTheme } from '../theme';
 import { PageShell, GlassCard, FormCard } from '../components/ui';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface SettingsProps {
   themeName: CatppuccinTheme;
@@ -39,6 +40,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   useTitle(t('nav.settings'));
+  const { confirm } = useConfirm();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [currentEmail, setCurrentEmail] = useState('');
@@ -177,7 +179,13 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
 
   const handleConfirmDeletion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!window.confirm('Are you absolutely sure? This cannot be undone.')) return;
+    const ok = await confirm({
+      title: 'Delete account',
+      message: 'Are you absolutely sure? This cannot be undone.',
+      confirmLabel: 'Delete forever',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api.post('users/confirm_account_deletion/', { code: deletionCode });
       localStorage.removeItem('access');

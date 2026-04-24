@@ -40,6 +40,7 @@ import {
   GlassCard,
   EmptyState,
 } from '../components/ui';
+import { useToast } from '../hooks/useToast';
 
 interface Reply {
   id: number;
@@ -129,6 +130,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
   const { t } = useTranslation();
   useTitle(t('community.title'));
   const navigate = useNavigate();
+  const { notify } = useToast();
   const [ratings, setRatings] = useState<FeedRating[]>([]);
   const [following, setFollowing] = useState<FollowedUser[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -213,7 +215,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
       );
       setReplyInputs((prev) => ({ ...prev, [ratingId]: '' }));
     } catch {
-      alert('Failed to send reply');
+      notify({ message: 'Failed to send reply', severity: 'error' });
     }
   };
 

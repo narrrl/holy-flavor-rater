@@ -37,6 +37,8 @@ import {
   FormCard,
   EmptyState,
 } from '../components/ui';
+import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface AdminReply {
   id: number;
@@ -81,6 +83,9 @@ const AdminUserDetail: React.FC = () => {
   const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
   const [editReplyText, setEditReplyText] = useState('');
 
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
+
   const fetchUser = useCallback(async () => {
     try {
       const res = await api.get(`admin-custom/${id}/user_detail/`);
@@ -105,7 +110,7 @@ const AdminUserDetail: React.FC = () => {
       await api.patch(`admin-custom/${id}/user_detail/`, { is_active: !user.is_active });
       fetchUser();
     } catch {
-      alert('Action failed');
+      notify({ message: 'Action failed', severity: 'error' });
     }
   };
 
@@ -115,17 +120,17 @@ const AdminUserDetail: React.FC = () => {
       setEditingRatingId(null);
       fetchUser();
     } catch {
-      alert('Update failed');
+      notify({ message: 'Update failed', severity: 'error' });
     }
   };
 
   const handleDeleteRating = async (ratingId: number) => {
-    if (!confirm('Delete this rating?')) return;
+    if (!(await confirm({ message: 'Delete this rating?', danger: true }))) return;
     try {
       await api.delete(`ratings/${ratingId}/`);
       fetchUser();
     } catch {
-      alert('Delete failed');
+      notify({ message: 'Delete failed', severity: 'error' });
     }
   };
 
@@ -135,28 +140,33 @@ const AdminUserDetail: React.FC = () => {
       setEditingReplyId(null);
       fetchUser();
     } catch {
-      alert('Update failed');
+      notify({ message: 'Update failed', severity: 'error' });
     }
   };
 
   const handleDeleteReply = async (replyId: number) => {
-    if (!confirm('Delete this reply?')) return;
+    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
       await api.delete(`replies/${replyId}/`);
       fetchUser();
     } catch {
-      alert('Delete failed');
+      notify({ message: 'Delete failed', severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('PERMANENTLY DELETE THIS USER AND ALL DATA? This cannot be undone.'))
-      return;
+    const ok = await confirm({
+      title: 'Delete user',
+      message: 'PERMANENTLY DELETE THIS USER AND ALL DATA? This cannot be undone.',
+      confirmLabel: 'Delete forever',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await api.delete(`admin-custom/${id}/user_detail/`);
       navigate('/admin-panel');
     } catch {
-      alert('Delete failed');
+      notify({ message: 'Delete failed', severity: 'error' });
     }
   };
 

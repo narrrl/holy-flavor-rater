@@ -8,6 +8,8 @@ import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import MentionTextField from '../components/MentionTextField';
 import { PageShell, SectionHeader, FormCard } from '../components/ui';
+import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface AdminRating {
   id: number;
@@ -25,6 +27,8 @@ const AdminRatingDetail: React.FC = () => {
   const [comment, setComment] = useState('');
   const [rating, setRating] = useState<AdminRating | null>(null);
   const [loading, setLoading] = useState(true);
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
 
   const fetchRating = useCallback(async () => {
     try {
@@ -51,19 +55,19 @@ const AdminRatingDetail: React.FC = () => {
     try {
       await api.patch(`ratings/${id}/`, { score, comment });
       fetchRating();
-      alert('Rating updated!');
+      notify({ message: 'Rating updated!', severity: 'success' });
     } catch {
-      alert('Update failed');
+      notify({ message: 'Update failed', severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this rating and all replies?')) return;
+    if (!(await confirm({ message: 'Delete this rating and all replies?', danger: true }))) return;
     try {
       await api.delete(`ratings/${id}/`);
       navigate('/admin-panel');
     } catch {
-      alert('Delete failed');
+      notify({ message: 'Delete failed', severity: 'error' });
     }
   };
 

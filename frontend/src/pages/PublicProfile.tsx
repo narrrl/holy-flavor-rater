@@ -34,6 +34,8 @@ import RichText from '../components/RichText';
 import DynamicBanner from '../components/DynamicBanner';
 import { formatDate } from '../utils/date';
 import { PageShell, GlassCard, GlassSurface, FormCard, EmptyState } from '../components/ui';
+import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface Rating {
   id: number;
@@ -94,6 +96,8 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   } | null>(null);
   const [palette, setPalette] = useState<string[]>([]);
   const [newComment, setNewComment] = useState('');
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -158,7 +162,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
         setData({ ...data, is_following: true, followers_count: data.followers_count + 1 });
       }
     } catch {
-      alert('Failed to update follow status. Please login.');
+      notify({ message: 'Failed to update follow status. Please login.', severity: 'error' });
     }
   };
 
@@ -168,7 +172,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
       else await api.post(`users/${user.id}/follow/`);
       fetchProfile();
     } catch {
-      alert('Failed');
+      notify({ message: 'Failed', severity: 'error' });
     }
   };
 
@@ -180,17 +184,18 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
       setNewComment('');
       fetchProfile();
     } catch {
-      alert('Failed to add comment');
+      notify({ message: 'Failed to add comment', severity: 'error' });
     }
   };
 
   const handleDeleteComment = async (commentId: number) => {
-    if (!data || !confirm('Delete this comment?')) return;
+    if (!data) return;
+    if (!(await confirm({ message: 'Delete this comment?', danger: true }))) return;
     try {
       await api.delete(`users/${data.id}/delete_comment/${commentId}/`);
       fetchProfile();
     } catch {
-      alert('Failed to delete comment');
+      notify({ message: 'Failed to delete comment', severity: 'error' });
     }
   };
 

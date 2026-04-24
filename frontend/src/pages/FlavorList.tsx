@@ -16,6 +16,7 @@ import api from '../lib/api';
 import RatingBadge from '../components/RatingBadge';
 import StatusBadge from '../components/StatusBadge';
 import { PageShell, HeroBackdrop, GlassCard, SectionHeader } from '../components/ui';
+import { useToast } from '../hooks/useToast';
 
 interface Rating {
   id: number;
@@ -55,6 +56,7 @@ const FlavorList: React.FC = () => {
   const [flavors, setFlavors] = useState<Flavor[]>([]);
   const [loading, setLoading] = useState(true);
   const [ratingInput, setRatingInput] = useState<Record<number, RatingInput>>({});
+  const { notify } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,9 +84,12 @@ const FlavorList: React.FC = () => {
       });
       const res = await api.get('flavors/');
       setFlavors(res.data);
-      alert('Rating submitted!');
+      notify({ message: 'Rating submitted!', severity: 'success' });
     } catch {
-      alert("Failed to submit rating. Make sure you are logged in and haven't rated this yet.");
+      notify({
+        message: "Failed to submit rating. Make sure you are logged in and haven't rated this yet.",
+        severity: 'error',
+      });
     }
   };
 

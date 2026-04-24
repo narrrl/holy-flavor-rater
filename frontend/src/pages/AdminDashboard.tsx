@@ -31,6 +31,7 @@ import {
   FormControl,
 } from '@mui/material';
 import { PageShell, GlassCard, GlassPaper, EmptyState } from '../components/ui';
+import { useToast } from '../hooks/useToast';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -134,6 +135,7 @@ const AdminDashboard: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const { notify } = useToast();
 
   const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -177,7 +179,7 @@ const AdminDashboard: React.FC = () => {
       const res = await api.patch('admin-custom/config/', { [key]: value });
       setConfig(res.data);
     } catch {
-      alert('Failed to update configuration');
+      notify({ message: 'Failed to update configuration', severity: 'error' });
     }
   };
 
@@ -186,7 +188,7 @@ const AdminDashboard: React.FC = () => {
       await api.post(`admin-custom/${id}/trigger_job/`);
       fetchData(true);
     } catch {
-      alert('Failed to trigger job');
+      notify({ message: 'Failed to trigger job', severity: 'error' });
     }
   };
 
@@ -197,7 +199,7 @@ const AdminDashboard: React.FC = () => {
       await api.patch(`admin-custom/${id}/update_job_schedule/`, data);
       fetchData(true);
     } catch {
-      alert('Failed to update schedule');
+      notify({ message: 'Failed to update schedule', severity: 'error' });
     }
   };
 
@@ -216,7 +218,10 @@ const AdminDashboard: React.FC = () => {
       fetchData();
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
-      alert(error.response?.data?.error || 'Failed to toggle visibility');
+      notify({
+        message: error.response?.data?.error || 'Failed to toggle visibility',
+        severity: 'error',
+      });
     }
   };
 
@@ -227,10 +232,13 @@ const AdminDashboard: React.FC = () => {
   const handleSendTestEmail = async () => {
     try {
       await api.post('admin-custom/send_test_email/');
-      alert(t('admin.testEmailSuccess'));
+      notify({ message: t('admin.testEmailSuccess'), severity: 'success' });
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
-      alert(`Error: ${error.response?.data?.error || 'Failed to send'}`);
+      notify({
+        message: `Error: ${error.response?.data?.error || 'Failed to send'}`,
+        severity: 'error',
+      });
     }
   };
 

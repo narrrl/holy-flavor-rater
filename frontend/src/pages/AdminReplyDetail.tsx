@@ -8,6 +8,8 @@ import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import MentionTextField from '../components/MentionTextField';
 import { PageShell, SectionHeader, FormCard } from '../components/ui';
+import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface AdminReply {
   id: number;
@@ -22,6 +24,8 @@ const AdminReplyDetail: React.FC = () => {
   const [text, setText] = useState('');
   const [reply, setReply] = useState<AdminReply | null>(null);
   const [loading, setLoading] = useState(true);
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
 
   const fetchReply = useCallback(async () => {
     try {
@@ -47,19 +51,19 @@ const AdminReplyDetail: React.FC = () => {
     try {
       await api.patch(`replies/${id}/`, { text });
       fetchReply();
-      alert('Reply updated!');
+      notify({ message: 'Reply updated!', severity: 'success' });
     } catch {
-      alert('Update failed');
+      notify({ message: 'Update failed', severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this reply?')) return;
+    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
       await api.delete(`replies/${id}/`);
       navigate('/admin-panel');
     } catch {
-      alert('Delete failed');
+      notify({ message: 'Delete failed', severity: 'error' });
     }
   };
 

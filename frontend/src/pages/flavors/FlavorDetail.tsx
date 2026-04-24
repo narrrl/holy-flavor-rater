@@ -41,6 +41,8 @@ import {
   SectionHeader,
   EmptyState,
 } from '../../components/ui';
+import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
 
 interface Reply {
   id: number;
@@ -83,6 +85,8 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const theme = useTheme();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
   const [flavor, setFlavor] = useState<Flavor | null>(null);
   const [loading, setLoading] = useState(true);
   const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({});
@@ -152,7 +156,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       setIsAdminEditing(false);
       fetchFlavor();
     } catch {
-      alert('Admin update failed');
+      notify({ message: 'Admin update failed', severity: 'error' });
     }
   };
 
@@ -170,7 +174,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       });
       fetchFlavor();
     } catch {
-      alert('Image upload failed');
+      notify({ message: 'Image upload failed', severity: 'error' });
     } finally {
       setUploadingImage(false);
     }
@@ -179,7 +183,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const handleRatingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newScore) {
-      alert('Please select a score');
+      notify({ message: 'Please select a score', severity: 'warning' });
       return;
     }
     try {
@@ -189,7 +193,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       fetchFlavor();
     } catch (err) {
       const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      alert(msg || 'Failed to submit rating');
+      notify({ message: msg || 'Failed to submit rating', severity: 'error' });
     }
   };
 
@@ -199,11 +203,10 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
     try {
       await api.post(`ratings/${ratingId}/reply/`, { text });
       setReplyInputs({ ...replyInputs, [ratingId]: '' });
-      // Auto-expand replies when submitting a new one
       setExpandedReplies((prev) => ({ ...prev, [ratingId]: true }));
       fetchFlavor();
     } catch {
-      alert('Failed to submit reply');
+      notify({ message: 'Failed to submit reply', severity: 'error' });
     }
   };
 
@@ -214,27 +217,27 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       setEditingReplyId(null);
       fetchFlavor();
     } catch {
-      alert('Failed to update reply');
+      notify({ message: 'Failed to update reply', severity: 'error' });
     }
   };
 
   const handleDeleteReply = async (replyId: number) => {
-    if (!confirm('Delete this reply?')) return;
+    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
       await api.delete(`replies/${replyId}/`);
       fetchFlavor();
     } catch {
-      alert('Failed to delete reply');
+      notify({ message: 'Failed to delete reply', severity: 'error' });
     }
   };
 
   const handleDeleteRating = async (ratingId: number) => {
-    if (!confirm('Are you sure?')) return;
+    if (!(await confirm({ message: 'Delete this review?', danger: true }))) return;
     try {
       await api.delete(`ratings/${ratingId}/`);
       fetchFlavor();
     } catch {
-      alert('Failed to delete review');
+      notify({ message: 'Failed to delete review', severity: 'error' });
     }
   };
 
@@ -250,7 +253,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       setEditMode(null);
       fetchFlavor();
     } catch {
-      alert('Failed to update review');
+      notify({ message: 'Failed to update review', severity: 'error' });
     }
   };
 

@@ -25,6 +25,8 @@ import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
 import { PageShell, SectionHeader, GlassCard, FormCard, EmptyState } from '../components/ui';
+import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
 
 interface Message {
   id: number;
@@ -78,6 +80,8 @@ const Support: React.FC = () => {
 
   const [replyText, setReplyText] = useState<Record<number, string>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [unreadTicketIds, setUnreadTicketIds] = useState<Set<number>>(new Set());
 
@@ -131,7 +135,7 @@ const Support: React.FC = () => {
       setShowCreate(false);
       fetchTickets();
     } catch {
-      alert('Failed to create ticket');
+      notify({ message: 'Failed to create ticket', severity: 'error' });
     }
   };
 
@@ -143,7 +147,7 @@ const Support: React.FC = () => {
       setReplyText({ ...replyText, [ticketId]: '' });
       fetchTickets();
     } catch {
-      alert('Failed to send message');
+      notify({ message: 'Failed to send message', severity: 'error' });
     }
   };
 
@@ -152,17 +156,17 @@ const Support: React.FC = () => {
       await api.post(`tickets/${ticketId}/update_status/`, { status });
       fetchTickets();
     } catch {
-      alert('Failed to update status');
+      notify({ message: 'Failed to update status', severity: 'error' });
     }
   };
 
   const handleDeleteTicket = async (ticketId: number) => {
-    if (!confirm('Delete this ticket?')) return;
+    if (!(await confirm({ message: 'Delete this ticket?', danger: true }))) return;
     try {
       await api.delete(`tickets/${ticketId}/`);
       fetchTickets();
     } catch {
-      alert('Failed to delete ticket');
+      notify({ message: 'Failed to delete ticket', severity: 'error' });
     }
   };
 
