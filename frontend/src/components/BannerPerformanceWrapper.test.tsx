@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useContext } from 'react';
 import { act, render } from '@testing-library/react';
-import {
-  BannerPerfContext,
-  BannerPerformanceWrapper,
-} from './BannerPerformanceWrapper';
+import { BannerPerfContext, BannerPerformanceWrapper } from './BannerPerformanceWrapper';
 
 type IOEntryLike = { isIntersecting: boolean };
 type IOCallback = (entries: IOEntryLike[]) => void;
@@ -45,9 +42,7 @@ const mockMatchMedia = (reduced: boolean) => {
 
 const Probe = () => {
   const { isActive, targetFps } = useContext(BannerPerfContext);
-  return (
-    <div data-testid="probe" data-active={String(isActive)} data-fps={String(targetFps)} />
-  );
+  return <div data-testid="probe" data-active={String(isActive)} data-fps={String(targetFps)} />;
 };
 
 describe('BannerPerformanceWrapper', () => {

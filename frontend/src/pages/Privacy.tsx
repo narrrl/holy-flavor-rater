@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Typography,
-  Box,
-  Button,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
+import { Typography, Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { Link } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTitle } from '../hooks/useTitle';
@@ -50,7 +44,10 @@ const Privacy: React.FC = () => {
         </ToggleButtonGroup>
       </Box>
 
-      <GlassCard intensity="subtle" sx={{ p: { xs: 2.5, sm: 4, md: 6 }, maxWidth: 900, width: '100%' }}>
+      <GlassCard
+        intensity="subtle"
+        sx={{ p: { xs: 2.5, sm: 4, md: 6 }, maxWidth: 900, width: '100%' }}
+      >
         <SectionHeader title={t('privacy.title')} />
         <Typography variant="body1" paragraph sx={{ lineHeight: 1.7 }}>
           {t('privacy.intro')}

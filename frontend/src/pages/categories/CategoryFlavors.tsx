@@ -5,7 +5,13 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import api from '../../lib/api';
 import { useTitle } from '../../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
-import { PageShell, HeroBackdrop, SectionHeader, FlavorCard, EmptyState } from '../../components/ui';
+import {
+  PageShell,
+  HeroBackdrop,
+  SectionHeader,
+  FlavorCard,
+  EmptyState,
+} from '../../components/ui';
 
 interface Rating {
   id: number;

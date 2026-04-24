@@ -28,9 +28,7 @@ const MatrixBanner: React.FC<DynamicBannerProps & { settings: Banner['settings']
   username,
   settings,
 }) => {
-  const [durations] = useState(() =>
-    Array.from({ length: 20 }, () => 2 + Math.random() * 3),
-  );
+  const [durations] = useState(() => Array.from({ length: 20 }, () => 2 + Math.random() * 3));
   return (
     <div
       style={{
@@ -73,10 +71,7 @@ const MatrixBanner: React.FC<DynamicBannerProps & { settings: Banner['settings']
   );
 };
 
-const pickBanner = (
-  banner: Banner | null,
-  props: DynamicBannerProps,
-): React.ReactElement => {
+const pickBanner = (banner: Banner | null, props: DynamicBannerProps): React.ReactElement => {
   if (!banner || banner.slug === 'generative-web') {
     return <GenerativeBanner {...props} settings={banner?.settings} />;
   }

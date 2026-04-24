@@ -34,13 +34,7 @@ import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
 import RatingBadge from '../../components/RatingBadge';
 import StatusBadge from '../../components/StatusBadge';
-import {
-  PageShell,
-  HeroBackdrop,
-  GlassCard,
-  SectionHeader,
-  EmptyState,
-} from '../../components/ui';
+import { PageShell, HeroBackdrop, GlassCard, SectionHeader, EmptyState } from '../../components/ui';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 

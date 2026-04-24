@@ -22,7 +22,10 @@ const About: React.FC = () => {
         {t('common.backToArchive')}
       </Button>
 
-      <GlassCard intensity="subtle" sx={{ p: { xs: 2.5, sm: 4, md: 6 }, maxWidth: 900, width: '100%' }}>
+      <GlassCard
+        intensity="subtle"
+        sx={{ p: { xs: 2.5, sm: 4, md: 6 }, maxWidth: 900, width: '100%' }}
+      >
         <SectionHeader title={t('about.title')} compact />
         <Typography
           variant="body1"
@@ -96,10 +99,20 @@ const About: React.FC = () => {
 
         <Box sx={{ mt: 4 }}>
           <SectionHeader title={t('about.disclaimerTitle')} compact />
-          <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 2, lineHeight: 1.6 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="p"
+            sx={{ mb: 2, lineHeight: 1.6 }}
+          >
             <strong>{t('about.liabilityContentTitle')}</strong> {t('about.liabilityContentDesc')}
           </Typography>
-          <Typography variant="caption" color="text.secondary" component="p" sx={{ lineHeight: 1.6 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            component="p"
+            sx={{ lineHeight: 1.6 }}
+          >
             <strong>{t('about.copyrightTitle')}</strong> {t('about.copyrightDesc')}
           </Typography>
         </Box>

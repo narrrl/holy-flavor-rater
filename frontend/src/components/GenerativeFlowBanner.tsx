@@ -232,7 +232,17 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
       }
       cancelAnimationFrame(animationFrameId);
     };
-  }, [seed, brightColors, blobCount, flowSpeed, vibrancy, blurAmount, distortionFactor, theme, gate]);
+  }, [
+    seed,
+    brightColors,
+    blobCount,
+    flowSpeed,
+    vibrancy,
+    blurAmount,
+    distortionFactor,
+    theme,
+    gate,
+  ]);
 
   return (
     <canvas

@@ -45,10 +45,7 @@ describe('FlavorCard', () => {
     render(
       <MemoryRouter>
         <ThemeProvider theme={getTheme('mocha')}>
-          <FlavorCard
-            flavor={{ id: 1, name: 'X', category_name: 'Fruit' }}
-            showCategory={false}
-          />
+          <FlavorCard flavor={{ id: 1, name: 'X', category_name: 'Fruit' }} showCategory={false} />
         </ThemeProvider>
       </MemoryRouter>,
     );
@@ -66,10 +63,7 @@ describe('FlavorCard', () => {
     render(
       <MemoryRouter>
         <ThemeProvider theme={getTheme('mocha')}>
-          <FlavorCard
-            flavor={{ id: 2, name: 'Cap', average_rating: 5 }}
-            caption="12 reviews"
-          />
+          <FlavorCard flavor={{ id: 2, name: 'Cap', average_rating: 5 }} caption="12 reviews" />
         </ThemeProvider>
       </MemoryRouter>,
     );

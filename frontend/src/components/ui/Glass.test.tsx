@@ -9,10 +9,7 @@ const collectStyles = () =>
     .map((s) => s.textContent ?? '')
     .join('\n');
 
-const renderWithTheme = (
-  ui: React.ReactElement,
-  mode: CatppuccinTheme = 'mocha',
-) => {
+const renderWithTheme = (ui: React.ReactElement, mode: CatppuccinTheme = 'mocha') => {
   const theme = getTheme(mode);
   const result = render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
   return { theme, ...result };
@@ -36,7 +33,9 @@ describe('Glass primitives', () => {
 
   it('GlassCard intensity="strong" emits blurStrong + tintStrong into emitted CSS', () => {
     const { theme } = renderWithTheme(
-      <GlassCard data-testid="g" intensity="strong">x</GlassCard>,
+      <GlassCard data-testid="g" intensity="strong">
+        x
+      </GlassCard>,
     );
     const css = collectStyles();
     expect(css).toContain(theme.tokens.glass.blurStrong);
@@ -45,7 +44,9 @@ describe('Glass primitives', () => {
 
   it('GlassCard intensity="subtle" emits tintSubtle into emitted CSS', () => {
     const { theme } = renderWithTheme(
-      <GlassCard data-testid="g" intensity="subtle">x</GlassCard>,
+      <GlassCard data-testid="g" intensity="subtle">
+        x
+      </GlassCard>,
     );
     const css = collectStyles();
     expect(css).toContain(theme.tokens.glass.tintSubtle);
@@ -53,7 +54,9 @@ describe('Glass primitives', () => {
 
   it('does not forward `intensity` prop to the DOM', () => {
     const { getByTestId } = renderWithTheme(
-      <GlassCard data-testid="g" intensity="strong">x</GlassCard>,
+      <GlassCard data-testid="g" intensity="strong">
+        x
+      </GlassCard>,
     );
     expect(getByTestId('g').getAttribute('intensity')).toBeNull();
   });

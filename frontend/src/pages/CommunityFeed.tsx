@@ -33,13 +33,7 @@ import { formatDate } from '../utils/date';
 import { useTranslation } from 'react-i18next';
 import MentionTextField from '../components/MentionTextField';
 import RatingBadge from '../components/RatingBadge';
-import {
-  PageShell,
-  HeroBackdrop,
-  SectionHeader,
-  GlassCard,
-  EmptyState,
-} from '../components/ui';
+import { PageShell, HeroBackdrop, SectionHeader, GlassCard, EmptyState } from '../components/ui';
 import { useToast } from '../hooks/useToast';
 
 interface Reply {
@@ -101,11 +95,11 @@ interface CommunityFeedProps {
   adminMode?: boolean;
 }
 
-const SidebarCard: React.FC<{ icon: React.ReactNode; title: React.ReactNode; children: React.ReactNode }> = ({
-  icon,
-  title,
-  children,
-}) => (
+const SidebarCard: React.FC<{
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  children: React.ReactNode;
+}> = ({ icon, title, children }) => (
   <GlassCard intensity="subtle">
     <Box
       sx={{
@@ -174,7 +168,9 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
 
         setTopFollowed(Array.isArray(topFollowedRes.data) ? topFollowedRes.data.slice(0, 5) : []);
 
-        const notifData = Array.isArray(notifRes.data) ? notifRes.data : notifRes.data.results || [];
+        const notifData = Array.isArray(notifRes.data)
+          ? notifRes.data
+          : notifRes.data.results || [];
         setNotifications(notifData.slice(0, 5));
       } catch (err) {
         const status = (err as { response?: { status?: number } }).response?.status;
@@ -278,11 +274,18 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                             to={`/profile/${rating.user}`}
                             style={{ textDecoration: 'none', color: 'inherit' }}
                           >
-                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
+                            <Typography
+                              variant="subtitle1"
+                              sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
+                            >
                               {rating.user}
                             </Typography>
                           </Link>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: 'block' }}
+                          >
                             {formatDate(rating.created_at)}
                           </Typography>
                         </Box>
@@ -309,7 +312,11 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                           <MuiLink
                             component={Link}
                             to={`/flavor/${rating.flavor}`}
-                            sx={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}
+                            sx={{
+                              color: 'primary.main',
+                              fontWeight: 'bold',
+                              textDecoration: 'none',
+                            }}
                           >
                             {rating.flavor_name}
                           </MuiLink>
@@ -322,7 +329,11 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                             <RichText text={rating.comment} />
                           </Typography>
                         ) : (
-                          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ fontStyle: 'italic' }}
+                          >
                             No comment provided.
                           </Typography>
                         )}
@@ -367,14 +378,23 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                         {rating.replies.map((reply) => (
                           <Box key={reply.id} sx={{ mb: 1.5 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>
+                              <Typography
+                                variant="subtitle2"
+                                sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}
+                              >
                                 {reply.user}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
                                 {formatDate(reply.created_at)}
                               </Typography>
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                              }}
+                            >
                               <Typography variant="body2">
                                 <RichText text={reply.text} />
                               </Typography>
@@ -394,7 +414,9 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                           <MentionTextField
                             placeholder={t('community.writeReply')}
                             value={replyInputs[rating.id] || ''}
-                            onChange={(val) => setReplyInputs((prev) => ({ ...prev, [rating.id]: val }))}
+                            onChange={(val) =>
+                              setReplyInputs((prev) => ({ ...prev, [rating.id]: val }))
+                            }
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 handleReplySubmit(rating.id);
@@ -416,7 +438,12 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
               ))}
               {totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={handlePageChange}
+                    color="primary"
+                  />
                 </Box>
               )}
             </Box>
@@ -549,7 +576,11 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                     </Box>
                     <ListItemText
                       primary={flavor.name}
-                      primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold', noWrap: true }}
+                      primaryTypographyProps={{
+                        variant: 'body2',
+                        fontWeight: 'bold',
+                        noWrap: true,
+                      }}
                     />
                     <RatingBadge score={flavor.average_rating || 0} size="small" />
                   </ListItemButton>

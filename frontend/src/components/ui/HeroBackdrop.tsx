@@ -22,14 +22,14 @@ const Root = styled(Box, {
     `conic-gradient(from 210deg at 50% -10%, ${alpha(p, 0.35)}, ${alpha(s, 0.25)}, ${alpha(p, 0.1)}, ${alpha(p, 0.35)})`,
   ];
 
-  const minimalLayers = [
-    `linear-gradient(180deg, ${alpha(p, 0.12)} 0%, transparent 60%)`,
-  ];
+  const minimalLayers = [`linear-gradient(180deg, ${alpha(p, 0.12)} 0%, transparent 60%)`];
 
   const backgroundImage =
-    variant === 'aurora' ? auroraLayers.join(', ')
-    : variant === 'minimal' ? minimalLayers.join(', ')
-    : meshLayers.join(', ');
+    variant === 'aurora'
+      ? auroraLayers.join(', ')
+      : variant === 'minimal'
+        ? minimalLayers.join(', ')
+        : meshLayers.join(', ');
 
   return {
     position: 'absolute',

@@ -138,7 +138,9 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
               max === min ? 0 : l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
             return { rgb: `rgb(${c[0]}, ${c[1]}, ${c[2]})`, l, s };
           });
-          const vibrant = processed.filter((c) => c.l > 0.2 && c.l < 0.85).sort((a, b) => b.s - a.s);
+          const vibrant = processed
+            .filter((c) => c.l > 0.2 && c.l < 0.85)
+            .sort((a, b) => b.s - a.s);
           if (vibrant.length >= 2) setPalette([vibrant[0].rgb, vibrant[1].rgb]);
           else if (vibrant.length === 1) setPalette([vibrant[0].rgb, vibrant[0].rgb]);
           else setPalette([]);
@@ -356,7 +358,9 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
           />
         </Box>
 
-        <CardContent sx={{ pt: 0, px: { xs: 2, md: 5 }, pb: { xs: 2, md: 4 }, position: 'relative' }}>
+        <CardContent
+          sx={{ pt: 0, px: { xs: 2, md: 5 }, pb: { xs: 2, md: 4 }, position: 'relative' }}
+        >
           <Box
             sx={{
               display: 'flex',
@@ -766,7 +770,10 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                         }}
                       >
                         <Stack direction="row" spacing={2.5} alignItems="center">
-                          <Link to={`/profile/${comment.author_username}`} style={{ textDecoration: 'none' }}>
+                          <Link
+                            to={`/profile/${comment.author_username}`}
+                            style={{ textDecoration: 'none' }}
+                          >
                             <Avatar
                               src={comment.author_avatar || undefined}
                               sx={{
@@ -784,7 +791,10 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                               to={`/profile/${comment.author_username}`}
                               style={{ textDecoration: 'none', color: 'inherit' }}
                             >
-                              <Typography variant="subtitle1" sx={{ fontWeight: '900', lineHeight: 1.2 }}>
+                              <Typography
+                                variant="subtitle1"
+                                sx={{ fontWeight: '900', lineHeight: 1.2 }}
+                              >
                                 {comment.author_username}
                               </Typography>
                             </Link>
@@ -800,7 +810,11 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                         {(currentUser?.username === comment.author_username ||
                           currentUser?.username === data.username ||
                           currentUser?.is_superuser) && (
-                          <IconButton size="small" color="error" onClick={() => handleDeleteComment(comment.id)}>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteComment(comment.id)}
+                          >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         )}

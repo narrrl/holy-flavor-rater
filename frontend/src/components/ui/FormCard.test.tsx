@@ -45,7 +45,13 @@ describe('FormCard', () => {
   });
 
   it('applies danger styling when danger prop set', () => {
-    render(wrap(<FormCard title="Delete account" danger>content</FormCard>));
+    render(
+      wrap(
+        <FormCard title="Delete account" danger>
+          content
+        </FormCard>,
+      ),
+    );
     const title = screen.getByText('Delete account');
     const color = window.getComputedStyle(title).color;
     // MUI uses the palette.error.main — we just assert the title DOM exists and has a color distinct from default

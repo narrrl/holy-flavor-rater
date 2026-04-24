@@ -285,7 +285,10 @@ const AdminDashboard: React.FC = () => {
         <Box>
           <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 6 }}>
             <Grid size={{ xs: 6, md: 3 }}>
-              <GlassCard intensity="subtle" sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) }}>
+              <GlassCard
+                intensity="subtle"
+                sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) }}
+              >
                 <CardContent sx={{ p: isMobile ? 2 : 3 }}>
                   <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>
                     {t('admin.totalUsers')}
@@ -297,7 +300,10 @@ const AdminDashboard: React.FC = () => {
               </GlassCard>
             </Grid>
             <Grid size={{ xs: 6, md: 3 }}>
-              <GlassCard intensity="subtle" sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.1) }}>
+              <GlassCard
+                intensity="subtle"
+                sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.1) }}
+              >
                 <CardContent sx={{ p: isMobile ? 2 : 3 }}>
                   <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>
                     {t('admin.openTickets')}

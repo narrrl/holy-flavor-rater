@@ -37,10 +37,10 @@ export const BannerPerformanceWrapper = ({
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { threshold: 0.01, rootMargin },
-    );
+    const io = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), {
+      threshold: 0.01,
+      rootMargin,
+    });
     io.observe(el);
     return () => io.disconnect();
   }, [rootMargin]);
@@ -55,10 +55,7 @@ export const BannerPerformanceWrapper = ({
 
   return (
     <BannerPerfContext.Provider value={value}>
-      <Box
-        ref={ref}
-        sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-      >
+      <Box ref={ref} sx={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
         {children}
       </Box>
     </BannerPerfContext.Provider>

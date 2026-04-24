@@ -379,158 +379,153 @@ const App: React.FC = () => {
     >
       <GlassAppBar>
         <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              fontWeight: 'bold',
-              mr: { xs: 0, sm: 2 },
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
-              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-                Holy Flavors Archive
-              </Box>
-              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-                HFA
-              </Box>
-            </Link>
-          </Typography>
+          variant="h6"
+          component="div"
+          sx={{
+            fontWeight: 'bold',
+            mr: { xs: 0, sm: 2 },
+            display: { xs: 'none', sm: 'block' },
+          }}
+        >
+          <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+              Holy Flavors Archive
+            </Box>
+            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+              HFA
+            </Box>
+          </Link>
+        </Typography>
 
-          <Box sx={{ display: isMobile ? 'none' : 'flex', ml: 2 }}>
-            {user && (
-              <Button
-                color="inherit"
-                component={Link}
-                to="/community"
-                sx={{
-                  fontWeight: 'bold',
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                  mr: 2,
-                }}
-              >
-                {t('nav.community')}
-              </Button>
-            )}
+        <Box sx={{ display: isMobile ? 'none' : 'flex', ml: 2 }}>
+          {user && (
             <Button
               color="inherit"
-              endIcon={<ArrowDropDownIcon />}
-              onClick={(e) => setCatAnchorEl(e.currentTarget)}
-              sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem' }}
+              component={Link}
+              to="/community"
+              sx={{
+                fontWeight: 'bold',
+                textTransform: 'none',
+                fontSize: '1rem',
+                mr: 2,
+              }}
             >
-              {t('nav.categories')}
+              {t('nav.community')}
             </Button>
-            <Menu
-              anchorEl={catAnchorEl}
-              open={Boolean(catAnchorEl)}
-              onClose={() => setCatAnchorEl(null)}
-              elevation={3}
-              sx={{ mt: 1 }}
-            >
-              {categories.map((cat) => (
-                <MenuItem
-                  key={cat.slug}
-                  component={Link}
-                  to={`/category/${cat.slug}`}
-                  onClick={() => setCatAnchorEl(null)}
-                >
-                  {t(`categories.${cat.slug}`, { defaultValue: cat.name })}
-                </MenuItem>
-              ))}
-            </Menu>
-          </Box>
+          )}
+          <Button
+            color="inherit"
+            endIcon={<ArrowDropDownIcon />}
+            onClick={(e) => setCatAnchorEl(e.currentTarget)}
+            sx={{ fontWeight: 'bold', textTransform: 'none', fontSize: '1rem' }}
+          >
+            {t('nav.categories')}
+          </Button>
+          <Menu
+            anchorEl={catAnchorEl}
+            open={Boolean(catAnchorEl)}
+            onClose={() => setCatAnchorEl(null)}
+            elevation={3}
+            sx={{ mt: 1 }}
+          >
+            {categories.map((cat) => (
+              <MenuItem
+                key={cat.slug}
+                component={Link}
+                to={`/category/${cat.slug}`}
+                onClick={() => setCatAnchorEl(null)}
+              >
+                {t(`categories.${cat.slug}`, { defaultValue: cat.name })}
+              </MenuItem>
+            ))}
+          </Menu>
+        </Box>
 
-          <GlobalSearch />
+        <GlobalSearch />
 
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!loadingUser && (
-              <>
-                {user && notificationsMenu}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {!loadingUser && (
+            <>
+              {user && notificationsMenu}
 
-                {user ? (
-                  <Box sx={{ display: isMobile ? 'none' : 'flex', ml: 1 }}>
-                    <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)}>
-                      <Avatar
-                        src={user.avatar || undefined}
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          border: '2px solid',
-                          borderColor: 'primary.main',
-                        }}
-                      >
-                        {user.username.charAt(0).toUpperCase()}
-                      </Avatar>
-                    </IconButton>
-                    <Menu
-                      anchorEl={anchorEl}
-                      open={Boolean(anchorEl)}
-                      onClose={() => setAnchorEl(null)}
-                      elevation={3}
-                      sx={{ mt: 1 }}
+              {user ? (
+                <Box sx={{ display: isMobile ? 'none' : 'flex', ml: 1 }}>
+                  <IconButton color="inherit" onClick={(e) => setAnchorEl(e.currentTarget)}>
+                    <Avatar
+                      src={user.avatar || undefined}
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        border: '2px solid',
+                        borderColor: 'primary.main',
+                      }}
                     >
+                      {user.username.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={() => setAnchorEl(null)}
+                    elevation={3}
+                    sx={{ mt: 1 }}
+                  >
+                    <MenuItem
+                      component={Link}
+                      to={`/profile/${user.username}`}
+                      onClick={() => setAnchorEl(null)}
+                    >
+                      {t('nav.profile')}
+                    </MenuItem>
+                    <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>
+                      {t('nav.dashboard')}
+                    </MenuItem>
+                    <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>
+                      {t('nav.settings')}
+                    </MenuItem>
+                    <MenuItem component={Link} to="/support" onClick={() => setAnchorEl(null)}>
+                      {t('support.title')}
+                    </MenuItem>
+                    {user.is_superuser && (
+                      <MenuItem
+                        onClick={toggleAdminMode}
+                        sx={{ color: adminMode ? 'primary.main' : 'inherit' }}
+                      >
+                        {t('admin.adminMode')}: {adminMode ? 'ON' : 'OFF'}
+                      </MenuItem>
+                    )}
+                    {user.is_superuser && (
                       <MenuItem
                         component={Link}
-                        to={`/profile/${user.username}`}
+                        to="/admin-panel"
                         onClick={() => setAnchorEl(null)}
+                        sx={{ fontWeight: 'bold', color: 'primary.main' }}
                       >
-                        {t('nav.profile')}
+                        Admin Panel
                       </MenuItem>
-                      <MenuItem component={Link} to="/dashboard" onClick={() => setAnchorEl(null)}>
-                        {t('nav.dashboard')}
-                      </MenuItem>
-                      <MenuItem component={Link} to="/settings" onClick={() => setAnchorEl(null)}>
-                        {t('nav.settings')}
-                      </MenuItem>
-                      <MenuItem component={Link} to="/support" onClick={() => setAnchorEl(null)}>
-                        {t('support.title')}
-                      </MenuItem>
-                      {user.is_superuser && (
-                        <MenuItem
-                          onClick={toggleAdminMode}
-                          sx={{ color: adminMode ? 'primary.main' : 'inherit' }}
-                        >
-                          {t('admin.adminMode')}: {adminMode ? 'ON' : 'OFF'}
-                        </MenuItem>
-                      )}
-                      {user.is_superuser && (
-                        <MenuItem
-                          component={Link}
-                          to="/admin-panel"
-                          onClick={() => setAnchorEl(null)}
-                          sx={{ fontWeight: 'bold', color: 'primary.main' }}
-                        >
-                          Admin Panel
-                        </MenuItem>
-                      )}
-                      <Divider />
-                      <MenuItem onClick={logout} sx={{ color: 'error.main' }}>
-                        {t('nav.logout')}
-                      </MenuItem>
-                    </Menu>
-                  </Box>
-                ) : (
-                  <Box sx={{ display: isMobile ? 'none' : 'block' }}>
-                    <Button
-                      variant="contained"
-                      component={Link}
-                      to="/login"
-                      sx={{ borderRadius: 2 }}
-                    >
-                      Login
-                    </Button>
-                  </Box>
-                )}
-              </>
-            )}
+                    )}
+                    <Divider />
+                    <MenuItem onClick={logout} sx={{ color: 'error.main' }}>
+                      {t('nav.logout')}
+                    </MenuItem>
+                  </Menu>
+                </Box>
+              ) : (
+                <Box sx={{ display: isMobile ? 'none' : 'block' }}>
+                  <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2 }}>
+                    Login
+                  </Button>
+                </Box>
+              )}
+            </>
+          )}
 
-            {isMobile && (
-              <IconButton color="inherit" onClick={() => setDrawerOpen(true)} sx={{ ml: 1 }}>
-                <MenuIcon />
-              </IconButton>
-            )}
-          </Box>
+          {isMobile && (
+            <IconButton color="inherit" onClick={() => setDrawerOpen(true)} sx={{ ml: 1 }}>
+              <MenuIcon />
+            </IconButton>
+          )}
+        </Box>
       </GlassAppBar>
 
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>

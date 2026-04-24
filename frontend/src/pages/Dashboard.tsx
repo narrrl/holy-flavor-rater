@@ -160,7 +160,9 @@ const Dashboard: React.FC = () => {
               max === min ? 0 : l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
             return { rgb: `rgb(${c[0]}, ${c[1]}, ${c[2]})`, l, s };
           });
-          const vibrant = processed.filter((c) => c.l > 0.2 && c.l < 0.85).sort((a, b) => b.s - a.s);
+          const vibrant = processed
+            .filter((c) => c.l > 0.2 && c.l < 0.85)
+            .sort((a, b) => b.s - a.s);
           if (vibrant.length >= 2) setPalette([vibrant[0].rgb, vibrant[1].rgb]);
           else if (vibrant.length === 1) setPalette([vibrant[0].rgb, vibrant[0].rgb]);
           else setPalette([]);
@@ -219,7 +221,9 @@ const Dashboard: React.FC = () => {
   const exploreCategories = useMemo(() => {
     if (!data) return ['All'];
     const cats = new Set(
-      data.missing_flavors.filter((f) => f.category_name !== 'Packs and other').map((f) => f.category_name),
+      data.missing_flavors
+        .filter((f) => f.category_name !== 'Packs and other')
+        .map((f) => f.category_name),
     );
     return ['All', ...Array.from(cats).sort()];
   }, [data]);
@@ -401,7 +405,11 @@ const Dashboard: React.FC = () => {
                         </Typography>
                       </Box>
                       {i < 1 && (
-                        <Divider orientation="vertical" flexItem sx={{ borderStyle: 'solid', opacity: 0.1 }} />
+                        <Divider
+                          orientation="vertical"
+                          flexItem
+                          sx={{ borderStyle: 'solid', opacity: 0.1 }}
+                        />
                       )}
                     </React.Fragment>
                   ))}
@@ -510,7 +518,11 @@ const Dashboard: React.FC = () => {
               <EmptyState
                 title={t('dashboard.noRatings')}
                 action={
-                  <Button onClick={() => setActiveTab(1)} variant="contained" sx={{ borderRadius: 2 }}>
+                  <Button
+                    onClick={() => setActiveTab(1)}
+                    variant="contained"
+                    sx={{ borderRadius: 2 }}
+                  >
                     {t('dashboard.exploreFlavors')}
                   </Button>
                 }
@@ -539,7 +551,11 @@ const Dashboard: React.FC = () => {
                           onChange={setEditComment}
                         />
                         <Stack direction="row" spacing={1}>
-                          <Button variant="contained" size="small" onClick={() => handleUpdateRating(rating.id)}>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleUpdateRating(rating.id)}
+                          >
                             {t('common.save')}
                           </Button>
                           <Button
@@ -590,7 +606,12 @@ const Dashboard: React.FC = () => {
                                   {rating.flavor_name}
                                 </Link>
                               </Typography>
-                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                sx={{ mt: 0.5 }}
+                              >
                                 <Typography variant="caption" color="text.secondary">
                                   {t(`categories.${rating.category_slug}`, {
                                     defaultValue: rating.category_name,
@@ -608,11 +629,22 @@ const Dashboard: React.FC = () => {
                           <RatingBadge score={rating.score} size={isMobile ? 'medium' : 'large'} />
                         </Box>
 
-                        <Box sx={{ mb: 2, p: 2, bgcolor: alpha(theme.palette.text.primary, 0.03), borderRadius: 2 }}>
+                        <Box
+                          sx={{
+                            mb: 2,
+                            p: 2,
+                            bgcolor: alpha(theme.palette.text.primary, 0.03),
+                            borderRadius: 2,
+                          }}
+                        >
                           {rating.comment ? (
                             <RichText text={rating.comment} />
                           ) : (
-                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ fontStyle: 'italic' }}
+                            >
                               {t('dashboard.noComment')}
                             </Typography>
                           )}
@@ -623,9 +655,16 @@ const Dashboard: React.FC = () => {
                             size="small"
                             startIcon={<CommentIcon fontSize="small" />}
                             onClick={() =>
-                              setExpandedReplies((prev) => ({ ...prev, [rating.id]: !prev[rating.id] }))
+                              setExpandedReplies((prev) => ({
+                                ...prev,
+                                [rating.id]: !prev[rating.id],
+                              }))
                             }
-                            sx={{ textTransform: 'none', fontWeight: 'bold', color: 'text.secondary' }}
+                            sx={{
+                              textTransform: 'none',
+                              fontWeight: 'bold',
+                              color: 'text.secondary',
+                            }}
                           >
                             {rating.replies.length} {t('common.replies')}
                           </Button>
@@ -652,7 +691,9 @@ const Dashboard: React.FC = () => {
                         </Stack>
 
                         <Collapse in={expandedReplies[rating.id]}>
-                          <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                          <Box
+                            sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}
+                          >
                             {rating.replies.map((reply) => (
                               <Box
                                 key={reply.id}
@@ -886,7 +927,8 @@ const Dashboard: React.FC = () => {
                                 size="small"
                                 sx={{
                                   height: 24,
-                                  bgcolor: exploreSort === 'circle' ? 'secondary.main' : 'primary.main',
+                                  bgcolor:
+                                    exploreSort === 'circle' ? 'secondary.main' : 'primary.main',
                                 }}
                               />
                             </Box>

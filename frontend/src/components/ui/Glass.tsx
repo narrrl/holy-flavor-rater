@@ -5,33 +5,37 @@ import Box from '@mui/material/Box';
 
 type Intensity = 'subtle' | 'default' | 'strong';
 
-const intensityStyles = (intensity: Intensity) => ({ theme }: { theme: any }) => {
-  const t = theme.tokens;
-  const tint =
-    intensity === 'strong' ? t.glass.tintStrong
-    : intensity === 'subtle' ? t.glass.tintSubtle
-    : t.glass.tint;
-  const blur = intensity === 'strong' ? t.glass.blurStrong : t.glass.blur;
-  return {
-    backgroundColor: tint,
-    backdropFilter: blur,
-    WebkitBackdropFilter: blur,
-    border: '1px solid',
-    borderColor: t.glass.border,
-    boxShadow: intensity === 'strong' ? t.elevation.md : t.elevation.sm,
-    borderRadius: t.radius.md,
-    position: 'relative' as const,
-    // Inset top highlight — the "glass lip"
-    '&::before': {
-      content: '""',
-      position: 'absolute',
-      inset: 0,
-      borderRadius: 'inherit',
-      pointerEvents: 'none',
-      boxShadow: `inset 0 1px 0 ${t.glass.highlight}`,
-    },
+const intensityStyles =
+  (intensity: Intensity) =>
+  ({ theme }: { theme: any }) => {
+    const t = theme.tokens;
+    const tint =
+      intensity === 'strong'
+        ? t.glass.tintStrong
+        : intensity === 'subtle'
+          ? t.glass.tintSubtle
+          : t.glass.tint;
+    const blur = intensity === 'strong' ? t.glass.blurStrong : t.glass.blur;
+    return {
+      backgroundColor: tint,
+      backdropFilter: blur,
+      WebkitBackdropFilter: blur,
+      border: '1px solid',
+      borderColor: t.glass.border,
+      boxShadow: intensity === 'strong' ? t.elevation.md : t.elevation.sm,
+      borderRadius: t.radius.md,
+      position: 'relative' as const,
+      // Inset top highlight — the "glass lip"
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        inset: 0,
+        borderRadius: 'inherit',
+        pointerEvents: 'none',
+        boxShadow: `inset 0 1px 0 ${t.glass.highlight}`,
+      },
+    };
   };
-};
 
 interface GlassProps {
   intensity?: Intensity;

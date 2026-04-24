@@ -157,7 +157,9 @@ const FlavorList: React.FC = () => {
                     />
                   )}
 
-                  <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <CardContent
+                    sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1 }}
+                  >
                     <Typography variant="h6">{flavor.name}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {flavor.description}
@@ -194,9 +196,17 @@ const FlavorList: React.FC = () => {
                             .map((r) => (
                               <Box
                                 key={r.id}
-                                sx={{ mb: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}
+                                sx={{
+                                  mb: 1,
+                                  borderBottom: '1px solid',
+                                  borderColor: 'divider',
+                                  pb: 0.5,
+                                }}
                               >
-                                <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ fontWeight: 'bold', display: 'block' }}
+                                >
                                   {r.user} ({r.score}/10):
                                 </Typography>
                                 <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
@@ -248,7 +258,11 @@ const FlavorList: React.FC = () => {
                                 })
                               }
                             />
-                            <Button variant="contained" size="small" onClick={() => handleRate(flavor.id)}>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              onClick={() => handleRate(flavor.id)}
+                            >
                               Submit
                             </Button>
                           </Box>

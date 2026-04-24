@@ -323,7 +323,12 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                     {t('settings.avatarButton')}
                     <input type="file" hidden accept="image/*" onChange={handleAvatarUpload} />
                   </Button>
-                  <Typography variant="caption" display="block" sx={{ mt: 1 }} color="text.secondary">
+                  <Typography
+                    variant="caption"
+                    display="block"
+                    sx={{ mt: 1 }}
+                    color="text.secondary"
+                  >
                     {t('settings.avatarHint')}
                   </Typography>
                 </Box>
@@ -367,7 +372,12 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                 subtitle={t('settings.confirmEmailHint', { email })}
                 onSubmit={handleConfirmEmail}
                 actions={
-                  <Button variant="contained" color="secondary" type="submit" sx={{ borderRadius: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    type="submit"
+                    sx={{ borderRadius: 2 }}
+                  >
                     {t('settings.confirmButton')}
                   </Button>
                 }

@@ -405,7 +405,9 @@ const Support: React.FC = () => {
 
                 <Collapse in={expandedId === ticket.id}>
                   <Divider />
-                  <Box sx={{ p: 2, bgcolor: (theme) => alpha(theme.palette.background.default, 0.5) }}>
+                  <Box
+                    sx={{ p: 2, bgcolor: (theme) => alpha(theme.palette.background.default, 0.5) }}
+                  >
                     {currentUser?.is_superuser && (
                       <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
                         {(['open', 'in_progress', 'resolved', 'closed'] as const).map((s) => (
@@ -458,7 +460,10 @@ const Support: React.FC = () => {
                             boxShadow: msg.is_admin ? 2 : 0,
                           }}
                         >
-                          <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 'bold', display: 'block' }}
+                          >
                             {msg.username} {msg.is_admin && '(Support)'}
                           </Typography>
                           <Typography variant="body2" sx={{ my: 0.5 }}>

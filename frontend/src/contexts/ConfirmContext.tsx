@@ -26,8 +26,7 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
   const resolverRef = useRef<((value: boolean) => void) | null>(null);
 
   const confirm = useCallback((input: ConfirmOptions | string) => {
-    const normalized: ConfirmOptions =
-      typeof input === 'string' ? { message: input } : input;
+    const normalized: ConfirmOptions = typeof input === 'string' ? { message: input } : input;
     setOpts(normalized);
     setOpen(true);
     return new Promise<boolean>((resolve) => {

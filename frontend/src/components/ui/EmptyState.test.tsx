@@ -36,14 +36,7 @@ describe('EmptyState', () => {
   });
 
   it('renders icon slot', () => {
-    render(
-      wrap(
-        <EmptyState
-          title="Nothing"
-          icon={<span data-testid="icon">📭</span>}
-        />,
-      ),
-    );
+    render(wrap(<EmptyState title="Nothing" icon={<span data-testid="icon">📭</span>} />));
     expect(screen.getByTestId('icon')).toBeInTheDocument();
   });
 });

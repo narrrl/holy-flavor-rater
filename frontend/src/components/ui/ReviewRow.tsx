@@ -45,44 +45,41 @@ export const ReviewRow = ({ review, showFlavor = true, compact }: ReviewRowProps
         },
       }}
     >
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-      <Avatar
-        src={review.user_avatar || undefined}
-        sx={{ width: 28, height: 28 }}
-      >
-        {!review.user_avatar && review.user.charAt(0).toUpperCase()}
-      </Avatar>
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
-          {review.user}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {formatDate(review.created_at)}
-        </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+        <Avatar src={review.user_avatar || undefined} sx={{ width: 28, height: 28 }}>
+          {!review.user_avatar && review.user.charAt(0).toUpperCase()}
+        </Avatar>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.2 }} noWrap>
+            {review.user}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {formatDate(review.created_at)}
+          </Typography>
+        </Box>
+        <RatingBadge score={review.score} size="small" />
       </Box>
-      <RatingBadge score={review.score} size="small" />
-    </Box>
 
-    {showFlavor && review.flavor_name && (
-      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }} noWrap>
-        on {review.flavor_name}
-      </Typography>
-    )}
+      {showFlavor && review.flavor_name && (
+        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }} noWrap>
+          on {review.flavor_name}
+        </Typography>
+      )}
 
-    {review.comment && (
-      <Typography
-        variant="body2"
-        component="div"
-        sx={{
-          display: '-webkit-box',
-          WebkitLineClamp: compact ? 2 : 3,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}
-      >
-        <RichText text={review.comment} />
-      </Typography>
-    )}
+      {review.comment && (
+        <Typography
+          variant="body2"
+          component="div"
+          sx={{
+            display: '-webkit-box',
+            WebkitLineClamp: compact ? 2 : 3,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
+          <RichText text={review.comment} />
+        </Typography>
+      )}
     </GlassCard>
   </Link>
 );

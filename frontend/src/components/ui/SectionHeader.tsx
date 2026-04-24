@@ -37,11 +37,7 @@ export const SectionHeader = ({ title, subtitle, action, compact }: SectionHeade
         {title}
       </Typography>
       {subtitle && (
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mt: 0.5, maxWidth: '60ch' }}
-        >
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: '60ch' }}>
           {subtitle}
         </Typography>
       )}

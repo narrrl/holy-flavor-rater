@@ -50,11 +50,7 @@ export const FlavorCard = ({
       }}
     >
       <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1 }}>
-        <StatusBadge
-          isLegacy={flavor.is_legacy}
-          isAvailable={flavor.is_available}
-          size="small"
-        />
+        <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} size="small" />
       </Box>
 
       {flavor.image_url && (
@@ -88,7 +84,11 @@ export const FlavorCard = ({
       )}
 
       <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-        <Typography variant="h6" sx={{ fontSize: compact ? '0.95rem' : '1rem', lineHeight: 1.25 }} noWrap>
+        <Typography
+          variant="h6"
+          sx={{ fontSize: compact ? '0.95rem' : '1rem', lineHeight: 1.25 }}
+          noWrap
+        >
           {flavor.name}
         </Typography>
 
@@ -98,7 +98,14 @@ export const FlavorCard = ({
           </Typography>
         )}
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 'auto' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mt: 'auto',
+          }}
+        >
           <RatingBadge score={flavor.average_rating || 0} size="small" />
           {caption && (
             <Typography variant="caption" color="text.secondary" noWrap>

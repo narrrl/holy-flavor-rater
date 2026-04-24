@@ -526,11 +526,7 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
                     }}
                   >
                     <RatingBadge score={currentTop.average_rating || 0} size="large" />
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ fontWeight: 'bold' }}
-                    >
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
                       {currentTop.ratings.length} {t('common.reviews')}
                     </Typography>
                   </Box>
