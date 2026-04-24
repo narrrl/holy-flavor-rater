@@ -1,31 +1,29 @@
 import React from 'react';
-import { Typography, Box, Container, Paper, Divider, Button, useMediaQuery } from '@mui/material';
+import { Typography, Box, Button, Divider } from '@mui/material';
 import { Link } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useTranslation } from 'react-i18next';
 import { useTitle } from '../hooks/useTitle';
+import { PageShell, HeroBackdrop, GlassCard, SectionHeader } from '../components/ui';
 
 const About: React.FC = () => {
   const { t } = useTranslation();
   useTitle(t('nav.about'));
-  const isMobile = useMediaQuery('(max-width:600px)');
 
   return (
-    <Container maxWidth="md" sx={{ py: { xs: 4, md: 8 }, px: { xs: 2, sm: 3 } }}>
+    <PageShell hero={<HeroBackdrop variant="minimal" />}>
       <Button
         variant="outlined"
         component={Link}
         to="/"
         startIcon={<ArrowBackIcon />}
-        sx={{ mb: 4, textTransform: 'none', borderRadius: 2 }}
+        sx={{ alignSelf: 'flex-start', textTransform: 'none', borderRadius: 2 }}
       >
         {t('common.backToArchive')}
       </Button>
 
-      <Paper sx={{ p: { xs: 2.5, sm: 4, md: 6 }, borderRadius: 4, overflow: 'hidden' }}>
-        <Typography variant={isMobile ? 'h4' : 'h3'} gutterBottom sx={{ fontWeight: 'bold' }}>
-          {t('about.title')}
-        </Typography>
+      <GlassCard intensity="subtle" sx={{ p: { xs: 2.5, sm: 4, md: 6 }, maxWidth: 900, width: '100%' }}>
+        <SectionHeader title={t('about.title')} compact />
         <Typography
           variant="body1"
           paragraph
@@ -35,10 +33,8 @@ const About: React.FC = () => {
         </Typography>
 
         <Box sx={{ my: 4 }}>
-          <Typography variant={isMobile ? 'h6' : 'h5'} gutterBottom sx={{ fontWeight: 'bold' }}>
-            {t('about.canDoTitle')}
-          </Typography>
-          <Typography component="ul" sx={{ lineHeight: 2, pl: 2 }}>
+          <SectionHeader title={t('about.canDoTitle')} compact />
+          <Typography component="ul" sx={{ lineHeight: 2, pl: 2, m: 0 }}>
             <li>{t('about.featureExplore')}</li>
             <li>{t('about.featureRate')}</li>
             <li>{t('about.featureCommunity')}</li>
@@ -55,9 +51,7 @@ const About: React.FC = () => {
 
         <Divider sx={{ my: { xs: 4, md: 6 } }} />
 
-        <Typography variant={isMobile ? 'h5' : 'h4'} gutterBottom sx={{ fontWeight: 'bold' }}>
-          {t('about.impressumTitle')}
-        </Typography>
+        <SectionHeader title={t('about.impressumTitle')} compact />
         <Typography variant="body2" sx={{ lineHeight: 2 }}>
           <strong>{t('about.legalInfo')}</strong>
           <br />
@@ -101,28 +95,16 @@ const About: React.FC = () => {
         </Box>
 
         <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-            {t('about.disclaimerTitle')}
-          </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            component="p"
-            sx={{ mb: 2, lineHeight: 1.6 }}
-          >
+          <SectionHeader title={t('about.disclaimerTitle')} compact />
+          <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 2, lineHeight: 1.6 }}>
             <strong>{t('about.liabilityContentTitle')}</strong> {t('about.liabilityContentDesc')}
           </Typography>
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            component="p"
-            sx={{ lineHeight: 1.6 }}
-          >
+          <Typography variant="caption" color="text.secondary" component="p" sx={{ lineHeight: 1.6 }}>
             <strong>{t('about.copyrightTitle')}</strong> {t('about.copyrightDesc')}
           </Typography>
         </Box>
-      </Paper>
-    </Container>
+      </GlassCard>
+    </PageShell>
   );
 };
 

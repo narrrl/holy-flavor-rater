@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Container,
   Typography,
   Box,
-  Card,
   CardContent,
   Button,
   TextField,
@@ -11,11 +9,10 @@ import {
   Chip,
   Divider,
   Collapse,
-  Paper,
-  alpha,
   CircularProgress,
   IconButton,
   Avatar,
+  alpha,
   useTheme,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
@@ -27,6 +24,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
+import { PageShell, SectionHeader, GlassCard, FormCard, EmptyState } from '../components/ui';
 
 interface Message {
   id: number;
@@ -36,6 +34,8 @@ interface Message {
   is_admin: boolean;
 }
 
+type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+
 interface Ticket {
   id: number;
   user: number;
@@ -44,10 +44,25 @@ interface Ticket {
   user_avatar: string | null;
   subject: string;
   description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: TicketStatus;
   created_at: string;
   messages: Message[];
 }
+
+interface CurrentUser {
+  id: number;
+  username: string;
+  is_superuser: boolean;
+}
+
+interface NotificationDTO {
+  is_read: boolean;
+  notification_type: string;
+  ticket: number | null;
+}
+
+type ChipStatusColor = 'error' | 'warning' | 'success' | 'default';
+type ButtonStatusColor = 'error' | 'warning' | 'success' | 'primary';
 
 const Support: React.FC = () => {
   const { t } = useTranslation();
@@ -58,17 +73,15 @@ const Support: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
-  // Create form
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
 
-  // Reply state
-  const [replyText, setReplyText] = useState<{ [key: number]: string }>({});
+  const [replyText, setReplyText] = useState<Record<number, string>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [unreadTicketIds, setUnreadTicketIds] = useState<Set<number>>(new Set());
 
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       const [ticketRes, userRes, notifRes] = await Promise.all([
         api.get('tickets/'),
@@ -78,11 +91,11 @@ const Support: React.FC = () => {
       setTickets(ticketRes.data.results || ticketRes.data);
       setCurrentUser(userRes.data);
 
-      const notifs = notifRes.data.results || notifRes.data;
+      const notifs: NotificationDTO[] = notifRes.data.results || notifRes.data;
       const unreadIds = new Set<number>(
         notifs
-          .filter((n: any) => !n.is_read && n.notification_type.startsWith('ticket') && n.ticket)
-          .map((n: any) => n.ticket),
+          .filter((n) => !n.is_read && n.notification_type.startsWith('ticket') && n.ticket != null)
+          .map((n) => n.ticket as number),
       );
       setUnreadTicketIds(unreadIds);
     } catch (err) {
@@ -90,29 +103,22 @@ const Support: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchTickets();
-  }, []);
+  }, [fetchTickets]);
 
-  const handleExpand = async (ticketId: number) => {
+  const handleExpand = (ticketId: number) => {
     if (expandedId === ticketId) {
       setExpandedId(null);
       return;
     }
     setExpandedId(ticketId);
-
-    // Mark notifications for this ticket as read
     if (unreadTicketIds.has(ticketId)) {
-      try {
-        // We'd need an endpoint to mark all for a specific ticket,
-        // or just rely on the user clicking the notification.
-        // For now, let's just clear it from the local state.
-        const newUnread = new Set(unreadTicketIds);
-        newUnread.delete(ticketId);
-        setUnreadTicketIds(newUnread);
-      } catch (e) {}
+      const newUnread = new Set(unreadTicketIds);
+      newUnread.delete(ticketId);
+      setUnreadTicketIds(newUnread);
     }
   };
 
@@ -124,7 +130,7 @@ const Support: React.FC = () => {
       setDescription('');
       setShowCreate(false);
       fetchTickets();
-    } catch (err) {
+    } catch {
       alert('Failed to create ticket');
     }
   };
@@ -136,7 +142,7 @@ const Support: React.FC = () => {
       await api.post(`tickets/${ticketId}/add_message/`, { text });
       setReplyText({ ...replyText, [ticketId]: '' });
       fetchTickets();
-    } catch (err) {
+    } catch {
       alert('Failed to send message');
     }
   };
@@ -145,7 +151,7 @@ const Support: React.FC = () => {
     try {
       await api.post(`tickets/${ticketId}/update_status/`, { status });
       fetchTickets();
-    } catch (err) {
+    } catch {
       alert('Failed to update status');
     }
   };
@@ -155,12 +161,12 @@ const Support: React.FC = () => {
     try {
       await api.delete(`tickets/${ticketId}/`);
       fetchTickets();
-    } catch (err) {
+    } catch {
       alert('Failed to delete ticket');
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getChipColor = (status: string): ChipStatusColor => {
     switch (status) {
       case 'open':
         return 'error';
@@ -173,87 +179,96 @@ const Support: React.FC = () => {
     }
   };
 
+  const getButtonColor = (status: string): ButtonStatusColor => {
+    switch (status) {
+      case 'open':
+        return 'error';
+      case 'in_progress':
+        return 'warning';
+      case 'resolved':
+        return 'success';
+      default:
+        return 'primary';
+    }
+  };
+
   if (loading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
     );
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <PageShell>
       <Button
         variant="outlined"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
-        sx={{ mb: 4, borderRadius: 2 }}
+        sx={{ alignSelf: 'flex-start', borderRadius: 2 }}
       >
         {t('common.back')}
       </Button>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
-        <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-          {t('support.title')}
-        </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setShowCreate(!showCreate)}
-          sx={{ borderRadius: 2 }}
-        >
-          {t('support.createTicket')}
-        </Button>
-      </Stack>
+
+      <SectionHeader
+        title={t('support.title')}
+        action={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setShowCreate(!showCreate)}
+            sx={{ borderRadius: 2 }}
+          >
+            {t('support.createTicket')}
+          </Button>
+        }
+      />
 
       <Collapse in={showCreate}>
-        <Paper
-          sx={{ p: 3, mb: 4, borderRadius: 3, border: '1px solid', borderColor: 'primary.main' }}
-        >
-          <form onSubmit={handleCreate}>
-            <TextField
-              fullWidth
-              label={t('support.subject')}
-              margin="normal"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              required
-            />
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label={t('support.description')}
-              margin="normal"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-            />
-            <Button type="submit" variant="contained" sx={{ mt: 2, borderRadius: 2 }}>
+        <FormCard
+          title={t('support.createTicket')}
+          onSubmit={handleCreate}
+          actions={
+            <Button type="submit" variant="contained" sx={{ borderRadius: 2 }}>
               {t('support.createTicket')}
             </Button>
-          </form>
-        </Paper>
+          }
+        >
+          <TextField
+            fullWidth
+            label={t('support.subject')}
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            required
+          />
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label={t('support.description')}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+          />
+        </FormCard>
       </Collapse>
 
-      <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
-        {currentUser?.is_superuser ? t('admin.users') + ' Tickets' : t('support.myTickets')}
-      </Typography>
+      <SectionHeader
+        title={currentUser?.is_superuser ? `${t('admin.users')} Tickets` : t('support.myTickets')}
+        compact
+      />
 
       {tickets.length === 0 ? (
-        <Box sx={{ py: 8, textAlign: 'center', bgcolor: 'action.hover', borderRadius: 4 }}>
-          <Typography color="text.secondary">{t('support.noTickets')}</Typography>
-        </Box>
+        <EmptyState title={t('support.noTickets')} />
       ) : (
         <Stack spacing={2}>
-          {tickets.map((ticket: Ticket) => (
-            <Card
+          {tickets.map((ticket) => (
+            <GlassCard
               key={ticket.id}
               sx={{
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: unreadTicketIds.has(ticket.id) ? 'primary.main' : 'divider',
-                bgcolor: unreadTicketIds.has(ticket.id)
-                  ? alpha(theme.palette.primary.main, 0.02)
-                  : 'inherit',
+                borderColor: unreadTicketIds.has(ticket.id) ? 'primary.main' : undefined,
               }}
             >
               <CardContent sx={{ p: 0 }}>
@@ -309,7 +324,7 @@ const Support: React.FC = () => {
                       )}
                       <Chip
                         label={t(`support.${ticket.status}`)}
-                        color={getStatusColor(ticket.status) as any}
+                        color={getChipColor(ticket.status)}
                         size="small"
                         sx={{ fontWeight: 'bold' }}
                       />
@@ -337,7 +352,7 @@ const Support: React.FC = () => {
                         mt: 1,
                         p: 1,
                         borderRadius: 2,
-                        bgcolor: alpha('#000', 0.03),
+                        bgcolor: alpha(theme.palette.action.active, 0.05),
                       }}
                     >
                       <Avatar
@@ -386,18 +401,16 @@ const Support: React.FC = () => {
 
                 <Collapse in={expandedId === ticket.id}>
                   <Divider />
-                  <Box
-                    sx={{ p: 2, bgcolor: (theme) => alpha(theme.palette.background.default, 0.5) }}
-                  >
+                  <Box sx={{ p: 2, bgcolor: (theme) => alpha(theme.palette.background.default, 0.5) }}>
                     {currentUser?.is_superuser && (
                       <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
-                        {['open', 'in_progress', 'resolved', 'closed'].map((s) => (
+                        {(['open', 'in_progress', 'resolved', 'closed'] as const).map((s) => (
                           <Button
                             key={s}
                             size="small"
                             variant={ticket.status === s ? 'contained' : 'outlined'}
                             onClick={() => handleUpdateStatus(ticket.id, s)}
-                            color={getStatusColor(s) as any}
+                            color={getButtonColor(s)}
                             sx={{
                               textTransform: 'none',
                               borderRadius: 4,
@@ -428,7 +441,7 @@ const Support: React.FC = () => {
                     </Typography>
 
                     <Stack spacing={2} sx={{ mb: 3 }}>
-                      {ticket.messages.map((msg: Message) => (
+                      {ticket.messages.map((msg) => (
                         <Box
                           key={msg.id}
                           sx={{
@@ -441,10 +454,7 @@ const Support: React.FC = () => {
                             boxShadow: msg.is_admin ? 2 : 0,
                           }}
                         >
-                          <Typography
-                            variant="caption"
-                            sx={{ fontWeight: 'bold', display: 'block' }}
-                          >
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
                             {msg.username} {msg.is_admin && '(Support)'}
                           </Typography>
                           <Typography variant="body2" sx={{ my: 0.5 }}>
@@ -486,11 +496,11 @@ const Support: React.FC = () => {
                   </Box>
                 </Collapse>
               </CardContent>
-            </Card>
+            </GlassCard>
           ))}
         </Stack>
       )}
-    </Container>
+    </PageShell>
   );
 };
 

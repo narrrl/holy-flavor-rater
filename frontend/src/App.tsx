@@ -1,8 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import {
-  AppBar,
-  Toolbar,
   Typography,
   Button,
   Box,
@@ -25,6 +23,7 @@ import {
   useMediaQuery,
   useTheme as useMuiTheme,
 } from '@mui/material';
+import { GlassAppBar } from './components/ui';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -378,19 +377,8 @@ const App: React.FC = () => {
         overflowX: 'hidden',
       }}
     >
-      <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          bgcolor: (th) => alpha(th.palette.background.paper, 0.8),
-          backdropFilter: 'blur(12px)',
-          color: 'text.primary',
-        }}
-      >
-        <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
-          <Typography
+      <GlassAppBar>
+        <Typography
             variant="h6"
             component="div"
             sx={{
@@ -543,8 +531,7 @@ const App: React.FC = () => {
               </IconButton>
             )}
           </Box>
-        </Toolbar>
-      </AppBar>
+      </GlassAppBar>
 
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         {drawer}

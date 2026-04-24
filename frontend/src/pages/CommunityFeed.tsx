@@ -1,11 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Typography,
   Box,
-  Card,
   CardContent,
   Avatar,
-  Container,
   CircularProgress,
   Divider,
   Button,
@@ -16,7 +14,6 @@ import {
   ListItemButton,
   Pagination,
   TextField,
-  alpha,
   IconButton,
   Collapse,
   Link as MuiLink,
@@ -36,6 +33,13 @@ import { formatDate } from '../utils/date';
 import { useTranslation } from 'react-i18next';
 import MentionTextField from '../components/MentionTextField';
 import RatingBadge from '../components/RatingBadge';
+import {
+  PageShell,
+  HeroBackdrop,
+  SectionHeader,
+  GlassCard,
+  EmptyState,
+} from '../components/ui';
 
 interface Reply {
   id: number;
@@ -85,9 +89,41 @@ interface Notification {
   flavor_id: number | null;
 }
 
+interface TopFlavor {
+  id: number;
+  name: string;
+  image_url: string | null;
+  average_rating: number;
+}
+
 interface CommunityFeedProps {
   adminMode?: boolean;
 }
+
+const SidebarCard: React.FC<{ icon: React.ReactNode; title: React.ReactNode; children: React.ReactNode }> = ({
+  icon,
+  title,
+  children,
+}) => (
+  <GlassCard intensity="subtle">
+    <Box
+      sx={{
+        p: 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+      }}
+    >
+      {icon}
+      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+        {title}
+      </Typography>
+    </Box>
+    {children}
+  </GlassCard>
+);
 
 const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
   const { t } = useTranslation();
@@ -100,60 +136,54 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [followingSearch, setFollowingSearch] = useState('');
-
-  // Top Rated Flavors by followed users
-  const [topFollowed, setTopFollowed] = useState<any[]>([]);
-
-  // UI State
-  const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({});
-  const [expandedReplies, setExpandedReplies] = useState<{ [key: number]: boolean }>({});
+  const [topFollowed, setTopFollowed] = useState<TopFlavor[]>([]);
+  const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
+  const [expandedReplies, setExpandedReplies] = useState<Record<number, boolean>>({});
 
   const filteredFollowing = following.filter((user) =>
     user.username.toLowerCase().includes(followingSearch.toLowerCase()),
   );
 
   const handleGoBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
   };
 
-  const fetchFeedData = async (pageNum: number) => {
-    setLoading(true);
-    try {
-      const [feedRes, followingRes, topFollowedRes, notifRes] = await Promise.all([
-        api.get(`ratings/feed/?page=${pageNum}`),
-        api.get('users/following_list/'),
-        api.get('flavors/followed_top/'),
-        api.get('notifications/'),
-      ]);
+  const fetchFeedData = useCallback(
+    async (pageNum: number) => {
+      setLoading(true);
+      try {
+        const [feedRes, followingRes, topFollowedRes, notifRes] = await Promise.all([
+          api.get(`ratings/feed/?page=${pageNum}`),
+          api.get('users/following_list/'),
+          api.get('flavors/followed_top/'),
+          api.get('notifications/'),
+        ]);
 
-      const feedData = feedRes.data.results || (Array.isArray(feedRes.data) ? feedRes.data : []);
-      setRatings(feedData);
+        const feedData = feedRes.data.results || (Array.isArray(feedRes.data) ? feedRes.data : []);
+        setRatings(feedData);
+        const count = feedRes.data.count || 0;
+        setTotalPages(Math.ceil(count / 10));
 
-      const count = feedRes.data.count || 0;
-      setTotalPages(Math.ceil(count / 10));
+        const followData = Array.isArray(followingRes.data)
+          ? followingRes.data
+          : followingRes.data.results || [];
+        setFollowing(followData);
 
-      const followData = Array.isArray(followingRes.data)
-        ? followingRes.data
-        : followingRes.data.results || [];
-      setFollowing(followData);
+        setTopFollowed(Array.isArray(topFollowedRes.data) ? topFollowedRes.data.slice(0, 5) : []);
 
-      setTopFollowed(Array.isArray(topFollowedRes.data) ? topFollowedRes.data.slice(0, 5) : []);
-
-      const notifData = Array.isArray(notifRes.data) ? notifRes.data : notifRes.data.results || [];
-      setNotifications(notifData.slice(0, 5)); // Just the latest 5 for sidebar
-    } catch (err: any) {
-      if (err.response?.status === 401) {
-        navigate('/login');
+        const notifData = Array.isArray(notifRes.data) ? notifRes.data : notifRes.data.results || [];
+        setNotifications(notifData.slice(0, 5));
+      } catch (err) {
+        const status = (err as { response?: { status?: number } }).response?.status;
+        if (status === 401) navigate('/login');
+        console.error('Failed to fetch feed data', err);
+      } finally {
+        setLoading(false);
       }
-      console.error('Failed to fetch feed data', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     const token = localStorage.getItem('access');
@@ -162,7 +192,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
       return;
     }
     fetchFeedData(page);
-  }, [page, navigate]);
+  }, [page, navigate, fetchFeedData]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
@@ -178,109 +208,54 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
     if (!text) return;
     try {
       const res = await api.post(`ratings/${ratingId}/reply/`, { text });
-      setRatings((prevRatings) =>
-        prevRatings.map((r) => {
-          if (r.id === ratingId) {
-            return { ...r, replies: [...r.replies, res.data] };
-          }
-          return r;
-        }),
+      setRatings((prev) =>
+        prev.map((r) => (r.id === ratingId ? { ...r, replies: [...r.replies, res.data] } : r)),
       );
       setReplyInputs((prev) => ({ ...prev, [ratingId]: '' }));
-    } catch (err) {
+    } catch {
       alert('Failed to send reply');
     }
   };
 
-  const formatTimestamp = (dateStr: string) => {
-    return formatDate(dateStr);
-  };
-
   if (loading && ratings.length === 0)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
     );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={handleGoBack}
-          startIcon={<ArrowBackIcon />}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 'bold',
-            color: 'text.secondary',
-            borderColor: 'divider',
-            '&:hover': {
-              borderColor: 'primary.main',
-              color: 'primary.main',
-              bgcolor: 'transparent',
-            },
-          }}
-        >
-          {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-        </Button>
-      </Box>
+    <PageShell hero={<HeroBackdrop variant="minimal" />}>
+      <Button
+        variant="outlined"
+        onClick={handleGoBack}
+        startIcon={<ArrowBackIcon />}
+        sx={{ alignSelf: 'flex-start', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+      >
+        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
+      </Button>
 
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h3" sx={{ fontWeight: '800', mb: 1 }}>
-          {t('community.title')}
-        </Typography>
-        <Typography variant="h6" color="text.secondary">
-          {t('community.subtitle')}
-        </Typography>
-      </Box>
+      <SectionHeader title={t('community.title')} subtitle={t('community.subtitle')} />
 
       <Grid container spacing={4}>
-        {/* Main Feed Column */}
         <Grid size={{ xs: 12, lg: 8 }}>
           {ratings.length === 0 ? (
-            <Box
-              sx={{
-                p: 6,
-                textAlign: 'center',
-                borderRadius: 4,
-                bgcolor: (theme) => alpha(theme.palette.background.paper, 0.6),
-                backdropFilter: 'blur(10px)',
-                border: '1px dashed',
-                borderColor: 'divider',
-              }}
-            >
-              <Typography variant="h6" gutterBottom color="text.secondary">
-                {t('community.quietFeed')}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                {t('community.followMore')}
-              </Typography>
-              <Button variant="contained" component={Link} to="/" sx={{ borderRadius: 2 }}>
-                {t('home.exploreFlavors')}
-              </Button>
-            </Box>
+            <EmptyState
+              title={t('community.quietFeed')}
+              subtitle={t('community.followMore')}
+              action={
+                <Button variant="contained" component={Link} to="/" sx={{ borderRadius: 2 }}>
+                  {t('home.exploreFlavors')}
+                </Button>
+              }
+            />
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               {ratings.map((rating) => (
-                <Card
-                  key={rating.id}
-                  elevation={0}
-                  sx={{
-                    borderRadius: 4,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
-                    transition: 'transform 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      borderColor: (theme) => alpha(theme.palette.primary.main, 0.2),
-                    },
-                  }}
-                >
+                <GlassCard key={rating.id} intensity="default">
                   <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                    {/* User Info */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                       <Box sx={{ display: 'flex', gap: 2 }}>
                         <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none' }}>
@@ -301,19 +276,12 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                             to={`/profile/${rating.user}`}
                             style={{ textDecoration: 'none', color: 'inherit' }}
                           >
-                            <Typography
-                              variant="subtitle1"
-                              sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
-                            >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', lineHeight: 1.2 }}>
                               {rating.user}
                             </Typography>
                           </Link>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ display: 'block' }}
-                          >
-                            {formatTimestamp(rating.created_at)}
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                            {formatDate(rating.created_at)}
                           </Typography>
                         </Box>
                       </Box>
@@ -332,7 +300,6 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                       </Button>
                     )}
 
-                    {/* Flavor and Comment */}
                     <Box sx={{ display: 'flex', gap: 3 }}>
                       <Box sx={{ flex: 1 }}>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -340,11 +307,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                           <MuiLink
                             component={Link}
                             to={`/flavor/${rating.flavor}`}
-                            sx={{
-                              color: 'primary.main',
-                              fontWeight: 'bold',
-                              textDecoration: 'none',
-                            }}
+                            sx={{ color: 'primary.main', fontWeight: 'bold', textDecoration: 'none' }}
                           >
                             {rating.flavor_name}
                           </MuiLink>
@@ -357,11 +320,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                             <RichText text={rating.comment} />
                           </Typography>
                         ) : (
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ fontStyle: 'italic' }}
-                          >
+                          <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                             No comment provided.
                           </Typography>
                         )}
@@ -381,6 +340,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                           <Box
                             component="img"
                             src={rating.flavor_image || undefined}
+                            alt={rating.flavor_name}
                             sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           />
                         </Box>
@@ -389,7 +349,6 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
 
                     <Divider sx={{ my: 2 }} />
 
-                    {/* Footer & Replies */}
                     <Button
                       size="small"
                       startIcon={<CommentIcon fontSize="small" />}
@@ -406,23 +365,14 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                         {rating.replies.map((reply) => (
                           <Box key={reply.id} sx={{ mb: 1.5 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                              <Typography
-                                variant="subtitle2"
-                                sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}
-                              >
+                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}>
                                 {reply.user}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                {formatTimestamp(reply.created_at)}
+                                {formatDate(reply.created_at)}
                               </Typography>
                             </Box>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                              }}
-                            >
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <Typography variant="body2">
                                 <RichText text={reply.text} />
                               </Typography>
@@ -442,9 +392,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                           <MentionTextField
                             placeholder={t('community.writeReply')}
                             value={replyInputs[rating.id] || ''}
-                            onChange={(val) =>
-                              setReplyInputs((prev) => ({ ...prev, [rating.id]: val }))
-                            }
+                            onChange={(val) => setReplyInputs((prev) => ({ ...prev, [rating.id]: val }))}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 handleReplySubmit(rating.id);
@@ -462,46 +410,23 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                       </Box>
                     </Collapse>
                   </CardContent>
-                </Card>
+                </GlassCard>
               ))}
               {totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Pagination
-                    count={totalPages}
-                    page={page}
-                    onChange={handlePageChange}
-                    color="primary"
-                  />
+                  <Pagination count={totalPages} page={page} onChange={handlePageChange} color="primary" />
                 </Box>
               )}
             </Box>
           )}
         </Grid>
 
-        {/* Sidebar Column */}
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* Notifications Widget */}
-            <Card
-              elevation={0}
-              sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+            <SidebarCard
+              icon={<NotificationsIcon color="primary" fontSize="small" />}
+              title={t('community.notifications')}
             >
-              <Box
-                sx={{
-                  p: 2,
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: alpha('#000', 0.02),
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
-                <NotificationsIcon color="primary" fontSize="small" />
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                  {t('community.notifications')}
-                </Typography>
-              </Box>
               <List disablePadding>
                 {notifications.length === 0 ? (
                   <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -518,7 +443,6 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                         navigate(`/flavor/${n.flavor_id}`);
                       }
                     };
-
                     return (
                       <ListItemButton key={n.id} onClick={handleClick} sx={{ py: 1.5 }}>
                         <ListItemAvatar sx={{ minWidth: 40 }}>
@@ -542,7 +466,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                                     : n.notification_type}
                             </Typography>
                           }
-                          secondary={formatTimestamp(n.created_at)}
+                          secondary={formatDate(n.created_at)}
                           secondaryTypographyProps={{ sx: { fontSize: '0.7rem' } }}
                         />
                       </ListItemButton>
@@ -550,29 +474,12 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                   })
                 )}
               </List>
-            </Card>
+            </SidebarCard>
 
-            {/* Following Widget */}
-            <Card
-              elevation={0}
-              sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+            <SidebarCard
+              icon={<PeopleIcon color="primary" fontSize="small" />}
+              title={t('nav.following')}
             >
-              <Box
-                sx={{
-                  p: 2,
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: alpha('#000', 0.02),
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
-                <PeopleIcon color="primary" fontSize="small" />
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                  {t('nav.following')}
-                </Typography>
-              </Box>
               <Box sx={{ p: 1.5 }}>
                 <TextField
                   fullWidth
@@ -580,10 +487,12 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                   placeholder={t('community.searchFriends')}
                   value={followingSearch}
                   onChange={(e) => setFollowingSearch(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                    ),
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                      ),
+                    },
                   }}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
                 />
@@ -604,29 +513,12 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                   </ListItemButton>
                 ))}
               </List>
-            </Card>
+            </SidebarCard>
 
-            {/* Top Rated by Circle */}
-            <Card
-              elevation={0}
-              sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}
+            <SidebarCard
+              icon={<WhatshotIcon color="error" fontSize="small" />}
+              title={t('community.topRated')}
             >
-              <Box
-                sx={{
-                  p: 2,
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: alpha('#000', 0.02),
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
-                <WhatshotIcon color="error" fontSize="small" />
-                <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-                  {t('community.topRated')}
-                </Typography>
-              </Box>
               <List disablePadding>
                 {topFollowed.map((flavor, idx) => (
                   <ListItemButton key={flavor.id} component={Link} to={`/flavor/${flavor.id}`}>
@@ -648,27 +540,24 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                     >
                       <Box
                         component="img"
-                        src={flavor.image_url}
+                        src={flavor.image_url || undefined}
+                        alt={flavor.name}
                         sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </Box>
                     <ListItemText
                       primary={flavor.name}
-                      primaryTypographyProps={{
-                        variant: 'body2',
-                        fontWeight: 'bold',
-                        noWrap: true,
-                      }}
+                      primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold', noWrap: true }}
                     />
                     <RatingBadge score={flavor.average_rating || 0} size="small" />
                   </ListItemButton>
                 ))}
               </List>
-            </Card>
+            </SidebarCard>
           </Box>
         </Grid>
       </Grid>
-    </Container>
+    </PageShell>
   );
 };
 

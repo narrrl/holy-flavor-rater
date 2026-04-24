@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
 import GenerativeBanner from './GenerativeBanner';
 import NebulaBanner from './NebulaBanner';
@@ -6,6 +6,7 @@ import FirefliesBanner from './FirefliesBanner';
 import HextechBanner from './HextechBanner';
 import HextechCorruptionBanner from './HextechCorruptionBanner';
 import GenerativeFlowBanner from './GenerativeFlowBanner';
+import { BannerPerformanceWrapper } from './BannerPerformanceWrapper';
 
 interface Banner {
   id: number;
@@ -23,9 +24,13 @@ interface DynamicBannerProps {
   followersCount: number;
 }
 
-// Future expansion: Add more banner components here
-const MatrixBanner: React.FC<DynamicBannerProps & { settings: any }> = ({ username, settings }) => {
-  // Placeholder for a second model
+const MatrixBanner: React.FC<DynamicBannerProps & { settings: Banner['settings'] | null }> = ({
+  username,
+  settings,
+}) => {
+  const [durations] = useState(() =>
+    Array.from({ length: 20 }, () => 2 + Math.random() * 3),
+  );
   return (
     <div
       style={{
@@ -42,15 +47,12 @@ const MatrixBanner: React.FC<DynamicBannerProps & { settings: any }> = ({ userna
         fontFamily: 'monospace',
         zIndex: 1,
         overflow: 'hidden',
-        opacity: settings.opacity || 0.5,
+        opacity: settings?.opacity || 0.5,
       }}
     >
       <div>
-        {Array.from({ length: 20 }).map((_, i) => (
-          <div
-            key={i}
-            style={{ animation: `matrixFall ${2 + Math.random() * 3}s linear infinite` }}
-          >
+        {durations.map((dur, i) => (
+          <div key={i} style={{ animation: `matrixFall ${dur}s linear infinite` }}>
             {username.split('').map((char, j) => (
               <span key={j} style={{ display: 'block' }}>
                 {char}
@@ -69,6 +71,24 @@ const MatrixBanner: React.FC<DynamicBannerProps & { settings: any }> = ({ userna
       </style>
     </div>
   );
+};
+
+const pickBanner = (
+  banner: Banner | null,
+  props: DynamicBannerProps,
+): React.ReactElement => {
+  if (!banner || banner.slug === 'generative-web') {
+    return <GenerativeBanner {...props} settings={banner?.settings} />;
+  }
+  if (banner.slug === 'matrix') return <MatrixBanner {...props} settings={banner.settings} />;
+  if (banner.slug === 'nebula') return <NebulaBanner {...props} settings={banner.settings} />;
+  if (banner.slug === 'fireflies') return <FirefliesBanner {...props} settings={banner.settings} />;
+  if (banner.slug === 'hextech') return <HextechBanner {...props} settings={banner.settings} />;
+  if (banner.slug === 'hextech-corruption')
+    return <HextechCorruptionBanner {...props} settings={banner.settings} />;
+  if (banner.slug === 'generative-flow')
+    return <GenerativeFlowBanner {...props} settings={banner.settings} />;
+  return <GenerativeBanner {...props} />;
 };
 
 const DynamicBanner: React.FC<DynamicBannerProps> = (props) => {
@@ -94,37 +114,7 @@ const DynamicBanner: React.FC<DynamicBannerProps> = (props) => {
 
   if (loading) return null;
 
-  // Default to GenerativeBanner if no active banner or unrecognized slug
-  if (!banner || banner.slug === 'generative-web') {
-    return <GenerativeBanner {...props} settings={banner?.settings} />;
-  }
-
-  if (banner.slug === 'matrix') {
-    return <MatrixBanner {...props} settings={banner.settings} />;
-  }
-
-  if (banner.slug === 'nebula') {
-    return <NebulaBanner {...props} settings={banner.settings} />;
-  }
-
-  if (banner.slug === 'fireflies') {
-    return <FirefliesBanner {...props} settings={banner.settings} />;
-  }
-
-  if (banner.slug === 'hextech') {
-    return <HextechBanner {...props} settings={banner.settings} />;
-  }
-
-  if (banner.slug === 'hextech-corruption') {
-    return <HextechCorruptionBanner {...props} settings={banner.settings} />;
-  }
-
-  if (banner.slug === 'generative-flow') {
-    return <GenerativeFlowBanner {...props} settings={banner.settings} />;
-  }
-
-  // Fallback
-  return <GenerativeBanner {...props} />;
+  return <BannerPerformanceWrapper>{pickBanner(banner, props)}</BannerPerformanceWrapper>;
 };
 
 export default DynamicBanner;

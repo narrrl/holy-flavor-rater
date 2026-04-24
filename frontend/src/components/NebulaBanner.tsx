@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { alpha, useTheme } from '@mui/material';
+import { useBannerFrameGate } from './BannerPerformanceWrapper';
 
 interface NebulaBannerProps {
   username: string;
@@ -26,6 +27,7 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const gate = useBannerFrameGate();
 
   const particleCount = settings?.particleCount ?? 400;
   const speed = settings?.speed ?? 0.0015;
@@ -181,7 +183,13 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({
     }
 
     let time = 0;
-    const draw = () => {
+    const draw = (now = 0) => {
+      const decision = gate(now);
+      if (decision === 'halt') return;
+      if (decision === 'skip') {
+        animationFrameId = requestAnimationFrame(draw);
+        return;
+      }
       const width = canvas.width / (window.devicePixelRatio || 1);
       const height = canvas.height / (window.devicePixelRatio || 1);
       if (!width || !height) {
@@ -314,6 +322,7 @@ const NebulaBanner: React.FC<NebulaBannerProps> = ({
     turbulenceStrength,
     returnSpeed,
     starDensity,
+    gate,
   ]);
 
   return (

@@ -1,16 +1,13 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Typography,
-  Card,
   CardContent,
   Box,
   Button,
-  Container,
   CircularProgress,
   Avatar,
   Tabs,
   Tab,
-  Paper,
   Grid,
   alpha,
   useTheme,
@@ -42,13 +39,48 @@ import StatusBadge from '../components/StatusBadge';
 import MentionTextField from '../components/MentionTextField';
 import RichText from '../components/RichText';
 import { formatDate } from '../utils/date';
+import { PageShell, GlassCard, GlassSurface, EmptyState } from '../components/ui';
+
+interface Reply {
+  id: number;
+  user: string;
+  text: string;
+  created_at: string;
+}
+
+interface RatedItem {
+  id: number;
+  flavor: number;
+  flavor_name: string;
+  flavor_image: string | null;
+  category_name: string;
+  category_slug: string;
+  score: number;
+  comment: string | null;
+  created_at: string;
+  replies: Reply[];
+  is_legacy?: boolean;
+  is_available?: boolean;
+}
+
+interface MissingFlavor {
+  id: number;
+  name: string;
+  image_url: string | null;
+  category_name: string;
+  category_slug: string;
+  average_rating: number;
+  followed_average_rating?: number;
+  is_legacy?: boolean;
+  is_available?: boolean;
+}
 
 interface DashboardData {
   user: { username: string; avatar: string | null };
   rated_count: number;
   missing_count: number;
-  missing_flavors: any[];
-  my_ratings: any[];
+  missing_flavors: MissingFlavor[];
+  my_ratings: RatedItem[];
 }
 
 const Dashboard: React.FC = () => {
@@ -62,24 +94,20 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [palette, setPalette] = useState<string[]>([]);
 
-  // Filtering states for Explore New
   const [exploreCategory, setExploreCategory] = useState<string>('All');
   const [exploreSearch, setExploreSearch] = useState('');
   const [exploreSort, setExploreSort] = useState<'community' | 'circle'>('community');
 
-  // Filtering states for My Reviews
   const [ratedCategory, setRatedCategory] = useState<string>('All');
   const [ratedSearch, setRatedSearch] = useState('');
   const [ratedSort, setRatedSort] = useState<'date' | 'rating'>('date');
 
-  // Inline Review Edit state
   const [editingRatingId, setEditingRatingId] = useState<number | null>(null);
   const [editScore, setEditScore] = useState(0);
   const [editComment, setEditComment] = useState('');
 
-  // Inline Reply state
-  const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({});
-  const [expandedReplies, setExpandedReplies] = useState<{ [key: number]: boolean }>({});
+  const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
+  const [expandedReplies, setExpandedReplies] = useState<Record<number, boolean>>({});
 
   const shareUrl = data ? `${window.location.origin}/profile/${data.user.username}` : '';
 
@@ -93,7 +121,7 @@ const Dashboard: React.FC = () => {
     else navigate('/');
   };
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const res = await api.get('users/dashboard/');
       setData(res.data);
@@ -102,11 +130,11 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   useEffect(() => {
     if (data?.user?.avatar) {
@@ -128,18 +156,11 @@ const Dashboard: React.FC = () => {
               max === min ? 0 : l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
             return { rgb: `rgb(${c[0]}, ${c[1]}, ${c[2]})`, l, s };
           });
-          const vibrant = processed
-            .filter((c) => c.l > 0.2 && c.l < 0.85)
-            .sort((a, b) => b.s - a.s);
-
-          if (vibrant.length >= 2) {
-            setPalette([vibrant[0].rgb, vibrant[1].rgb]);
-          } else if (vibrant.length === 1) {
-            setPalette([vibrant[0].rgb, vibrant[0].rgb]);
-          } else {
-            setPalette([]);
-          }
-        } catch (e) {
+          const vibrant = processed.filter((c) => c.l > 0.2 && c.l < 0.85).sort((a, b) => b.s - a.s);
+          if (vibrant.length >= 2) setPalette([vibrant[0].rgb, vibrant[1].rgb]);
+          else if (vibrant.length === 1) setPalette([vibrant[0].rgb, vibrant[0].rgb]);
+          else setPalette([]);
+        } catch {
           setPalette([]);
         }
       };
@@ -148,13 +169,12 @@ const Dashboard: React.FC = () => {
     }
   }, [data?.user?.avatar]);
 
-  // Update Review Logic
   const handleUpdateRating = async (ratingId: number) => {
     try {
       await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
       setEditingRatingId(null);
       fetchData();
-    } catch (err) {
+    } catch {
       alert('Failed to update review');
     }
   };
@@ -164,12 +184,11 @@ const Dashboard: React.FC = () => {
     try {
       await api.delete(`ratings/${ratingId}/`);
       fetchData();
-    } catch (err) {
+    } catch {
       alert('Failed to delete review');
     }
   };
 
-  // Reply Logic
   const handleReplySubmit = async (ratingId: number) => {
     const text = replyInputs[ratingId];
     if (!text) return;
@@ -178,7 +197,7 @@ const Dashboard: React.FC = () => {
       setReplyInputs({ ...replyInputs, [ratingId]: '' });
       setExpandedReplies({ ...expandedReplies, [ratingId]: true });
       fetchData();
-    } catch (err) {
+    } catch {
       alert('Failed to send reply');
     }
   };
@@ -188,18 +207,15 @@ const Dashboard: React.FC = () => {
     try {
       await api.delete(`replies/${replyId}/`);
       fetchData();
-    } catch (err) {
+    } catch {
       alert('Failed to delete reply');
     }
   };
 
-  // Performance Optimization: Memoize categories and filtered lists
   const exploreCategories = useMemo(() => {
     if (!data) return ['All'];
     const cats = new Set(
-      data.missing_flavors
-        .filter((f) => f.category_name !== 'Packs and other')
-        .map((f) => f.category_name),
+      data.missing_flavors.filter((f) => f.category_name !== 'Packs and other').map((f) => f.category_name),
     );
     return ['All', ...Array.from(cats).sort()];
   }, [data]);
@@ -248,28 +264,29 @@ const Dashboard: React.FC = () => {
 
   if (loading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
     );
-  if (!data) return <Typography>Please login to view dashboard.</Typography>;
+  if (!data)
+    return (
+      <PageShell>
+        <Typography>Please login to view dashboard.</Typography>
+      </PageShell>
+    );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <PageShell>
       {/* Action Bar */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Button
             variant="outlined"
             onClick={handleGoBack}
             startIcon={<ArrowBackIcon />}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 'bold',
-              color: 'text.secondary',
-              borderColor: 'divider',
-            }}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
           >
             {t('common.back')}
           </Button>
@@ -288,47 +305,24 @@ const Dashboard: React.FC = () => {
         </Button>
       </Box>
 
-      {/* Header Profile Info */}
-      <Card
-        elevation={0}
-        sx={{
-          borderRadius: 5,
-          mb: 4,
-          bgcolor: (theme) => alpha(theme.palette.background.paper, 0.6),
-          backdropFilter: 'blur(20px)',
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        <Box
-          sx={{
-            height: { xs: 80, sm: 100 },
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Layer 1: Abstract Mesh Background */}
+      {/* Profile Header — keeps inline ColorThief gradient per Phase-2 risk fallback */}
+      <GlassCard intensity="strong" sx={{ overflow: 'hidden' }}>
+        <Box sx={{ height: { xs: 80, sm: 100 }, position: 'relative', overflow: 'hidden' }}>
           <Box
             sx={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              inset: 0,
               background: `
-                    radial-gradient(at 0% 0%, ${alpha(palette[0] || theme.palette.primary.main, 0.6)} 0px, transparent 55%),
-                    radial-gradient(at 100% 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.5)} 0px, transparent 55%),
-                    radial-gradient(at 50% 100%, ${alpha(theme.palette.primary.main, 0.3)} 0px, transparent 55%),
-                    linear-gradient(135deg, ${alpha(palette[0] || theme.palette.primary.main, 0.1)} 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.1)} 100%)
-                  `,
-              zIndex: 0,
+                radial-gradient(at 0% 0%, ${alpha(palette[0] || theme.palette.primary.main, 0.6)} 0px, transparent 55%),
+                radial-gradient(at 100% 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.5)} 0px, transparent 55%),
+                radial-gradient(at 50% 100%, ${alpha(theme.palette.primary.main, 0.3)} 0px, transparent 55%),
+                linear-gradient(135deg, ${alpha(palette[0] || theme.palette.primary.main, 0.1)} 0%, ${alpha(palette[1] || theme.palette.secondary.main, 0.1)} 100%)
+              `,
             }}
           />
         </Box>
 
-        <CardContent sx={{ pt: 0, px: { xs: 2, sm: 4 }, pb: 4, position: 'relative', zIndex: 2 }}>
+        <CardContent sx={{ pt: 0, px: { xs: 2, sm: 4 }, pb: 4, position: 'relative' }}>
           <Box
             sx={{
               display: 'flex',
@@ -354,9 +348,9 @@ const Dashboard: React.FC = () => {
                   width: { xs: 90, sm: 110 },
                   height: { xs: 90, sm: 110 },
                   border: '4px solid',
-                  borderColor: (theme) => theme.palette.background.paper,
+                  borderColor: theme.palette.background.paper,
                   fontSize: '3rem',
-                  bgcolor: (theme) => theme.palette.background.paper,
+                  bgcolor: theme.palette.background.paper,
                   color: palette[0] || 'primary.main',
                 }}
               >
@@ -373,17 +367,9 @@ const Dashboard: React.FC = () => {
               </Typography>
 
               <Box sx={{ mt: 2 }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    display: 'inline-flex',
-                    bgcolor: (theme: any) => alpha(theme.palette.text.primary, 0.04),
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                    backdropFilter: 'blur(8px)',
-                  }}
+                <GlassSurface
+                  intensity="subtle"
+                  sx={{ display: 'inline-flex', borderRadius: 1, overflow: 'hidden' }}
                 >
                   {[
                     { label: t('dashboard.myRatings'), val: data.rated_count },
@@ -411,23 +397,19 @@ const Dashboard: React.FC = () => {
                         </Typography>
                       </Box>
                       {i < 1 && (
-                        <Divider
-                          orientation="vertical"
-                          flexItem
-                          sx={{ borderStyle: 'solid', opacity: 0.1 }}
-                        />
+                        <Divider orientation="vertical" flexItem sx={{ borderStyle: 'solid', opacity: 0.1 }} />
                       )}
                     </React.Fragment>
                   ))}
-                </Paper>
+                </GlassSurface>
               </Box>
             </Box>
           </Box>
         </CardContent>
-      </Card>
+      </GlassCard>
 
-      {/* Tabs Section */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Tabs
           value={activeTab}
           onChange={(_, v) => setActiveTab(v)}
@@ -449,8 +431,7 @@ const Dashboard: React.FC = () => {
       {/* TAB 0: MY REVIEWS */}
       {activeTab === 0 && (
         <Box>
-          {/* Filter Controls for Reviews */}
-          <Box sx={{ mb: 4 }}>
+          <GlassSurface intensity="subtle" sx={{ p: 2, mb: 3 }}>
             <Grid container spacing={{ xs: 2, lg: 1.5 }} alignItems="center">
               <Grid size={{ xs: 12, lg: 4, xl: 5 }}>
                 <TextField
@@ -468,11 +449,6 @@ const Dashboard: React.FC = () => {
                       ),
                     },
                   }}
-                  sx={{
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    '& .MuiOutlinedInput-root': { borderRadius: 1, height: { xs: 48, lg: 40 } },
-                  }}
                 />
               </Grid>
 
@@ -483,7 +459,6 @@ const Dashboard: React.FC = () => {
                     gap: 1,
                     overflowX: 'auto',
                     py: 0.5,
-                    px: 0.2,
                     '&::-webkit-scrollbar': { display: 'none' },
                   }}
                 >
@@ -501,13 +476,7 @@ const Dashboard: React.FC = () => {
                       onClick={() => setRatedCategory(cat)}
                       color={ratedCategory === cat ? 'primary' : 'default'}
                       variant={ratedCategory === cat ? 'filled' : 'outlined'}
-                      sx={{
-                        fontWeight: 'bold',
-                        height: { xs: 36, lg: 32 },
-                        borderRadius: 1,
-                        fontSize: '0.8rem',
-                        flexShrink: 0,
-                      }}
+                      sx={{ fontWeight: 'bold', flexShrink: 0 }}
                     />
                   ))}
                 </Box>
@@ -517,66 +486,34 @@ const Dashboard: React.FC = () => {
                 <Select
                   size="small"
                   value={ratedSort}
-                  onChange={(e) => setRatedSort(e.target.value as any)}
+                  onChange={(e) => setRatedSort(e.target.value as 'date' | 'rating')}
                   startAdornment={
                     <InputAdornment position="start">
                       <SortIcon fontSize="small" />
                     </InputAdornment>
                   }
-                  sx={{
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    height: { xs: 48, lg: 40 },
-                    minWidth: { xs: '100%', lg: 140 },
-                    fontWeight: 'bold',
-                    fontSize: '0.85rem',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-                  }}
+                  sx={{ minWidth: { xs: '100%', lg: 140 }, fontWeight: 'bold' }}
                 >
                   <MenuItem value="date">{t('dashboard.date')}</MenuItem>
                   <MenuItem value="rating">{t('dashboard.rating')}</MenuItem>
                 </Select>
               </Grid>
             </Grid>
-          </Box>
+          </GlassSurface>
 
           <Stack spacing={3}>
             {filteredAndSortedRated.length === 0 ? (
-              <Box
-                sx={{
-                  py: 10,
-                  textAlign: 'center',
-                  bgcolor: 'action.hover',
-                  borderRadius: 4,
-                  border: '1px dashed',
-                  borderColor: 'divider',
-                }}
-              >
-                <Typography variant="h6" color="text.secondary">
-                  {t('dashboard.noRatings')}
-                </Typography>
-                <Button
-                  onClick={() => setActiveTab(1)}
-                  variant="contained"
-                  sx={{ mt: 2, borderRadius: 2 }}
-                >
-                  {t('dashboard.exploreFlavors')}
-                </Button>
-              </Box>
+              <EmptyState
+                title={t('dashboard.noRatings')}
+                action={
+                  <Button onClick={() => setActiveTab(1)} variant="contained" sx={{ borderRadius: 2 }}>
+                    {t('dashboard.exploreFlavors')}
+                  </Button>
+                }
+              />
             ) : (
               filteredAndSortedRated.map((rating) => (
-                <Card
-                  key={rating.id}
-                  elevation={0}
-                  sx={{
-                    borderRadius: 4,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
-                    transition: 'border-color 0.2s',
-                    '&:hover': { borderColor: 'primary.main' },
-                  }}
-                >
+                <GlassCard key={rating.id}>
                   <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                     {editingRatingId === rating.id ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -588,7 +525,7 @@ const Dashboard: React.FC = () => {
                           <MuiRating
                             max={10}
                             value={editScore}
-                            onChange={(_: any, val: number | null) => setEditScore(val || 0)}
+                            onChange={(_, val) => setEditScore(val || 0)}
                           />
                         </Stack>
                         <MentionTextField
@@ -598,11 +535,7 @@ const Dashboard: React.FC = () => {
                           onChange={setEditComment}
                         />
                         <Stack direction="row" spacing={1}>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            onClick={() => handleUpdateRating(rating.id)}
-                          >
+                          <Button variant="contained" size="small" onClick={() => handleUpdateRating(rating.id)}>
                             {t('common.save')}
                           </Button>
                           <Button
@@ -640,6 +573,7 @@ const Dashboard: React.FC = () => {
                               <Box
                                 component="img"
                                 src={rating.flavor_image || undefined}
+                                alt={rating.flavor_name}
                                 sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                               />
                             </Box>
@@ -652,12 +586,7 @@ const Dashboard: React.FC = () => {
                                   {rating.flavor_name}
                                 </Link>
                               </Typography>
-                              <Stack
-                                direction="row"
-                                spacing={1}
-                                alignItems="center"
-                                sx={{ mt: 0.5 }}
-                              >
+                              <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
                                 <Typography variant="caption" color="text.secondary">
                                   {t(`categories.${rating.category_slug}`, {
                                     defaultValue: rating.category_name,
@@ -675,15 +604,11 @@ const Dashboard: React.FC = () => {
                           <RatingBadge score={rating.score} size={isMobile ? 'medium' : 'large'} />
                         </Box>
 
-                        <Box sx={{ mb: 2, p: 2, bgcolor: alpha('#000', 0.02), borderRadius: 2 }}>
+                        <Box sx={{ mb: 2, p: 2, bgcolor: alpha(theme.palette.text.primary, 0.03), borderRadius: 2 }}>
                           {rating.comment ? (
                             <RichText text={rating.comment} />
                           ) : (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ fontStyle: 'italic' }}
-                            >
+                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                               {t('dashboard.noComment')}
                             </Typography>
                           )}
@@ -694,16 +619,9 @@ const Dashboard: React.FC = () => {
                             size="small"
                             startIcon={<CommentIcon fontSize="small" />}
                             onClick={() =>
-                              setExpandedReplies((prev) => ({
-                                ...prev,
-                                [rating.id]: !prev[rating.id],
-                              }))
+                              setExpandedReplies((prev) => ({ ...prev, [rating.id]: !prev[rating.id] }))
                             }
-                            sx={{
-                              textTransform: 'none',
-                              fontWeight: 'bold',
-                              color: 'text.secondary',
-                            }}
+                            sx={{ textTransform: 'none', fontWeight: 'bold', color: 'text.secondary' }}
                           >
                             {rating.replies.length} {t('common.replies')}
                           </Button>
@@ -729,12 +647,9 @@ const Dashboard: React.FC = () => {
                           </Button>
                         </Stack>
 
-                        {/* Replies Inline */}
                         <Collapse in={expandedReplies[rating.id]}>
-                          <Box
-                            sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}
-                          >
-                            {rating.replies.map((reply: any) => (
+                          <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                            {rating.replies.map((reply) => (
                               <Box
                                 key={reply.id}
                                 sx={{
@@ -810,7 +725,7 @@ const Dashboard: React.FC = () => {
                       </>
                     )}
                   </CardContent>
-                </Card>
+                </GlassCard>
               ))
             )}
           </Stack>
@@ -820,8 +735,7 @@ const Dashboard: React.FC = () => {
       {/* TAB 1: EXPLORE NEW */}
       {activeTab === 1 && (
         <Box>
-          {/* Filter Controls for Explore */}
-          <Box sx={{ mb: 4 }}>
+          <GlassSurface intensity="subtle" sx={{ p: 2, mb: 3 }}>
             <Grid container spacing={{ xs: 2, lg: 1.5 }} alignItems="center">
               <Grid size={{ xs: 12, lg: 4, xl: 5 }}>
                 <TextField
@@ -839,11 +753,6 @@ const Dashboard: React.FC = () => {
                       ),
                     },
                   }}
-                  sx={{
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    '& .MuiOutlinedInput-root': { borderRadius: 1, height: { xs: 48, lg: 40 } },
-                  }}
                 />
               </Grid>
 
@@ -854,7 +763,6 @@ const Dashboard: React.FC = () => {
                     gap: 1,
                     overflowX: 'auto',
                     py: 0.5,
-                    px: 0.2,
                     '&::-webkit-scrollbar': { display: 'none' },
                   }}
                 >
@@ -872,13 +780,7 @@ const Dashboard: React.FC = () => {
                       onClick={() => setExploreCategory(cat)}
                       color={exploreCategory === cat ? 'primary' : 'default'}
                       variant={exploreCategory === cat ? 'filled' : 'outlined'}
-                      sx={{
-                        fontWeight: 'bold',
-                        height: { xs: 36, lg: 32 },
-                        borderRadius: 1,
-                        fontSize: '0.8rem',
-                        flexShrink: 0,
-                      }}
+                      sx={{ fontWeight: 'bold', flexShrink: 0 }}
                     />
                   ))}
                 </Box>
@@ -888,51 +790,36 @@ const Dashboard: React.FC = () => {
                 <Select
                   size="small"
                   value={exploreSort}
-                  onChange={(e) => setExploreSort(e.target.value as any)}
+                  onChange={(e) => setExploreSort(e.target.value as 'community' | 'circle')}
                   startAdornment={
                     <InputAdornment position="start">
                       <SortIcon fontSize="small" />
                     </InputAdornment>
                   }
-                  sx={{
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    height: { xs: 48, lg: 40 },
-                    minWidth: { xs: '100%', lg: 180 },
-                    fontWeight: 'bold',
-                    fontSize: '0.85rem',
-                    '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
-                  }}
+                  sx={{ minWidth: { xs: '100%', lg: 180 }, fontWeight: 'bold' }}
                 >
                   <MenuItem value="community">{t('dashboard.communityRating')}</MenuItem>
                   <MenuItem value="circle">{t('dashboard.circleRating')}</MenuItem>
                 </Select>
               </Grid>
             </Grid>
-          </Box>
+          </GlassSurface>
 
           {filteredMissing.length === 0 ? (
-            <Box sx={{ py: 10, textAlign: 'center' }}>
-              <Typography variant="h5" color="primary" sx={{ fontWeight: '900' }}>
-                {t('dashboard.allRated')}
-              </Typography>
-            </Box>
+            <EmptyState title={t('dashboard.allRated')} />
           ) : (
             <Grid container spacing={2}>
               {filteredMissing.map((flavor) => (
                 <Grid key={flavor.id} size={{ xs: 12, sm: 6, lg: 3 }}>
-                  <Card
-                    elevation={0}
+                  <GlassCard
+                    intensity="subtle"
                     sx={{
                       height: '100%',
-                      borderRadius: 1.5,
-                      border: '1px solid',
-                      borderColor: 'divider',
                       transition: 'all 0.2s ease',
                       '&:hover': {
                         transform: 'translateY(-4px)',
                         borderColor: 'primary.main',
-                        boxShadow: 4,
+                        boxShadow: (th) => th.tokens.elevation.md,
                       },
                       overflow: 'hidden',
                     }}
@@ -957,6 +844,8 @@ const Dashboard: React.FC = () => {
                         <Box
                           component="img"
                           src={flavor.image_url || undefined}
+                          alt={flavor.name}
+                          loading="lazy"
                           sx={{
                             width: '100%',
                             height: '100%',
@@ -993,13 +882,7 @@ const Dashboard: React.FC = () => {
                                 size="small"
                                 sx={{
                                   height: 24,
-                                  bgcolor:
-                                    exploreSort === 'circle' ? 'secondary.main' : 'primary.main',
-                                  '& .MuiTypography-root': {
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                  },
+                                  bgcolor: exploreSort === 'circle' ? 'secondary.main' : 'primary.main',
                                 }}
                               />
                             </Box>
@@ -1032,14 +915,14 @@ const Dashboard: React.FC = () => {
                         </Typography>
                       </CardContent>
                     </Link>
-                  </Card>
+                  </GlassCard>
                 </Grid>
               ))}
             </Grid>
           )}
         </Box>
       )}
-    </Container>
+    </PageShell>
   );
 };
 

@@ -1,31 +1,33 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Typography,
   Box,
-  Card,
   CardContent,
   CircularProgress,
   Button,
   Avatar,
-  Paper,
   Chip,
-  Container,
   IconButton,
-  alpha,
   Tabs,
   Tab,
 } from '@mui/material';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
-import { formatDate } from '../utils/date';
 import RatingBadge from '../components/RatingBadge';
 import StatusBadge from '../components/StatusBadge';
-import { useNavigate } from 'react-router-dom';
+import {
+  GlassCard,
+  PageShell,
+  SectionHeader,
+  HeroBackdrop,
+  ReviewRow,
+  FlavorCard,
+} from '../components/ui';
 
 interface Category {
   id: number;
@@ -42,7 +44,21 @@ interface Flavor {
   image_url: string | null;
   is_available: boolean;
   is_legacy: boolean;
-  ratings: any[];
+  ratings: FeedRating[];
+}
+
+interface FeedRating {
+  id: number;
+  user: string;
+  user_avatar: string | null;
+  flavor: number;
+  flavor_name: string;
+  flavor_image: string | null;
+  flavor_category?: string;
+  score: number;
+  comment: string;
+  created_at: string;
+  replies?: unknown[];
 }
 
 interface Review {
@@ -68,7 +84,7 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
   const [newestFlavors, setNewestFlavors] = useState<Flavor[]>([]);
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
   const [allFlavors, setAllFlavors] = useState<Flavor[]>([]);
-  const [feedRatings, setFeedRatings] = useState<any[]>([]);
+  const [feedRatings, setFeedRatings] = useState<FeedRating[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -86,11 +102,10 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
       setLoading(true);
       try {
         if (query) {
-          // Perform server-side search to get all matching flavors across pages
           const res = await api.get(`flavors/?search=${encodeURIComponent(query)}`);
           setAllFlavors(Array.isArray(res.data) ? res.data : res.data.results || []);
         } else {
-          const requests: any[] = [
+          const requests = [
             api.get('flavors/top/'),
             api.get('ratings/recent/'),
             api.get('flavors/newest/'),
@@ -120,7 +135,7 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
             const feedData = Array.isArray(results[4].data)
               ? results[4].data
               : results[4].data.results || [];
-            setFeedRatings(feedData.slice(0, 6)); // Show top 6 on home
+            setFeedRatings(feedData.slice(0, 6));
           }
         }
       } catch (err) {
@@ -133,7 +148,7 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
   }, [query, isLoggedIn]);
 
   useEffect(() => {
-    if (query) return; // Don't refetch if we are in search mode
+    if (query) return;
 
     const fetchTopFlavors = async () => {
       setCategoryLoading(true);
@@ -143,7 +158,7 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
           : 'flavors/top/';
         const res = await api.get(url);
         setTopFlavors(Array.isArray(res.data) ? res.data : res.data.results || []);
-        setActiveIndex(0); // Reset carousel
+        setActiveIndex(0);
       } catch (err) {
         console.error(err);
       } finally {
@@ -163,14 +178,13 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
     setSelectedCategorySlug(newValue);
   };
 
-  const startTimer = () => {
+  const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % topFlavors.length);
     }, 6000);
-  };
+  }, [topFlavors.length]);
 
-  // Auto-rotate
   useEffect(() => {
     if (topFlavors.length > 0 && !query) {
       startTimer();
@@ -178,7 +192,7 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
         if (timerRef.current) clearInterval(timerRef.current);
       };
     }
-  }, [topFlavors, query]);
+  }, [topFlavors, query, startTimer]);
 
   useTitle(query ? `Search: ${query}` : 'Holy Flavors Archive');
 
@@ -208,14 +222,11 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
     );
 
     return (
-      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ overflowWrap: 'break-word' }}>
-          Search Results for "{query}"
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          Found {filteredFlavors.length} items
-        </Typography>
-
+      <PageShell>
+        <SectionHeader
+          title={`Search Results for "${query}"`}
+          subtitle={`Found ${filteredFlavors.length} items`}
+        />
         <Box
           sx={{
             display: 'grid',
@@ -228,84 +239,10 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
           }}
         >
           {filteredFlavors.map((flavor) => (
-            <Box key={flavor.id}>
-              <Card
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  transition: 'transform 0.2s',
-                  '&:hover': { transform: 'scale(1.02)' },
-                }}
-              >
-                <Box
-                  component={Link}
-                  to={`/flavor/${flavor.id}`}
-                  sx={{
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                >
-                  <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1 }}>
-                    <StatusBadge
-                      isLegacy={flavor.is_legacy}
-                      isAvailable={flavor.is_available}
-                      size="small"
-                    />
-                  </Box>
-                  {flavor.image_url && (
-                    <Box
-                      sx={{
-                        width: '100%',
-                        aspectRatio: '1/1',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: 'background.default',
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={flavor.image_url}
-                        sx={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          transition: 'transform 0.5s ease',
-                          '&:hover': { transform: 'scale(1.1)' },
-                        }}
-                        loading="lazy"
-                      />
-                    </Box>
-                  )}
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" sx={{ fontSize: '1rem' }}>
-                      {flavor.name}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ display: 'block', mb: 1 }}
-                    >
-                      {flavor.category_name}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <RatingBadge score={flavor.average_rating || 0} size="small" />
-                    </Box>
-                  </CardContent>
-                </Box>
-              </Card>
-            </Box>
+            <FlavorCard key={flavor.id} flavor={flavor} />
           ))}
         </Box>
-      </Container>
+      </PageShell>
     );
   }
 
@@ -314,44 +251,14 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
   const featuredReview = currentTop?.ratings?.find((r) => r.comment) || null;
 
   return (
-    <Box sx={{ width: '100%' }}>
-      {/* Hero Section / Activity Feed */}
+    <PageShell hero={<HeroBackdrop variant={isLoggedIn ? 'minimal' : 'mesh'} />}>
+      {/* Hero / Activity Feed */}
       {isLoggedIn ? (
-        <Box
-          sx={{
-            py: { xs: 4, md: 8 },
-            px: { xs: 2, sm: 4, md: 6 },
-            background: (theme) =>
-              theme.palette.mode === 'dark'
-                ? `linear-gradient(180deg, ${alpha('#000', 0.4)} 0%, ${alpha('#000', 0)} 100%)`
-                : `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.main, 0)} 100%)`,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            mb: 4,
-          }}
-        >
-          <Container maxWidth={false} sx={{ px: { xs: 0, sm: 2, md: 4 } }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-                mb: 4,
-                flexWrap: 'wrap',
-                gap: 2,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="h3"
-                  sx={{ fontWeight: 'bold', mb: 1, fontSize: { xs: '2rem', md: '3rem' } }}
-                >
-                  {t('home.activity')}
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                  {t('home.activitySubtitle')}
-                </Typography>
-              </Box>
+        <Box>
+          <SectionHeader
+            title={t('home.activity')}
+            subtitle={t('home.activitySubtitle')}
+            action={
               <Button
                 component={Link}
                 to="/community"
@@ -360,197 +267,79 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
               >
                 {t('home.viewFullFeed')}
               </Button>
+            }
+          />
+
+          {feedRatings.length === 0 ? (
+            <GlassCard
+              intensity="subtle"
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                border: '2px dashed',
+                borderColor: 'divider',
+              }}
+            >
+              <Typography variant="h6">{t('home.quietFeed')}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {t('home.followMore')}
+              </Typography>
+              <Button
+                variant="contained"
+                component={Link}
+                to="/"
+                size="small"
+                sx={{ borderRadius: 2 }}
+              >
+                {t('home.exploreFlavors')}
+              </Button>
+            </GlassCard>
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+                gap: 2,
+              }}
+            >
+              {feedRatings.map((rating) => (
+                <Box key={rating.id} sx={{ position: 'relative' }}>
+                  <ReviewRow review={rating} compact />
+                  {adminMode && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigate(`/admin-panel/rating/${rating.id}`);
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        borderRadius: 1,
+                        fontSize: '0.6rem',
+                        py: 0,
+                        textTransform: 'none',
+                        zIndex: 2,
+                      }}
+                    >
+                      {t('admin.manageRating')}
+                    </Button>
+                  )}
+                </Box>
+              ))}
             </Box>
-
-            {feedRatings.length === 0 ? (
-              <Paper
-                sx={{
-                  p: 4,
-                  textAlign: 'center',
-                  borderRadius: 4,
-                  bgcolor: 'action.hover',
-                  border: '2px dashed',
-                  borderColor: 'divider',
-                  elevation: 0,
-                }}
-              >
-                <Typography variant="h6">{t('home.quietFeed')}</Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  {t('home.followMore')}
-                </Typography>
-                <Button
-                  variant="contained"
-                  component={Link}
-                  to="/"
-                  size="small"
-                  sx={{ borderRadius: 2 }}
-                >
-                  {t('home.exploreFlavors')}
-                </Button>
-              </Paper>
-            ) : (
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
-                  gap: 2,
-                }}
-              >
-                {feedRatings.map((rating) => (
-                  <Card
-                    key={rating.id}
-                    component={Link}
-                    to={`/flavor/${rating.flavor}`}
-                    sx={{
-                      borderRadius: 3,
-                      textDecoration: 'none',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        borderColor: 'primary.main',
-                        boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                      },
-                      bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      color: 'inherit',
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}
-                  >
-                    <CardContent sx={{ p: 2, flex: 1, '&:last-child': { pb: 2 } }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          mb: 1.5,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
-                          <Avatar
-                            src={rating.user_avatar || undefined}
-                            sx={{ width: 22, height: 22, mr: 1 }}
-                          >
-                            {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              fontWeight: 'bold',
-                              fontSize: '0.8rem',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {rating.user}
-                          </Typography>
-                        </Box>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: '0.65rem', ml: 1, whiteSpace: 'nowrap' }}
-                        >
-                          {t('home.rated')} {formatDate(rating.created_at)}
-                        </Typography>
-                      </Box>
-
-                      {adminMode && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="secondary"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigate(`/admin-panel/rating/${rating.id}`);
-                          }}
-                          sx={{
-                            mb: 1,
-                            borderRadius: 1,
-                            fontSize: '0.6rem',
-                            py: 0,
-                            textTransform: 'none',
-                          }}
-                        >
-                          {t('admin.manageRating')}
-                        </Button>
-                      )}
-
-                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                        <Box
-                          component="img"
-                          src={rating.flavor_image || undefined}
-                          sx={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 1.5,
-                            objectFit: 'contain',
-                            bgcolor: 'action.hover',
-                            p: 0.5,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                          }}
-                        />
-                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 'bold',
-                              lineHeight: 1.2,
-                              mb: 0.5,
-                              fontSize: '0.85rem',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 1,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            {rating.flavor_name}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                fontWeight: '900',
-                                color: 'primary.main',
-                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                                px: 1,
-                                py: 0.2,
-                                borderRadius: 1,
-                                fontSize: '0.75rem',
-                              }}
-                            >
-                              {rating.score} / 10
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Box>
-            )}
-          </Container>
+          )}
         </Box>
       ) : (
-        <Paper
-          elevation={0}
+        <GlassCard
+          intensity="strong"
           sx={{
             p: { xs: 4, md: 10 },
-            mb: 4,
-            borderRadius: 0,
-            background: (theme) =>
-              theme.palette.mode === 'dark'
-                ? `radial-gradient(circle at top right, ${alpha(theme.palette.primary.main, 0.15)}, transparent), linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)`
-                : `radial-gradient(circle at top right, ${alpha(theme.palette.primary.main, 0.1)}, transparent), linear-gradient(135deg, #fdf6f7 0%, #f8e1e5 100%)`,
             textAlign: 'center',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            width: '100%',
-            boxSizing: 'border-box',
             overflow: 'hidden',
             position: 'relative',
           }}
@@ -563,7 +352,10 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
               fontWeight: 'bold',
               fontSize: { xs: '2.2rem', sm: '3rem', md: '4.5rem' },
               overflowWrap: 'break-word',
-              px: 2,
+              background: (theme) => theme.tokens.accent.gradient,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
             }}
           >
             {t('hero.title')}
@@ -595,28 +387,21 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
               {t('hero.whatIsThis')}
             </Button>
           </Box>
-        </Paper>
+        </GlassCard>
       )}
 
-      <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, pb: 8 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', xl: 'row' }, gap: 6, mb: 10 }}>
-          {/* Hall of Fame Carousel - SIDE BY SIDE */}
-          {topFlavors.length > 0 && currentTop && (
-            <Box sx={{ flex: { xs: '1 1 100%', xl: '1 1 65%' }, minWidth: 0 }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  mb: 4,
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <EmojiEventsIcon color="primary" sx={{ mr: 1, fontSize: '2rem' }} />
-                  <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-                    {t('home.hallOfFame')}
-                  </Typography>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', xl: 'row' }, gap: 6 }}>
+        {/* Hall of Fame Carousel */}
+        {topFlavors.length > 0 && currentTop && (
+          <Box sx={{ flex: { xs: '1 1 100%', xl: '1 1 65%' }, minWidth: 0 }}>
+            <SectionHeader
+              title={
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                  <EmojiEventsIcon color="primary" sx={{ fontSize: '2rem' }} />
+                  <span>{t('home.hallOfFame')}</span>
                 </Box>
+              }
+              action={
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   <IconButton
                     onClick={handlePrev}
@@ -631,431 +416,294 @@ const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
                     <ChevronRightIcon />
                   </IconButton>
                 </Box>
-              </Box>
+              }
+            />
 
-              <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
-                <Tabs
-                  value={selectedCategorySlug}
-                  onChange={handleTabChange}
-                  variant="scrollable"
-                  scrollButtons="auto"
-                  aria-label="hall of fame categories"
-                  sx={{
-                    '& .MuiTab-root': {
-                      fontWeight: 'bold',
-                      minWidth: 100,
-                    },
-                  }}
-                >
-                  <Tab label="All Flavors" value="" />
-                  {categories.map((cat) => (
-                    <Tab key={cat.id} label={cat.name} value={cat.slug} />
-                  ))}
-                </Tabs>
-              </Box>
-
-              <Box sx={{ position: 'relative', minHeight: { xs: 400, md: 500 } }}>
-                {categoryLoading && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      bgcolor: 'rgba(255,255,255,0.5)',
-                      zIndex: 2,
-                      borderRadius: 4,
-                    }}
-                  >
-                    <CircularProgress />
-                  </Box>
-                )}
-                <Card
-                  sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', md: 'row' },
-                    height: { xs: 'auto', md: 500 },
-                    borderRadius: 4,
-                    overflow: 'hidden',
-                    position: 'relative',
-                  }}
-                >
-                  <Box
-                    component={Link}
-                    to={`/flavor/${currentTop.id}`}
-                    sx={{
-                      width: { xs: '100%', md: '45%' },
-                      height: { md: '100%' },
-                      aspectRatio: { xs: '16/9', md: 'auto' },
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: 'action.hover',
-                      overflow: 'hidden',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1 }}>
-                      <StatusBadge
-                        isLegacy={currentTop.is_legacy}
-                        isAvailable={currentTop.is_available}
-                      />
-                    </Box>
-
-                    <Box
-                      component="img"
-                      src={currentTop.image_url || ''}
-                      sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      loading="lazy"
-                    />
-                  </Box>
-                  <CardContent
-                    sx={{
-                      flex: 1,
-                      p: { xs: 3, sm: 4, md: 6 },
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Chip
-                      label={`${t('common.rank')} #${activeIndex + 1}`}
-                      color="primary"
-                      size="small"
-                      sx={{ width: 'fit-content', mb: 1, fontWeight: 'bold' }}
-                    />
-
-                    <Typography
-                      variant="h3"
-                      gutterBottom
-                      sx={{
-                        fontWeight: 'bold',
-                        fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' },
-                      }}
-                    >
-                      {currentTop.name}
-                    </Typography>
-
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        mb: { xs: 2, md: 3 },
-                        flexWrap: 'wrap',
-                        gap: 2,
-                      }}
-                    >
-                      <RatingBadge score={currentTop.average_rating || 0} size="large" />
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontWeight: 'bold' }}
-                      >
-                        {currentTop.ratings.length} {t('common.reviews')}
-                      </Typography>
-                    </Box>
-
-                    {featuredReview && (
-                      <Box
-                        sx={{
-                          mt: 1,
-                          p: { xs: 2, md: 3 },
-                          bgcolor: (theme) => alpha(theme.palette.background.paper, 0.4),
-                          backdropFilter: 'blur(8px)',
-                          borderRadius: 3,
-                          border: '1px solid',
-                          borderColor: (theme) => alpha(theme.palette.text.primary, 0.05),
-                          position: 'relative',
-                        }}
-                      >
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontStyle: 'italic',
-                            mb: 1,
-                            fontSize: { xs: '0.9rem', md: '1.1rem' },
-                            display: '-webkit-box',
-                            overflow: 'hidden',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 3,
-                          }}
-                        >
-                          "{featuredReview.comment}"
-                        </Typography>
-                        <Link
-                          to={`/profile/${featuredReview.user}`}
-                          style={{
-                            textDecoration: 'none',
-                            color: 'inherit',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                          }}
-                        >
-                          <Avatar
-                            src={featuredReview.user_avatar || undefined}
-                            sx={{
-                              width: 24,
-                              height: 24,
-                              fontSize: '0.6rem',
-                              '&:hover': { opacity: 0.8 },
-                            }}
-                          >
-                            {!featuredReview.user_avatar && featuredReview.user.charAt(0)}
-                          </Avatar>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ '&:hover': { color: 'primary.main' } }}
-                          >
-                            — {featuredReview.user}
-                          </Typography>
-                        </Link>
-                      </Box>
-                    )}
-
-                    <Button
-                      variant="contained"
-                      component={Link}
-                      to={`/flavor/${currentTop.id}`}
-                      sx={{
-                        mt: { xs: 3, md: 4 },
-                        width: { xs: '100%', sm: 'fit-content' },
-                        px: 4,
-                        py: 1.5,
-                        borderRadius: 2,
-                      }}
-                    >
-                      {t('home.viewAllReviews')}
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Box>
-
-              {/* Progress Indicators */}
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, gap: 1 }}>
-                {topFlavors.map((_, i) => (
-                  <Box
-                    key={i}
-                    onClick={() => setActiveIndex(i)}
-                    sx={{
-                      width: activeIndex === i ? 24 : 8,
-                      height: 8,
-                      borderRadius: 4,
-                      bgcolor: activeIndex === i ? 'primary.main' : 'divider',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                    }}
-                  />
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 4 }}>
+              <Tabs
+                value={selectedCategorySlug}
+                onChange={handleTabChange}
+                variant="scrollable"
+                scrollButtons="auto"
+                aria-label="hall of fame categories"
+                sx={{ '& .MuiTab-root': { fontWeight: 'bold', minWidth: 100 } }}
+              >
+                <Tab label="All Flavors" value="" />
+                {categories.map((cat) => (
+                  <Tab key={cat.id} label={cat.name} value={cat.slug} />
                 ))}
-              </Box>
+              </Tabs>
             </Box>
-          )}
 
-          {/* Recent Reviews - SIDE BY SIDE */}
-          {recentReviews.length > 0 && (
-            <Box
-              sx={{
-                flex: { xs: '1 1 100%', xl: '1 1 35%' },
-                minWidth: 0,
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
-                {t('home.communityVoice')}
-              </Typography>
-              <Box
+            <Box sx={{ position: 'relative', minHeight: { xs: 400, md: 500 } }}>
+              {categoryLoading && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    bgcolor: (theme) => theme.tokens.glass.tint,
+                    backdropFilter: (theme) => theme.tokens.glass.blur,
+                    zIndex: 2,
+                    borderRadius: 4,
+                  }}
+                >
+                  <CircularProgress />
+                </Box>
+              )}
+              <GlassCard
+                intensity="strong"
                 sx={{
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                  height: { xl: 500 },
-                  overflowY: { xl: 'auto' },
-                  pr: { xl: 1 },
-                  '&::-webkit-scrollbar': { width: '6px' },
-                  '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '3px' },
+                  flexDirection: { xs: 'column', md: 'row' },
+                  height: { xs: 'auto', md: 500 },
+                  overflow: 'hidden',
+                  position: 'relative',
                 }}
               >
-                {recentReviews.map((review) => (
-                  <Paper
-                    key={review.id}
-                    variant="outlined"
+                <Box
+                  component={Link}
+                  to={`/flavor/${currentTop.id}`}
+                  sx={{
+                    width: { xs: '100%', md: '45%' },
+                    height: { md: '100%' },
+                    aspectRatio: { xs: '16/9', md: 'auto' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'action.hover',
+                    overflow: 'hidden',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1 }}>
+                    <StatusBadge
+                      isLegacy={currentTop.is_legacy}
+                      isAvailable={currentTop.is_available}
+                    />
+                  </Box>
+                  <Box
+                    component="img"
+                    src={currentTop.image_url || ''}
+                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    loading="lazy"
+                  />
+                </Box>
+                <CardContent
+                  sx={{
+                    flex: 1,
+                    p: { xs: 3, sm: 4, md: 6 },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Chip
+                    label={`${t('common.rank')} #${activeIndex + 1}`}
+                    color="primary"
+                    size="small"
+                    sx={{ width: 'fit-content', mb: 1, fontWeight: 'bold' }}
+                  />
+                  <Typography
+                    variant="h3"
+                    gutterBottom
                     sx={{
-                      p: 2,
-                      borderRadius: 3,
-                      transition: 'border-color 0.2s',
-                      '&:hover': { borderColor: 'primary.main' },
+                      fontWeight: 'bold',
+                      fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' },
                     }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    {currentTop.name}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      mb: { xs: 2, md: 3 },
+                      flexWrap: 'wrap',
+                      gap: 2,
+                    }}
+                  >
+                    <RatingBadge score={currentTop.average_rating || 0} size="large" />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontWeight: 'bold' }}
+                    >
+                      {currentTop.ratings.length} {t('common.reviews')}
+                    </Typography>
+                  </Box>
+
+                  {featuredReview && (
+                    <GlassCard
+                      intensity="subtle"
+                      sx={{ mt: 1, p: { xs: 2, md: 3 }, boxShadow: 'none' }}
+                    >
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontStyle: 'italic',
+                          mb: 1,
+                          fontSize: { xs: '0.9rem', md: '1.1rem' },
+                          display: '-webkit-box',
+                          overflow: 'hidden',
+                          WebkitBoxOrient: 'vertical',
+                          WebkitLineClamp: 3,
+                        }}
+                      >
+                        "{featuredReview.comment}"
+                      </Typography>
                       <Link
-                        to={`/profile/${review.user}`}
+                        to={`/profile/${featuredReview.user}`}
                         style={{
                           textDecoration: 'none',
                           color: 'inherit',
                           display: 'flex',
                           alignItems: 'center',
+                          gap: 1,
                         }}
                       >
                         <Avatar
-                          src={review.user_avatar || undefined}
-                          sx={{ width: 28, height: 28, mr: 1, '&:hover': { opacity: 0.8 } }}
+                          src={featuredReview.user_avatar || undefined}
+                          sx={{ width: 24, height: 24, fontSize: '0.6rem' }}
                         >
-                          {!review.user_avatar && review.user.charAt(0).toUpperCase()}
+                          {!featuredReview.user_avatar && featuredReview.user.charAt(0)}
                         </Avatar>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontWeight: 'bold',
-                            fontSize: '0.8rem',
-                            '&:hover': { color: 'primary.main' },
-                          }}
-                        >
-                          {review.user}
+                        <Typography variant="caption" color="text.secondary">
+                          — {featuredReview.user}
                         </Typography>
                       </Link>
-                      <Box sx={{ flexGrow: 1 }} />
-                      <RatingBadge score={review.score} size="small" />
-                    </Box>
-                    {adminMode && (
-                      <Button
-                        size="small"
-                        variant="text"
-                        color="secondary"
-                        onClick={() => navigate(`/admin-panel/rating/${review.id}`)}
-                        sx={{
-                          mb: 1,
-                          fontSize: '0.65rem',
-                          py: 0,
-                          textTransform: 'none',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        {t('admin.manageRating')}
-                      </Button>
-                    )}
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                      sx={{ mb: 1 }}
-                    >
-                      {formatDate(review.created_at)} • on{' '}
-                      <Link
-                        to={`/flavor/${review.flavor}`}
-                        style={{ color: 'inherit', fontWeight: 'bold' }}
-                      >
-                        {review.flavor_name}
-                      </Link>
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontStyle: 'italic',
-                        fontSize: '0.85rem',
-                        display: '-webkit-box',
-                        overflow: 'hidden',
-                        WebkitBoxOrient: 'vertical',
-                        WebkitLineClamp: 2,
-                      }}
-                    >
-                      "{review.comment}"
-                    </Typography>
-                  </Paper>
-                ))}
-                <Button
-                  component={Link}
-                  to="/community"
-                  variant="text"
-                  size="small"
-                  sx={{ alignSelf: 'center', mt: 1 }}
-                >
-                  {t('home.viewMoreReviews')}
-                </Button>
-              </Box>
-            </Box>
-          )}
-        </Box>
+                    </GlassCard>
+                  )}
 
-        {/* Newest Arrivals */}
-        {newestFlavors.length > 0 && (
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
-              {t('home.newArrivals')}
-            </Typography>
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: 'repeat(2, 1fr)',
-                  sm: 'repeat(3, 1fr)',
-                  md: 'repeat(4, 1fr)',
-                  lg: 'repeat(5, 1fr)',
-                  xl: 'repeat(6, 1fr)',
-                },
-                gap: 2,
-              }}
-            >
-              {newestFlavors.map((flavor) => (
-                <Card
-                  key={flavor.id}
-                  sx={{
-                    transition: 'transform 0.2s',
-                    '&:hover': { transform: 'translateY(-4px)' },
-                    borderRadius: 3,
-                    position: 'relative',
-                  }}
-                >
-                  <Link
-                    to={`/flavor/${flavor.id}`}
-                    style={{ textDecoration: 'none', color: 'inherit' }}
+                  <Button
+                    variant="contained"
+                    component={Link}
+                    to={`/flavor/${currentTop.id}`}
+                    sx={{
+                      mt: { xs: 3, md: 4 },
+                      width: { xs: '100%', sm: 'fit-content' },
+                      px: 4,
+                      py: 1.5,
+                      borderRadius: 2,
+                    }}
                   >
-                    <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}>
-                      <StatusBadge
-                        isLegacy={flavor.is_legacy}
-                        isAvailable={flavor.is_available}
-                        size="small"
-                      />
-                    </Box>
-                    <Box sx={{ aspectRatio: '1/1', overflow: 'hidden', bgcolor: 'action.hover' }}>
-                      <Box
-                        component="img"
-                        src={flavor.image_url || undefined}
-                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        loading="lazy"
-                      />
-                    </Box>
-                    <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 'bold',
-                          fontSize: '0.85rem',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 1,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        {flavor.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {flavor.category_name}
-                      </Typography>
-                    </CardContent>
-                  </Link>
-                </Card>
+                    {t('home.viewAllReviews')}
+                  </Button>
+                </CardContent>
+              </GlassCard>
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3, gap: 1 }}>
+              {topFlavors.map((_, i) => (
+                <Box
+                  key={i}
+                  onClick={() => setActiveIndex(i)}
+                  sx={{
+                    width: activeIndex === i ? 24 : 8,
+                    height: 8,
+                    borderRadius: 4,
+                    bgcolor: activeIndex === i ? 'primary.main' : 'divider',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                  }}
+                />
               ))}
             </Box>
           </Box>
         )}
-      </Container>
-    </Box>
+
+        {/* Recent Reviews */}
+        {recentReviews.length > 0 && (
+          <Box
+            sx={{
+              flex: { xs: '1 1 100%', xl: '1 1 35%' },
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <SectionHeader title={t('home.communityVoice')} />
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                height: { xl: 500 },
+                overflowY: { xl: 'auto' },
+                pr: { xl: 1 },
+                '&::-webkit-scrollbar': { width: '6px' },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '3px' },
+              }}
+            >
+              {recentReviews.map((review) => (
+                <Box key={review.id} sx={{ position: 'relative' }}>
+                  <ReviewRow review={review} compact />
+                  {adminMode && (
+                    <Button
+                      size="small"
+                      variant="text"
+                      color="secondary"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigate(`/admin-panel/rating/${review.id}`);
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        fontSize: '0.65rem',
+                        py: 0,
+                        textTransform: 'none',
+                        fontWeight: 'bold',
+                        zIndex: 2,
+                      }}
+                    >
+                      {t('admin.manageRating')}
+                    </Button>
+                  )}
+                </Box>
+              ))}
+              <Button
+                component={Link}
+                to="/community"
+                variant="text"
+                size="small"
+                sx={{ alignSelf: 'center', mt: 1 }}
+              >
+                {t('home.viewMoreReviews')}
+              </Button>
+            </Box>
+          </Box>
+        )}
+      </Box>
+
+      {/* Newest Arrivals */}
+      {newestFlavors.length > 0 && (
+        <Box>
+          <SectionHeader title={t('home.newArrivals')} />
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(2, 1fr)',
+                sm: 'repeat(3, 1fr)',
+                md: 'repeat(4, 1fr)',
+                lg: 'repeat(5, 1fr)',
+                xl: 'repeat(6, 1fr)',
+              },
+              gap: 2,
+            }}
+          >
+            {newestFlavors.map((flavor) => (
+              <FlavorCard key={flavor.id} flavor={flavor} compact />
+            ))}
+          </Box>
+        </Box>
+      )}
+    </PageShell>
   );
 };
 

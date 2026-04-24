@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { alpha, useTheme } from '@mui/material';
+import { useBannerFrameGate } from './BannerPerformanceWrapper';
 
 interface HextechBannerProps {
   username: string;
@@ -18,6 +19,7 @@ interface HextechBannerProps {
 const HextechBanner: React.FC<HextechBannerProps> = ({ username, palette, settings }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const gate = useBannerFrameGate();
 
   const gridSize = settings?.gridSize ?? 40;
   const pulseSpeed = settings?.pulseSpeed ?? 0.02;
@@ -142,7 +144,13 @@ const HextechBanner: React.FC<HextechBannerProps> = ({ username, palette, settin
       });
     }
 
-    const draw = () => {
+    const draw = (now = 0) => {
+      const decision = gate(now);
+      if (decision === 'halt') return;
+      if (decision === 'skip') {
+        animationFrameId = requestAnimationFrame(draw);
+        return;
+      }
       const width = canvas.width / (window.devicePixelRatio || 1);
       const height = canvas.height / (window.devicePixelRatio || 1);
       if (!width || !height) {
@@ -277,6 +285,7 @@ const HextechBanner: React.FC<HextechBannerProps> = ({ username, palette, settin
     streamCount,
     distortionFactor,
     theme,
+    gate,
   ]);
 
   return (

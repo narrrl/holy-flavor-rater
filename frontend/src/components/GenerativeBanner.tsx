@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { alpha, useTheme } from '@mui/material';
+import { useBannerFrameGate } from './BannerPerformanceWrapper';
 
 interface GenerativeBannerProps {
   username: string;
@@ -23,6 +24,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const gate = useBannerFrameGate();
 
   const nodeCountBase = settings?.nodeCountBase ?? 60;
   const connectionDist = settings?.connectionDist ?? 140;
@@ -150,7 +152,13 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({
       });
     }
 
-    const draw = () => {
+    const draw = (now = 0) => {
+      const decision = gate(now);
+      if (decision === 'halt') return;
+      if (decision === 'skip') {
+        animationFrameId = requestAnimationFrame(draw);
+        return;
+      }
       const width = canvas.width / (window.devicePixelRatio || 1);
       const height = canvas.height / (window.devicePixelRatio || 1);
 
@@ -294,6 +302,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({
     connectionDist,
     speed,
     globalOpacity,
+    gate,
   ]);
 
   return (

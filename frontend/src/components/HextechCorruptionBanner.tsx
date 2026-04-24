@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { alpha, useTheme } from '@mui/material';
+import { useBannerFrameGate } from './BannerPerformanceWrapper';
 
 interface HextechCorruptionBannerProps {
   username: string;
@@ -22,6 +23,7 @@ const HextechCorruptionBanner: React.FC<HextechCorruptionBannerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const gate = useBannerFrameGate();
 
   const cellCount = settings?.cellCount ?? 40;
   const shimmerSpeed = settings?.shimmerSpeed ?? 0.015;
@@ -144,7 +146,13 @@ const HextechCorruptionBanner: React.FC<HextechCorruptionBannerProps> = ({
       });
     }
 
-    const draw = () => {
+    const draw = (now = 0) => {
+      const decision = gate(now);
+      if (decision === 'halt') return;
+      if (decision === 'skip') {
+        animationFrameId = requestAnimationFrame(draw);
+        return;
+      }
       const width = canvas.width / (window.devicePixelRatio || 1);
       const height = canvas.height / (window.devicePixelRatio || 1);
       if (!width || !height) {
@@ -267,6 +275,7 @@ const HextechCorruptionBanner: React.FC<HextechCorruptionBannerProps> = ({
     instability,
     shellDarkness,
     theme,
+    gate,
   ]);
 
   return (

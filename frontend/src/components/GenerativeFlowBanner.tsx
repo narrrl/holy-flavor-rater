@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { alpha, useTheme } from '@mui/material';
+import { useBannerFrameGate } from './BannerPerformanceWrapper';
 
 interface GenerativeFlowProps {
   username: string;
@@ -18,6 +19,7 @@ interface GenerativeFlowProps {
 const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette, settings }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const gate = useBannerFrameGate();
 
   const blobCount = settings?.blobCount ?? 8;
   const flowSpeed = settings?.flowSpeed ?? 0.008;
@@ -135,7 +137,13 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
       });
     }
 
-    const draw = () => {
+    const draw = (now = 0) => {
+      const decision = gate(now);
+      if (decision === 'halt') return;
+      if (decision === 'skip') {
+        animationFrameId = requestAnimationFrame(draw);
+        return;
+      }
       const width = canvas.width / (window.devicePixelRatio || 1);
       const height = canvas.height / (window.devicePixelRatio || 1);
       if (!width || !height) {
@@ -224,7 +232,7 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
       }
       cancelAnimationFrame(animationFrameId);
     };
-  }, [seed, brightColors, blobCount, flowSpeed, vibrancy, blurAmount, distortionFactor, theme]);
+  }, [seed, brightColors, blobCount, flowSpeed, vibrancy, blurAmount, distortionFactor, theme, gate]);
 
   return (
     <canvas

@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Typography,
   Box,
-  Card,
   CardContent,
   Rating as MuiRating,
   Button,
   Avatar,
   CircularProgress,
-  Container,
   Grid,
   Chip,
   Stack,
@@ -36,6 +34,13 @@ import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
 import RatingBadge from '../../components/RatingBadge';
 import StatusBadge from '../../components/StatusBadge';
+import {
+  PageShell,
+  HeroBackdrop,
+  GlassCard,
+  SectionHeader,
+  EmptyState,
+} from '../../components/ui';
 
 interface Reply {
   id: number;
@@ -108,7 +113,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
   const [editReplyText, setEditReplyText] = useState('');
 
-  const fetchFlavor = async () => {
+  const fetchFlavor = useCallback(async () => {
     try {
       const res = await api.get(`flavors/${id}/`);
       setFlavor(res.data);
@@ -124,20 +129,20 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     const getUser = async () => {
       try {
         const res = await api.get('users/me/');
         setCurrentUser(res.data.username);
-      } catch (e) {
+      } catch {
         /* ignore */
       }
     };
     getUser();
     fetchFlavor();
-  }, [id]);
+  }, [fetchFlavor]);
 
   useTitle(flavor?.name || t('common.loading'));
 
@@ -146,7 +151,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       await api.patch(`flavors/${id}/`, editFlavorData);
       setIsAdminEditing(false);
       fetchFlavor();
-    } catch (err) {
+    } catch {
       alert('Admin update failed');
     }
   };
@@ -164,7 +169,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       fetchFlavor();
-    } catch (err) {
+    } catch {
       alert('Image upload failed');
     } finally {
       setUploadingImage(false);
@@ -182,8 +187,9 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       setNewScore(null);
       setNewComment('');
       fetchFlavor();
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to submit rating');
+    } catch (err) {
+      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
+      alert(msg || 'Failed to submit rating');
     }
   };
 
@@ -196,7 +202,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       // Auto-expand replies when submitting a new one
       setExpandedReplies((prev) => ({ ...prev, [ratingId]: true }));
       fetchFlavor();
-    } catch (err) {
+    } catch {
       alert('Failed to submit reply');
     }
   };
@@ -207,7 +213,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       await api.patch(`replies/${replyId}/`, { text: editReplyText });
       setEditingReplyId(null);
       fetchFlavor();
-    } catch (err) {
+    } catch {
       alert('Failed to update reply');
     }
   };
@@ -217,7 +223,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
     try {
       await api.delete(`replies/${replyId}/`);
       fetchFlavor();
-    } catch (err) {
+    } catch {
       alert('Failed to delete reply');
     }
   };
@@ -227,7 +233,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
     try {
       await api.delete(`ratings/${ratingId}/`);
       fetchFlavor();
-    } catch (err) {
+    } catch {
       alert('Failed to delete review');
     }
   };
@@ -243,7 +249,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
       setEditMode(null);
       fetchFlavor();
-    } catch (err) {
+    } catch {
       alert('Failed to update review');
     }
   };
@@ -258,53 +264,41 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
 
   if (loading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
     );
-  if (!flavor) return <Typography>Flavor not found</Typography>;
+  if (!flavor)
+    return (
+      <PageShell>
+        <Typography>Flavor not found</Typography>
+      </PageShell>
+    );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Top Bar */}
-      <Box sx={{ mb: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={handleGoBack}
-          startIcon={<ArrowBackIcon />}
-          sx={{
-            borderRadius: 2,
-            textTransform: 'none',
-            fontWeight: 'bold',
-            color: 'text.secondary',
-            borderColor: 'divider',
-            '&:hover': {
-              borderColor: 'primary.main',
-              color: 'primary.main',
-              bgcolor: 'transparent',
-            },
-          }}
-        >
-          {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-        </Button>
-      </Box>
+    <PageShell hero={<HeroBackdrop variant="minimal" />}>
+      <Button
+        variant="outlined"
+        onClick={handleGoBack}
+        startIcon={<ArrowBackIcon />}
+        sx={{
+          alignSelf: 'flex-start',
+          borderRadius: 2,
+          textTransform: 'none',
+          fontWeight: 'bold',
+          color: 'text.secondary',
+        }}
+      >
+        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
+      </Button>
 
-      {/* Main Content Grid */}
       <Grid container spacing={4}>
         {/* Left: Product Info Card */}
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box sx={{ position: { md: 'sticky' }, top: 100 }}>
-            <Card
-              elevation={0}
-              sx={{
-                borderRadius: 4,
-                border: '1px solid',
-                borderColor: 'divider',
-                bgcolor: (theme) => alpha(theme.palette.background.paper, 0.6),
-                backdropFilter: 'blur(12px)',
-                overflow: 'hidden',
-              }}
-            >
+            <GlassCard intensity="strong" sx={{ overflow: 'hidden' }}>
               <Box
                 sx={{
                   p: 4,
@@ -481,6 +475,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                     component="a"
                     href={flavor.shop_url}
                     target="_blank"
+                    rel="noreferrer"
                     startIcon={<ShoppingCartIcon />}
                     sx={{
                       borderRadius: 3,
@@ -494,94 +489,66 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                   </Button>
                 )}
               </CardContent>
-            </Card>
+            </GlassCard>
           </Box>
         </Grid>
 
         {/* Right: Ratings & Comments */}
         <Grid size={{ xs: 12, lg: 8 }}>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" sx={{ fontWeight: '800', mb: 1 }}>
-              Ratings & Comments
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
-              {flavor.ratings.length === 0
+          <SectionHeader
+            title="Ratings & Comments"
+            subtitle={
+              flavor.ratings.length === 0
                 ? 'Be the first to rate this flavor!'
-                : `Join the discussion with ${flavor.ratings.length} other fans.`}
-            </Typography>
-          </Box>
+                : `Join the discussion with ${flavor.ratings.length} other fans.`
+            }
+            compact
+          />
 
           {/* Add Rating Form */}
           {currentUser && flavor.user_rating === null && (
-            <Card
-              variant="outlined"
-              sx={{
-                mb: 4,
-                borderRadius: 4,
-                border: '2px dashed',
-                borderColor: 'divider',
-                bgcolor: 'transparent',
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Rate this flavor
-                </Typography>
-                <form onSubmit={handleRatingSubmit}>
-                  <Box sx={{ mb: 3 }}>
-                    <MuiRating
-                      max={10}
-                      value={newScore}
-                      onChange={(_, val) => setNewScore(val)}
-                      size="large"
+            <Box sx={{ mb: 4 }}>
+              <GlassCard intensity="subtle">
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    Rate this flavor
+                  </Typography>
+                  <form onSubmit={handleRatingSubmit}>
+                    <Box sx={{ mb: 3 }}>
+                      <MuiRating
+                        max={10}
+                        value={newScore}
+                        onChange={(_, val) => setNewScore(val)}
+                        size="large"
+                      />
+                    </Box>
+                    <MentionTextField
+                      multiline
+                      rows={3}
+                      placeholder="Share your thoughts..."
+                      value={newComment}
+                      onChange={(val) => setNewComment(val)}
                     />
-                  </Box>
-                  <MentionTextField
-                    multiline
-                    rows={3}
-                    placeholder="Share your thoughts..."
-                    value={newComment}
-                    onChange={(val) => setNewComment(val)}
-                  />
-                  <Button
-                    variant="contained"
-                    type="submit"
-                    disabled={!newScore}
-                    sx={{ mt: 2, borderRadius: 2, fontWeight: 'bold' }}
-                  >
-                    Submit Review
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                    <Button
+                      variant="contained"
+                      type="submit"
+                      disabled={!newScore}
+                      sx={{ mt: 2, borderRadius: 2, fontWeight: 'bold' }}
+                    >
+                      Submit Review
+                    </Button>
+                  </form>
+                </CardContent>
+              </GlassCard>
+            </Box>
           )}
 
           <Stack spacing={2.5}>
             {flavor.ratings.length === 0 ? (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  py: 8,
-                  bgcolor: 'action.hover',
-                  borderRadius: 4,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                }}
-              >
-                <Typography color="text.secondary">{t('dashboard.noRatings')}</Typography>
-              </Box>
+              <EmptyState title={t('dashboard.noRatings')} />
             ) : (
               flavor.ratings.map((rating: Rating) => (
-                <Card
-                  key={rating.id}
-                  elevation={0}
-                  sx={{
-                    borderRadius: 4,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8),
-                  }}
-                >
+                <GlassCard key={rating.id}>
                   <CardContent sx={{ p: 3 }}>
                     {editMode === rating.id ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -733,7 +700,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                     {/* Replies Section */}
                     <Collapse in={expandedReplies[rating.id]}>
                       <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                        {rating.replies.map((reply: any) => (
+                        {rating.replies.map((reply) => (
                           <Box
                             key={reply.id}
                             sx={{
@@ -896,13 +863,13 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                       </Box>
                     </Collapse>
                   </CardContent>
-                </Card>
+                </GlassCard>
               ))
             )}
           </Stack>
         </Grid>
       </Grid>
-    </Container>
+    </PageShell>
   );
 };
 

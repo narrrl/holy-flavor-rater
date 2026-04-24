@@ -1,17 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Container,
   Typography,
   Box,
-  Card,
   CardContent,
   Button,
   Stack,
-  alpha,
-  useTheme,
   CircularProgress,
   Chip,
-  Paper,
   List,
   ListItem,
   ListItemText,
@@ -34,6 +29,30 @@ import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
 import MentionTextField from '../components/MentionTextField';
 import RichText from '../components/RichText';
+import {
+  PageShell,
+  SectionHeader,
+  GlassCard,
+  GlassPaper,
+  FormCard,
+  EmptyState,
+} from '../components/ui';
+
+interface AdminReply {
+  id: number;
+  user: string;
+  text: string;
+  created_at: string;
+}
+
+interface AdminRating {
+  id: number;
+  flavor_name: string;
+  score: number;
+  comment: string;
+  created_at: string;
+  replies: AdminReply[];
+}
 
 interface AdminUser {
   id: number;
@@ -44,28 +63,25 @@ interface AdminUser {
   date_joined: string;
   last_login: string;
   ips: string[];
-  ratings: any[];
+  ratings: AdminRating[];
 }
 
 const AdminUserDetail: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const theme = useTheme();
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
 
-  // Edit state for Ratings
   const [editingRatingId, setEditingRatingId] = useState<number | null>(null);
   const [editScore, setEditScore] = useState(0);
   const [editComment, setEditComment] = useState('');
 
-  // Edit state for Replies
   const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
   const [editReplyText, setEditReplyText] = useState('');
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const res = await api.get(`admin-custom/${id}/user_detail/`);
       setUser(res.data);
@@ -75,11 +91,11 @@ const AdminUserDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
   useEffect(() => {
     fetchUser();
-  }, [id]);
+  }, [fetchUser]);
 
   useTitle(user ? `${t('admin.manageUser')}: ${user.username}` : 'User Management');
 
@@ -88,7 +104,7 @@ const AdminUserDetail: React.FC = () => {
     try {
       await api.patch(`admin-custom/${id}/user_detail/`, { is_active: !user.is_active });
       fetchUser();
-    } catch (err) {
+    } catch {
       alert('Action failed');
     }
   };
@@ -98,7 +114,7 @@ const AdminUserDetail: React.FC = () => {
       await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
       setEditingRatingId(null);
       fetchUser();
-    } catch (err) {
+    } catch {
       alert('Update failed');
     }
   };
@@ -108,7 +124,7 @@ const AdminUserDetail: React.FC = () => {
     try {
       await api.delete(`ratings/${ratingId}/`);
       fetchUser();
-    } catch (err) {
+    } catch {
       alert('Delete failed');
     }
   };
@@ -118,7 +134,7 @@ const AdminUserDetail: React.FC = () => {
       await api.patch(`replies/${replyId}/`, { text: editReplyText });
       setEditingReplyId(null);
       fetchUser();
-    } catch (err) {
+    } catch {
       alert('Update failed');
     }
   };
@@ -128,7 +144,7 @@ const AdminUserDetail: React.FC = () => {
     try {
       await api.delete(`replies/${replyId}/`);
       fetchUser();
-    } catch (err) {
+    } catch {
       alert('Delete failed');
     }
   };
@@ -139,7 +155,7 @@ const AdminUserDetail: React.FC = () => {
     try {
       await api.delete(`admin-custom/${id}/user_detail/`);
       navigate('/admin-panel');
-    } catch (err) {
+    } catch {
       alert('Delete failed');
     }
   };
@@ -153,21 +169,17 @@ const AdminUserDetail: React.FC = () => {
   if (!user) return <Typography>User not found</Typography>;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <PageShell>
       <Button
         variant="outlined"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
-        sx={{ mb: 4, borderRadius: 2 }}
+        sx={{ mb: 3, borderRadius: 2 }}
       >
         {t('common.back')}
       </Button>
 
-      {/* Profile Header */}
-      <Card
-        elevation={0}
-        sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', mb: 4 }}
-      >
+      <GlassCard intensity="strong" sx={{ mb: 4 }}>
         <CardContent sx={{ p: { xs: 2, md: 4 } }}>
           <Grid container spacing={3} alignItems="center">
             <Grid size={{ xs: 12, sm: 'auto' }}>
@@ -226,9 +238,8 @@ const AdminUserDetail: React.FC = () => {
             </Grid>
           </Grid>
         </CardContent>
-      </Card>
+      </GlassCard>
 
-      {/* Content Tabs */}
       <Box sx={{ mb: 4 }}>
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant="fullWidth">
           <Tab
@@ -246,19 +257,12 @@ const AdminUserDetail: React.FC = () => {
         <Divider />
       </Box>
 
-      {/* TAB 0: USER CONTENT (Ratings & Replies) */}
       {activeTab === 0 && (
         <Box>
-          <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-            User Ratings & Discussion
-          </Typography>
+          <SectionHeader title="User Ratings & Discussion" compact />
           <Stack spacing={2}>
             {user.ratings.map((rating) => (
-              <Card
-                key={rating.id}
-                variant="outlined"
-                sx={{ borderRadius: 3, bgcolor: alpha(theme.palette.background.paper, 0.4) }}
-              >
+              <GlassCard key={rating.id} intensity="subtle">
                 <CardContent sx={{ p: { xs: 2, md: 3 } }}>
                   {editingRatingId === rating.id ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -351,7 +355,7 @@ const AdminUserDetail: React.FC = () => {
 
                       {rating.replies.length > 0 && (
                         <Box sx={{ pl: 2, borderLeft: '2px solid', borderColor: 'divider' }}>
-                          {rating.replies.map((reply: any) => (
+                          {rating.replies.map((reply) => (
                             <Box key={reply.id} sx={{ mb: 1.5 }}>
                               {editingReplyId === reply.id ? (
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -428,29 +432,15 @@ const AdminUserDetail: React.FC = () => {
                     </>
                   )}
                 </CardContent>
-              </Card>
+              </GlassCard>
             ))}
-            {user.ratings.length === 0 && (
-              <Box
-                sx={{
-                  py: 6,
-                  textAlign: 'center',
-                  bgcolor: 'action.hover',
-                  borderRadius: 3,
-                  border: '1px dashed',
-                  borderColor: 'divider',
-                }}
-              >
-                <Typography color="text.secondary">No ratings yet.</Typography>
-              </Box>
-            )}
+            {user.ratings.length === 0 && <EmptyState title="No ratings yet." />}
           </Stack>
         </Box>
       )}
 
-      {/* TAB 1: SECURITY & IP */}
       {activeTab === 1 && (
-        <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+        <GlassPaper intensity="subtle" sx={{ p: 3 }}>
           <Typography
             variant="h6"
             gutterBottom
@@ -471,41 +461,34 @@ const AdminUserDetail: React.FC = () => {
               <Typography variant="caption">No IP history available.</Typography>
             )}
           </List>
-        </Paper>
+        </GlassPaper>
       )}
 
-      {/* TAB 2: DANGER ZONE */}
       {activeTab === 2 && (
-        <Paper
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            border: '1px solid',
-            borderColor: 'error.main',
-            bgcolor: (theme) => alpha(theme.palette.error.main, 0.05),
-          }}
+        <FormCard
+          title={t('admin.dangerZone')}
+          subtitle="Deleting this user will permanently remove their profile, all their ratings, replies, and IP history. This action is irreversible."
+          danger
+          asForm={false}
+          actions={
+            <Button
+              variant="contained"
+              color="error"
+              size="large"
+              startIcon={<DeleteIcon />}
+              onClick={handleDelete}
+              sx={{ borderRadius: 2, fontWeight: 'bold', px: 4 }}
+            >
+              {t('admin.deleteUser')}
+            </Button>
+          }
         >
-          <Typography variant="h5" color="error" gutterBottom sx={{ fontWeight: 'bold' }}>
-            {t('admin.dangerZone')}
+          <Typography variant="body2" color="text.secondary">
+            Proceed only if the user has been reviewed for policy violations or requested deletion.
           </Typography>
-          <Typography variant="body1" sx={{ mb: 4, maxWidth: 600 }}>
-            Deleting this user will permanently remove their profile, all their ratings, replies,
-            and IP history.
-            <strong> This action is irreversible.</strong>
-          </Typography>
-          <Button
-            variant="contained"
-            color="error"
-            size="large"
-            startIcon={<DeleteIcon />}
-            onClick={handleDelete}
-            sx={{ borderRadius: 2, fontWeight: 'bold', px: 4 }}
-          >
-            {t('admin.deleteUser')}
-          </Button>
-        </Paper>
+        </FormCard>
       )}
-    </Container>
+    </PageShell>
   );
 };
 

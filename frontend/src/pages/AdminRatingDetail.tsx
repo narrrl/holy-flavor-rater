@@ -1,14 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Button,
-  Stack,
-  CircularProgress,
-  TextField,
-  Paper,
-} from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Button, Stack, CircularProgress, TextField } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +7,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import MentionTextField from '../components/MentionTextField';
+import { PageShell, SectionHeader, FormCard } from '../components/ui';
+
+interface AdminRating {
+  id: number;
+  user: string;
+  score: number;
+  comment: string | null;
+  flavor_name: string;
+}
 
 const AdminRatingDetail: React.FC = () => {
   const { t } = useTranslation();
@@ -23,12 +23,12 @@ const AdminRatingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [score, setScore] = useState(0);
   const [comment, setComment] = useState('');
-  const [rating, setRating] = useState<any>(null);
+  const [rating, setRating] = useState<AdminRating | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRating = async () => {
+  const fetchRating = useCallback(async () => {
     try {
-      const res = await api.get(`ratings/${id}/`);
+      const res = await api.get<AdminRating>(`ratings/${id}/`);
       setRating(res.data);
       setScore(res.data.score);
       setComment(res.data.comment || '');
@@ -38,20 +38,21 @@ const AdminRatingDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
   useEffect(() => {
     fetchRating();
-  }, [id]);
+  }, [fetchRating]);
 
   useTitle(rating ? `${t('admin.manageRating')}: ${rating.flavor_name}` : 'Rating Management');
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       await api.patch(`ratings/${id}/`, { score, comment });
       fetchRating();
       alert('Rating updated!');
-    } catch (err) {
+    } catch {
       alert('Update failed');
     }
   };
@@ -61,38 +62,57 @@ const AdminRatingDetail: React.FC = () => {
     try {
       await api.delete(`ratings/${id}/`);
       navigate('/admin-panel');
-    } catch (err) {
+    } catch {
       alert('Delete failed');
     }
   };
 
   if (loading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
     );
 
+  if (!rating) return null;
+
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <PageShell>
       <Button
         variant="outlined"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
-        sx={{ mb: 4, borderRadius: 2 }}
+        sx={{ alignSelf: 'flex-start', borderRadius: 2 }}
       >
         {t('common.back')}
       </Button>
 
-      <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 4 }}>
-        {t('admin.manageRating')}
-      </Typography>
+      <SectionHeader title={t('admin.manageRating')} />
 
-      <Paper sx={{ p: 3, borderRadius: 4 }}>
-        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          {rating.flavor_name} (User: {rating.user})
-        </Typography>
-        <Stack spacing={3} sx={{ mt: 3 }}>
+      <Box sx={{ maxWidth: 560, width: '100%' }}>
+        <FormCard
+          title={rating.flavor_name}
+          subtitle={`User: ${rating.user}`}
+          onSubmit={handleUpdate}
+          actions={
+            <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+              <Button variant="contained" fullWidth type="submit">
+                {t('common.save')}
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                startIcon={<DeleteIcon />}
+                onClick={handleDelete}
+              >
+                {t('common.delete')}
+              </Button>
+            </Stack>
+          }
+        >
           <TextField
             label="Score"
             type="number"
@@ -101,23 +121,9 @@ const AdminRatingDetail: React.FC = () => {
             onChange={(e) => setScore(Number(e.target.value))}
           />
           <MentionTextField multiline rows={4} value={comment} onChange={setComment} />
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained" fullWidth onClick={handleUpdate}>
-              {t('common.save')}
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              fullWidth
-              startIcon={<DeleteIcon />}
-              onClick={handleDelete}
-            >
-              {t('common.delete')}
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
-    </Container>
+        </FormCard>
+      </Box>
+    </PageShell>
   );
 };
 

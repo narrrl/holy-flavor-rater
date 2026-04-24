@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Button, Stack, CircularProgress, Paper } from '@mui/material';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Button, Stack, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
@@ -7,19 +7,25 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import MentionTextField from '../components/MentionTextField';
+import { PageShell, SectionHeader, FormCard } from '../components/ui';
+
+interface AdminReply {
+  id: number;
+  user: string;
+  text: string;
+}
 
 const AdminReplyDetail: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [text, setText] = useState('');
-  const [reply, setReply] = useState<any>(null);
+  const [reply, setReply] = useState<AdminReply | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchReply = async () => {
+  const fetchReply = useCallback(async () => {
     try {
-      // We use the replies list/detail endpoint
-      const res = await api.get(`replies/${id}/`);
+      const res = await api.get<AdminReply>(`replies/${id}/`);
       setReply(res.data);
       setText(res.data.text);
     } catch (err) {
@@ -28,20 +34,21 @@ const AdminReplyDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, navigate]);
 
   useEffect(() => {
     fetchReply();
-  }, [id]);
+  }, [fetchReply]);
 
   useTitle(reply ? `${t('admin.manageReply')}` : 'Reply Management');
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       await api.patch(`replies/${id}/`, { text });
       fetchReply();
       alert('Reply updated!');
-    } catch (err) {
+    } catch {
       alert('Update failed');
     }
   };
@@ -51,56 +58,60 @@ const AdminReplyDetail: React.FC = () => {
     try {
       await api.delete(`replies/${id}/`);
       navigate('/admin-panel');
-    } catch (err) {
+    } catch {
       alert('Delete failed');
     }
   };
 
   if (loading)
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Box>
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
     );
 
+  if (!reply) return null;
+
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
+    <PageShell>
       <Button
         variant="outlined"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
-        sx={{ mb: 4, borderRadius: 2 }}
+        sx={{ alignSelf: 'flex-start', borderRadius: 2 }}
       >
         {t('common.back')}
       </Button>
 
-      <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 4 }}>
-        {t('admin.manageReply')}
-      </Typography>
+      <SectionHeader title={t('admin.manageReply')} />
 
-      <Paper sx={{ p: 3, borderRadius: 4 }}>
-        <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-          Reply by {reply.user}
-        </Typography>
-        <Stack spacing={3} sx={{ mt: 3 }}>
+      <Box sx={{ maxWidth: 560, width: '100%' }}>
+        <FormCard
+          title={`Reply by ${reply.user}`}
+          onSubmit={handleUpdate}
+          actions={
+            <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+              <Button variant="contained" fullWidth type="submit">
+                {t('common.save')}
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                startIcon={<DeleteIcon />}
+                onClick={handleDelete}
+              >
+                {t('common.delete')}
+              </Button>
+            </Stack>
+          }
+        >
           <MentionTextField multiline rows={4} value={text} onChange={setText} />
-          <Stack direction="row" spacing={2}>
-            <Button variant="contained" fullWidth onClick={handleUpdate}>
-              {t('common.save')}
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              fullWidth
-              startIcon={<DeleteIcon />}
-              onClick={handleDelete}
-            >
-              {t('common.delete')}
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
-    </Container>
+        </FormCard>
+      </Box>
+    </PageShell>
   );
 };
 

@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Container,
   Typography,
   Box,
   Grid,
-  Card,
   CardContent,
   Button,
   Table,
@@ -13,7 +11,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Stack,
   alpha,
   CircularProgress,
@@ -33,6 +30,7 @@ import {
   MenuItem,
   FormControl,
 } from '@mui/material';
+import { PageShell, GlassCard, GlassPaper, EmptyState } from '../components/ui';
 import EditIcon from '@mui/icons-material/Edit';
 import EmailIcon from '@mui/icons-material/Email';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -81,6 +79,16 @@ interface AdminUser {
   ips: string[];
 }
 
+interface BannerSettingSchema {
+  key: string;
+  label: string;
+  type: 'number' | 'slider' | 'text' | 'boolean';
+  min?: number;
+  max?: number;
+  step?: number;
+  description?: string;
+}
+
 interface Banner {
   id: number;
   name: string;
@@ -88,8 +96,8 @@ interface Banner {
   description: string;
   is_active: boolean;
   is_enabled: boolean;
-  settings: any;
-  schema: any[];
+  settings: Record<string, unknown>;
+  schema: BannerSettingSchema[];
 }
 
 interface Job {
@@ -127,7 +135,7 @@ const AdminDashboard: React.FC = () => {
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
-  const fetchData = async (silent = false) => {
+  const fetchData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
       const [statsRes, usersRes, bannersRes, jobsRes, configRes] = await Promise.all([
@@ -153,7 +161,7 @@ const AdminDashboard: React.FC = () => {
     }
 
     if (!silent) setLoading(false);
-  };
+  }, []);
 
   // Poll for job updates if any are running or pending
   useEffect(() => {
@@ -162,13 +170,13 @@ const AdminDashboard: React.FC = () => {
       const interval = setInterval(() => fetchData(true), 3000);
       return () => clearInterval(interval);
     }
-  }, [jobs, currentTab]);
+  }, [jobs, currentTab, fetchData]);
 
-  const handleUpdateConfig = async (key: string, value: any) => {
+  const handleUpdateConfig = async (key: string, value: unknown) => {
     try {
       const res = await api.patch('admin-custom/config/', { [key]: value });
       setConfig(res.data);
-    } catch (err) {
+    } catch {
       alert('Failed to update configuration');
     }
   };
@@ -177,18 +185,18 @@ const AdminDashboard: React.FC = () => {
     try {
       await api.post(`admin-custom/${id}/trigger_job/`);
       fetchData(true);
-    } catch (err) {
+    } catch {
       alert('Failed to trigger job');
     }
   };
 
   const handleUpdateJobSchedule = async (id: number, interval: number, nextRun?: string) => {
     try {
-      const data: any = { interval_hours: interval };
+      const data: Record<string, unknown> = { interval_hours: interval };
       if (nextRun) data.next_run = nextRun;
       await api.patch(`admin-custom/${id}/update_job_schedule/`, data);
       fetchData(true);
-    } catch (err) {
+    } catch {
       alert('Failed to update schedule');
     }
   };
@@ -206,21 +214,23 @@ const AdminDashboard: React.FC = () => {
     try {
       await api.post(`banners/${id}/toggle_enabled/`);
       fetchData();
-    } catch (err: any) {
-      alert(err.response?.data?.error || 'Failed to toggle visibility');
+    } catch (err) {
+      const error = err as { response?: { data?: { error?: string } } };
+      alert(error.response?.data?.error || 'Failed to toggle visibility');
     }
   };
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const handleSendTestEmail = async () => {
     try {
       await api.post('admin-custom/send_test_email/');
       alert(t('admin.testEmailSuccess'));
-    } catch (err: any) {
-      alert(`Error: ${err.response?.data?.error || 'Failed to send'}`);
+    } catch (err) {
+      const error = err as { response?: { data?: { error?: string } } };
+      alert(`Error: ${error.response?.data?.error || 'Failed to send'}`);
     }
   };
 
@@ -238,12 +248,12 @@ const AdminDashboard: React.FC = () => {
     );
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
+    <PageShell>
       <Button
         variant="outlined"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
-        sx={{ mb: 4, borderRadius: 2 }}
+        sx={{ mb: 3, borderRadius: 2 }}
       >
         {t('common.back')}
       </Button>
@@ -267,7 +277,7 @@ const AdminDashboard: React.FC = () => {
         <Box>
           <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 6 }}>
             <Grid size={{ xs: 6, md: 3 }}>
-              <Card sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) }}>
+              <GlassCard intensity="subtle" sx={{ bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1) }}>
                 <CardContent sx={{ p: isMobile ? 2 : 3 }}>
                   <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>
                     {t('admin.totalUsers')}
@@ -276,10 +286,10 @@ const AdminDashboard: React.FC = () => {
                     {stats?.total_users}
                   </Typography>
                 </CardContent>
-              </Card>
+              </GlassCard>
             </Grid>
             <Grid size={{ xs: 6, md: 3 }}>
-              <Card sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.1) }}>
+              <GlassCard intensity="subtle" sx={{ bgcolor: (theme) => alpha(theme.palette.error.main, 0.1) }}>
                 <CardContent sx={{ p: isMobile ? 2 : 3 }}>
                   <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>
                     {t('admin.openTickets')}
@@ -291,10 +301,10 @@ const AdminDashboard: React.FC = () => {
                     {stats?.open_tickets}
                   </Typography>
                 </CardContent>
-              </Card>
+              </GlassCard>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
-              <Card variant="outlined">
+              <GlassCard intensity="subtle">
                 <CardContent sx={{ p: isMobile ? 2 : 3 }}>
                   <Stack
                     direction={isMobile ? 'column' : 'row'}
@@ -327,7 +337,7 @@ const AdminDashboard: React.FC = () => {
                     </Button>
                   </Stack>
                 </CardContent>
-              </Card>
+              </GlassCard>
             </Grid>
           </Grid>
 
@@ -337,7 +347,7 @@ const AdminDashboard: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
                 System Configuration (Live)
               </Typography>
-              <Paper variant="outlined" sx={{ p: 0, borderRadius: 3, overflow: 'hidden' }}>
+              <GlassPaper intensity="subtle" sx={{ p: 0, overflow: 'hidden' }}>
                 <List disablePadding>
                   {[
                     { key: 'site_name', label: 'Site Name', type: 'text' },
@@ -352,11 +362,17 @@ const AdminDashboard: React.FC = () => {
                     <ListItem key={item.key} divider={idx < 3} sx={{ py: 2 }}>
                       <ListItemText
                         primary={item.label}
-                        secondary={item.type === 'text' ? (config as any)?.[item.key] : null}
+                        secondary={
+                          item.type === 'text'
+                            ? (config as unknown as Record<string, string>)?.[item.key]
+                            : null
+                        }
                       />
                       {item.type === 'switch' ? (
                         <Switch
-                          checked={(config as any)?.[item.key] || false}
+                          checked={
+                            (config as unknown as Record<string, boolean>)?.[item.key] || false
+                          }
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                             handleUpdateConfig(item.key, e.target.checked)
                           }
@@ -367,7 +383,7 @@ const AdminDashboard: React.FC = () => {
                           onClick={() => {
                             const val = prompt(
                               `Enter new value for ${item.label}:`,
-                              (config as any)?.[item.key],
+                              (config as unknown as Record<string, string>)?.[item.key],
                             );
                             if (val !== null) handleUpdateConfig(item.key, val);
                           }}
@@ -378,7 +394,7 @@ const AdminDashboard: React.FC = () => {
                     </ListItem>
                   ))}
                 </List>
-              </Paper>
+              </GlassPaper>
             </Grid>
 
             {/* Environment Info */}
@@ -386,10 +402,7 @@ const AdminDashboard: React.FC = () => {
               <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
                 Environment Info (.env)
               </Typography>
-              <Paper
-                variant="outlined"
-                sx={{ p: 3, borderRadius: 3, bgcolor: alpha('#000', 0.02) }}
-              >
+              <GlassPaper intensity="subtle" sx={{ p: 3 }}>
                 <Stack spacing={2.5}>
                   <Box>
                     <Typography
@@ -436,7 +449,7 @@ const AdminDashboard: React.FC = () => {
                     </Typography>
                   </Box>
                 </Stack>
-              </Paper>
+              </GlassPaper>
             </Grid>
           </Grid>
         </Box>
@@ -467,7 +480,7 @@ const AdminDashboard: React.FC = () => {
           {isMobile ? (
             <Stack spacing={2}>
               {filteredUsers.map((user) => (
-                <Card key={user.id} variant="outlined" sx={{ borderRadius: 3 }}>
+                <GlassCard key={user.id} intensity="subtle" sx={{ borderRadius: 3 }}>
                   <CardContent sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
@@ -500,14 +513,11 @@ const AdminDashboard: React.FC = () => {
                       )}
                     </Stack>
                   </CardContent>
-                </Card>
+                </GlassCard>
               ))}
             </Stack>
           ) : (
-            <TableContainer
-              component={Paper}
-              sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
-            >
+            <TableContainer component={GlassPaper} sx={{ borderRadius: 3 }}>
               <Table>
                 <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
@@ -588,18 +598,19 @@ const AdminDashboard: React.FC = () => {
           </Typography>
 
           {banners.length === 0 ? (
-            <Card variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
-              <Typography color="text.secondary">
-                No banner models found in the database.
-              </Typography>
-              <Button variant="outlined" sx={{ mt: 2 }} onClick={() => fetchData()}>
-                Retry Loading
-              </Button>
-            </Card>
+            <EmptyState
+              title="No banner models found"
+              subtitle="No banners registered in the database."
+              action={
+                <Button variant="outlined" onClick={() => fetchData()}>
+                  Retry Loading
+                </Button>
+              }
+            />
           ) : (
             <Stack spacing={3}>
               {banners.map((banner) => (
-                <Card
+                <GlassCard
                   key={banner.id}
                   sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
                 >
@@ -671,7 +682,7 @@ const AdminDashboard: React.FC = () => {
                       )}
                     </Stack>
                   </CardContent>
-                </Card>
+                </GlassCard>
               ))}
             </Stack>
           )}
@@ -685,7 +696,7 @@ const AdminDashboard: React.FC = () => {
           </Typography>
           <Stack spacing={3}>
             {jobs.map((job) => (
-              <Card
+              <GlassCard
                 key={job.id}
                 sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
               >
@@ -819,7 +830,7 @@ const AdminDashboard: React.FC = () => {
                     Trigger Now
                   </Button>
                 </CardContent>
-              </Card>
+              </GlassCard>
             ))}
           </Stack>
         </Box>
@@ -834,7 +845,7 @@ const AdminDashboard: React.FC = () => {
         banner={selectedBanner}
         onSave={fetchData}
       />
-    </Container>
+    </PageShell>
   );
 };
 

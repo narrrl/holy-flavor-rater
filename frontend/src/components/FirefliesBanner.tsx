@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { alpha, useTheme } from '@mui/material';
+import { useBannerFrameGate } from './BannerPerformanceWrapper';
 
 interface FirefliesBannerProps {
   username: string;
@@ -19,6 +20,7 @@ interface FirefliesBannerProps {
 const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, settings }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
+  const gate = useBannerFrameGate();
 
   const count = settings?.count ?? 150;
   const baseSpeed = settings?.speed ?? 0.8; // Slower default cruise
@@ -133,7 +135,13 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
     }
 
     let time = 0;
-    const draw = () => {
+    const draw = (now = 0) => {
+      const decision = gate(now);
+      if (decision === 'halt') return;
+      if (decision === 'skip') {
+        animationFrameId = requestAnimationFrame(draw);
+        return;
+      }
       const width = canvas.width / (window.devicePixelRatio || 1);
       const height = canvas.height / (window.devicePixelRatio || 1);
       if (!width || !height) {
@@ -259,6 +267,7 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
     glowSizeMultiplier,
     flickerSpeed,
     theme,
+    gate,
   ]);
 
   return (
