@@ -124,27 +124,32 @@ const HextechCorruptionBanner: React.FC<HextechCorruptionBannerProps> = ({
     const mouse = { x: -1000, y: -1000, down: false };
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        mouse.x = -1000;
+        mouse.y = -1000;
+        mouse.down = false;
+      } else {
+        mouse.x = x;
+        mouse.y = y;
+      }
     };
-    const handleMouseDown = () => {
-      mouse.down = true;
+    const handleMouseDown = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
+        mouse.down = true;
+      }
     };
     const handleMouseUp = () => {
       mouse.down = false;
     };
 
-    const parent = canvas.parentElement;
-    if (parent) {
-      parent.addEventListener('mousemove', handleMouseMove);
-      parent.addEventListener('mousedown', handleMouseDown);
-      parent.addEventListener('mouseup', handleMouseUp);
-      parent.addEventListener('mouseleave', () => {
-        mouse.x = -1000;
-        mouse.y = -1000;
-        mouse.down = false;
-      });
-    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
 
     const draw = (now = 0) => {
       const decision = gate(now);
@@ -259,11 +264,9 @@ const HextechCorruptionBanner: React.FC<HextechCorruptionBannerProps> = ({
 
     return () => {
       resizeObserver.disconnect();
-      if (parent) {
-        parent.removeEventListener('mousemove', handleMouseMove);
-        parent.removeEventListener('mousedown', handleMouseDown);
-        parent.removeEventListener('mouseup', handleMouseUp);
-      }
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
       cancelAnimationFrame(animationFrameId);
     };
   }, [
@@ -288,7 +291,7 @@ const HextechCorruptionBanner: React.FC<HextechCorruptionBannerProps> = ({
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 1,
+        zIndex: 0,
       }}
     />
   );

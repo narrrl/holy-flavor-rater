@@ -113,44 +113,57 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({
 
     const mouse = { x: -1000, y: -1000, down: false };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const updateMouseFromCoords = (clientX: number, clientY: number) => {
       const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        mouse.x = -1000;
+        mouse.y = -1000;
+        return false;
+      }
+      mouse.x = x;
+      mouse.y = y;
+      return true;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!updateMouseFromCoords(e.clientX, e.clientY)) {
+        mouse.down = false;
+      }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (e.touches.length > 0) {
-        const rect = canvas.getBoundingClientRect();
-        mouse.x = e.touches[0].clientX - rect.left;
-        mouse.y = e.touches[0].clientY - rect.top;
+        updateMouseFromCoords(e.touches[0].clientX, e.touches[0].clientY);
       }
     };
 
-    const handleMouseDown = () => {
-      mouse.down = true;
+    const handleMouseDown = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x >= 0 && y >= 0 && x <= rect.width && y <= rect.height) {
+        mouse.down = true;
+      }
     };
     const handleMouseUp = () => {
       mouse.down = false;
     };
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        if (updateMouseFromCoords(e.touches[0].clientX, e.touches[0].clientY)) {
+          mouse.down = true;
+        }
+      }
+    };
 
-    const parent = canvas.parentElement;
-    if (parent) {
-      parent.addEventListener('mousemove', handleMouseMove);
-      parent.addEventListener('touchmove', handleTouchMove, { passive: false });
-      parent.addEventListener('mousedown', handleMouseDown);
-      parent.addEventListener('mouseup', handleMouseUp);
-      parent.addEventListener('touchstart', (e) => {
-        mouse.down = true;
-        handleTouchMove(e);
-      });
-      parent.addEventListener('touchend', handleMouseUp);
-      parent.addEventListener('mouseleave', () => {
-        mouse.x = -1000;
-        mouse.y = -1000;
-        mouse.down = false;
-      });
-    }
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchstart', handleTouchStart);
+    window.addEventListener('touchend', handleMouseUp);
 
     const draw = (now = 0) => {
       const decision = gate(now);
@@ -282,14 +295,12 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({
 
     return () => {
       resizeObserver.disconnect();
-      if (parent) {
-        parent.removeEventListener('mousemove', handleMouseMove);
-        parent.removeEventListener('touchmove', handleTouchMove);
-        parent.removeEventListener('mousedown', handleMouseDown);
-        parent.removeEventListener('mouseup', handleMouseUp);
-        parent.removeEventListener('touchstart', handleMouseDown);
-        parent.removeEventListener('touchend', handleMouseUp);
-      }
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleMouseUp);
       cancelAnimationFrame(animationFrameId);
     };
   }, [
@@ -315,7 +326,7 @@ const GenerativeBanner: React.FC<GenerativeBannerProps> = ({
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 1,
+        zIndex: 0,
         mixBlendMode: theme.palette.mode === 'light' ? 'multiply' : 'screen',
       }}
     />

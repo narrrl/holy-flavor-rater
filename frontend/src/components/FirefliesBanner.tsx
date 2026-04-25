@@ -121,18 +121,17 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
     const mouse = { x: -1000, y: -1000 };
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
-    };
-
-    const parent = canvas.parentElement;
-    if (parent) {
-      parent.addEventListener('mousemove', handleMouseMove);
-      parent.addEventListener('mouseleave', () => {
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
         mouse.x = -1000;
         mouse.y = -1000;
-      });
-    }
+      } else {
+        mouse.x = x;
+        mouse.y = y;
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
 
     let time = 0;
     const draw = (now = 0) => {
@@ -252,9 +251,7 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
 
     return () => {
       resizeObserver.disconnect();
-      if (parent) {
-        parent.removeEventListener('mousemove', handleMouseMove);
-      }
+      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
     };
   }, [
@@ -280,7 +277,7 @@ const FirefliesBanner: React.FC<FirefliesBannerProps> = ({ username, palette, se
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 1,
+        zIndex: 0,
       }}
     />
   );

@@ -43,7 +43,7 @@ const MatrixBanner: React.FC<DynamicBannerProps & { settings: Banner['settings']
         alignItems: 'center',
         justifyContent: 'center',
         fontFamily: 'monospace',
-        zIndex: 1,
+        zIndex: 0,
         overflow: 'hidden',
         opacity: settings?.opacity || 0.5,
       }}
