@@ -135,6 +135,10 @@ const resources = {
         save: 'Save',
         cancel: 'Cancel',
       },
+      status: {
+        limited: 'Limited',
+        outOfStock: 'Out of Stock',
+      },
       flavorDetail: {
         rateThisFlavor: 'Rate this flavor',
         scoreLabel: 'Your score, 1 to 10',
@@ -432,6 +436,10 @@ const resources = {
         delete: 'Löschen',
         save: 'Speichern',
         cancel: 'Abbrechen',
+      },
+      status: {
+        limited: 'Limitiert',
+        outOfStock: 'Ausverkauft',
       },
       flavorDetail: {
         rateThisFlavor: 'Diese Sorte bewerten',
