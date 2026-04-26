@@ -30,12 +30,15 @@ export interface CategoryItem {
   slug: string;
 }
 
+const unwrap = <T>(data: T[] | { results?: T[] }): T[] =>
+  Array.isArray(data) ? data : (data.results ?? []);
+
 export const useFlavorsList = () =>
   useQuery({
     queryKey: queryKeys.flavors({ scope: 'all' }),
     queryFn: async () => {
-      const res = await api.get<FlavorListItem[]>('flavors/');
-      return res.data;
+      const res = await api.get<FlavorListItem[] | { results: FlavorListItem[] }>('flavors/');
+      return unwrap(res.data);
     },
   });
 
@@ -43,8 +46,8 @@ export const useCategories = () =>
   useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const res = await api.get<CategoryItem[]>('categories/');
-      return res.data;
+      const res = await api.get<CategoryItem[] | { results: CategoryItem[] }>('categories/');
+      return unwrap(res.data);
     },
     staleTime: 5 * 60_000,
   });
