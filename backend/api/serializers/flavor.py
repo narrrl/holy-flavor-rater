@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import serializers
 
 from api.models import Category, Flavor, Rating
@@ -19,6 +20,8 @@ class FlavorSerializer(serializers.ModelSerializer):
     user_rating = serializers.SerializerMethodField()
     ratings = RatingSerializer(many=True, read_only=True)
     image_url = serializers.SerializerMethodField()
+    image_urls = serializers.SerializerMethodField()
+    rating_distribution = serializers.SerializerMethodField()
 
     class Meta:
         model = Flavor
@@ -34,10 +37,12 @@ class FlavorSerializer(serializers.ModelSerializer):
             "user_rating",
             "ratings",
             "image_url",
+            "image_urls",
             "image",
             "is_available",
             "is_legacy",
             "shop_url",
+            "rating_distribution",
         ]
         extra_kwargs = {"image": {"write_only": True}}
 
@@ -45,6 +50,23 @@ class FlavorSerializer(serializers.ModelSerializer):
         if obj.image:
             return absolute_image_url(self, obj.image)
         return obj.image_url
+
+    def get_image_urls(self, obj: Flavor) -> list[str]:
+        urls: list[str] = []
+        if obj.image:
+            absolute = absolute_image_url(self, obj.image)
+            if absolute:
+                urls.append(absolute)
+        urls.extend(obj.image_urls or [])
+        return urls
+
+    def get_rating_distribution(self, obj: Flavor) -> dict[str, int]:
+        counts = dict.fromkeys((str(i) for i in range(1, 11)), 0)
+        for row in obj.ratings.values("score").annotate(c=Count("id")):
+            score = row["score"]
+            if 1 <= score <= 10:
+                counts[str(score)] = row["c"]
+        return counts
 
     def get_user_rating(self, obj: Flavor) -> int | None:
         request = self.context.get("request")

@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Typography,
   Box,
   CardContent,
-  Rating as MuiRating,
   Button,
   Avatar,
   CircularProgress,
@@ -24,7 +23,6 @@ import { useFlavorDetail, type FlavorDetailRating } from '../../api/queries/useF
 import { useCurrentUserLite } from '../../api/queries/useCurrentUserLite';
 import { useUpdateFlavor } from '../../api/mutations/useFlavorMutations';
 import {
-  useCreateRating,
   useDeleteRating,
   useCreateReply,
   useDeleteReply,
@@ -44,7 +42,17 @@ import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
 import RatingBadge from '../../components/RatingBadge';
 import StatusBadge from '../../components/StatusBadge';
-import { PageShell, HeroBackdrop, GlassCard, SectionHeader, EmptyState } from '../../components/ui';
+import {
+  PageShell,
+  HeroBackdrop,
+  GlassCard,
+  SectionHeader,
+  EmptyState,
+  HeroGallery,
+  ScoreInput,
+  RatingDistribution,
+} from '../../components/ui';
+import RatingForm from './components/RatingForm';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 
@@ -63,7 +71,6 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const { data: meData } = useCurrentUserLite();
   const currentUser = meData?.username ?? null;
   const updateFlavor = useUpdateFlavor();
-  const createRating = useCreateRating();
   const deleteRatingMutation = useDeleteRating();
   const updateRating = useUpdateRating();
   const createReply = useCreateReply();
@@ -82,10 +89,6 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
     is_available: true,
     is_legacy: false,
   });
-
-  // Rating form state
-  const [newScore, setNewScore] = useState<number | null>(null);
-  const [newComment, setNewComment] = useState('');
 
   // Edit state
   const [editMode, setEditMode] = useState<number | null>(null);
@@ -109,6 +112,8 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   }, [flavor]);
 
   useTitle(flavor?.name || t('common.loading'));
+
+  const galleryImages = useMemo(() => flavor?.image_urls ?? [], [flavor?.image_urls]);
 
   const handleAdminUpdate = async () => {
     if (!id) return;
@@ -134,23 +139,6 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       notify({ message: 'Image upload failed', severity: 'error' });
     } finally {
       setUploadingImage(false);
-    }
-  };
-
-  const handleRatingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newScore) {
-      notify({ message: 'Please select a score', severity: 'warning' });
-      return;
-    }
-    if (!flavor) return;
-    try {
-      await createRating.mutateAsync({ flavor: flavor.id, score: newScore, comment: newComment });
-      setNewScore(null);
-      setNewComment('');
-    } catch (err) {
-      const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
-      notify({ message: msg || 'Failed to submit rating', severity: 'error' });
     }
   };
 
@@ -228,7 +216,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   if (!flavor)
     return (
       <PageShell>
-        <Typography>Flavor not found</Typography>
+        <Typography>{t('flavorDetail.flavorNotFound')}</Typography>
       </PageShell>
     );
 
@@ -253,36 +241,21 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
         {/* Left: Product Info Card */}
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box sx={{ position: { md: 'sticky' }, top: 100 }}>
-            <GlassCard intensity="strong" sx={{ overflow: 'hidden' }}>
-              <Box
-                sx={{
-                  p: 4,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: 'action.hover',
-                  position: 'relative',
-                  aspectRatio: '1/1',
-                }}
-              >
-                <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1 }}>
-                  <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} />
-                </Box>
-                {flavor.image_url ? (
-                  <Box
-                    component="img"
-                    src={flavor.image_url}
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'contain',
-                      filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.15))',
-                    }}
-                  />
-                ) : (
-                  <Typography color="text.secondary">No Image</Typography>
-                )}
-              </Box>
+            <HeroGallery
+              images={galleryImages}
+              alt={flavor.name}
+              badge={<StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} />}
+            />
+            <Box
+              sx={{
+                display: { xs: 'block', lg: 'none' },
+                height: 2,
+                my: 2,
+                background: theme.tokens.accent.softGradient,
+                borderRadius: 1,
+              }}
+            />
+            <GlassCard sx={{ mt: { xs: 0, lg: 2 } }}>
               <CardContent sx={{ p: 3 }}>
                 {adminMode && (
                   <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
@@ -402,7 +375,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                       {flavor.name}
                     </Typography>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                       <RatingBadge score={flavor.average_rating || 0} size="large" />
                       <Typography
                         variant="body2"
@@ -412,6 +385,15 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                         {flavor.ratings.length} {t('common.reviews')}
                       </Typography>
                     </Box>
+
+                    {flavor.ratings.length > 0 && (
+                      <Box sx={{ mb: 3 }}>
+                        <RatingDistribution
+                          distribution={flavor.rating_distribution}
+                          total={flavor.ratings.length}
+                        />
+                      </Box>
+                    )}
 
                     <Typography
                       variant="body2"
@@ -451,11 +433,11 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
         {/* Right: Ratings & Comments */}
         <Grid size={{ xs: 12, lg: 8 }}>
           <SectionHeader
-            title="Ratings & Comments"
+            title={t('flavorDetail.ratingsAndComments')}
             subtitle={
               flavor.ratings.length === 0
-                ? 'Be the first to rate this flavor!'
-                : `Join the discussion with ${flavor.ratings.length} other fans.`
+                ? t('flavorDetail.beTheFirst')
+                : t('flavorDetail.joinDiscussion', { count: flavor.ratings.length })
             }
             compact
           />
@@ -463,38 +445,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
           {/* Add Rating Form */}
           {currentUser && flavor.user_rating === null && (
             <Box sx={{ mb: 4 }}>
-              <GlassCard intensity="subtle">
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    Rate this flavor
-                  </Typography>
-                  <form onSubmit={handleRatingSubmit}>
-                    <Box sx={{ mb: 3 }}>
-                      <MuiRating
-                        max={10}
-                        value={newScore}
-                        onChange={(_, val) => setNewScore(val)}
-                        size="large"
-                      />
-                    </Box>
-                    <MentionTextField
-                      multiline
-                      rows={3}
-                      placeholder="Share your thoughts..."
-                      value={newComment}
-                      onChange={(val) => setNewComment(val)}
-                    />
-                    <Button
-                      variant="contained"
-                      type="submit"
-                      disabled={!newScore}
-                      sx={{ mt: 2, borderRadius: 2, fontWeight: 'bold' }}
-                    >
-                      Submit Review
-                    </Button>
-                  </form>
-                </CardContent>
-              </GlassCard>
+              <RatingForm flavorId={flavor.id} />
             </Box>
           )}
 
@@ -507,11 +458,11 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                   <CardContent sx={{ p: 3 }}>
                     {editMode === rating.id ? (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <MuiRating
-                          max={10}
-                          value={editScore}
-                          onChange={(_, val) => setEditScore(val || 0)}
-                          size="large"
+                        <ScoreInput
+                          value={editScore || null}
+                          onChange={(val) => setEditScore(val)}
+                          size="small"
+                          ariaLabel={t('flavorDetail.scoreLabel')}
                         />
                         <MentionTextField
                           multiline
@@ -598,7 +549,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                             color="text.secondary"
                             sx={{ mb: 2, fontStyle: 'italic' }}
                           >
-                            No comment provided.
+                            {t('flavorDetail.noComment')}
                           </Typography>
                         )}
 

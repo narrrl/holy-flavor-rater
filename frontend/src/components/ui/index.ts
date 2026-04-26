@@ -7,3 +7,6 @@ export { ReviewRow, type ReviewRowProps, type ReviewRowData } from './ReviewRow'
 export { FlavorCard, type FlavorCardProps, type FlavorCardData } from './FlavorCard';
 export { FormCard, type FormCardProps } from './FormCard';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
+export { default as ScoreInput, type ScoreInputProps } from './ScoreInput';
+export { default as HeroGallery, type HeroGalleryProps } from './HeroGallery';
+export { default as RatingDistribution, type RatingDistributionProps } from './RatingDistribution';

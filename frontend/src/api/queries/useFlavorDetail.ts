@@ -29,6 +29,8 @@ export interface FlavorDetailData {
   user_rating: number | null;
   ratings: FlavorDetailRating[];
   image_url: string | null;
+  image_urls: string[];
+  rating_distribution: Record<string, number>;
   is_available: boolean;
   is_legacy: boolean;
   shop_url: string | null;

@@ -132,6 +132,7 @@ class Command(BaseCommand):
             is_available = any(v.get("available") for v in variants)
             images = p.get("images", [])
             image_url = images[0].get("src") if images else None
+            image_urls_list = [img.get("src") for img in images if img.get("src")]
             description = self.clean_html(p.get("body_html", ""))
             handle = p.get("handle")
             shop_url = f"https://weareholy.com/products/{handle}" if handle else None
@@ -196,6 +197,7 @@ class Command(BaseCommand):
                         )
 
             flavor.image_url = image_url
+            flavor.image_urls = image_urls_list
             flavor.save()
             synced_external_ids.append(p["id"])
 
