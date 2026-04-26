@@ -2,7 +2,7 @@ from django.db.models import Count
 from rest_framework import serializers
 
 from api.models import Category, Flavor, Rating
-from api.serializers._helpers import absolute_image_url
+from api.serializers._helpers import absolute_image_url, absolute_media_url
 from api.serializers.rating import RatingSerializer
 
 
@@ -47,18 +47,29 @@ class FlavorSerializer(serializers.ModelSerializer):
         extra_kwargs = {"image": {"write_only": True}}
 
     def get_image_url(self, obj: Flavor) -> str | None:
+        if obj.main_image_path:
+            url = absolute_media_url(self, obj.main_image_path)
+            if url:
+                return url
+        if obj.local_image_paths:
+            url = absolute_media_url(self, obj.local_image_paths[0])
+            if url:
+                return url
         if obj.image:
             return absolute_image_url(self, obj.image)
         return obj.image_url
 
     def get_image_urls(self, obj: Flavor) -> list[str]:
-        urls: list[str] = []
+        if obj.local_image_paths:
+            urls = [absolute_media_url(self, p) for p in obj.local_image_paths]
+            return [u for u in urls if u]
+        legacy_urls: list[str] = []
         if obj.image:
             absolute = absolute_image_url(self, obj.image)
             if absolute:
-                urls.append(absolute)
-        urls.extend(obj.image_urls or [])
-        return urls
+                legacy_urls.append(absolute)
+        legacy_urls.extend(obj.image_urls or [])
+        return legacy_urls
 
     def get_rating_distribution(self, obj: Flavor) -> dict[str, int]:
         counts = dict.fromkeys((str(i) for i in range(1, 11)), 0)

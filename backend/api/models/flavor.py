@@ -21,6 +21,8 @@ class Flavor(models.Model):
     image_url = models.URLField(max_length=1000, blank=True, null=True)
     image_urls = models.JSONField(blank=True, default=list)
     image = models.ImageField(upload_to="flavors/", blank=True, null=True)
+    local_image_paths = models.JSONField(blank=True, default=list)
+    main_image_path = models.CharField(max_length=500, blank=True, null=True)
     shop_url = models.URLField(max_length=500, blank=True, null=True)
     is_available = models.BooleanField(default=True)
     is_legacy = models.BooleanField(default=False)

@@ -1,10 +1,11 @@
+import hashlib
 import os
 import re
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils.text import slugify
 
 from api.models import Category, Flavor
 
@@ -19,35 +20,47 @@ class Command(BaseCommand):
         cleantext = re.sub(cleanr, "", raw_html)
         return cleantext.strip()
 
-    def download_image(self, url, flavor_name):
+    def download_image_to_path(self, url, rel_path):
+        """Download `url` to MEDIA_ROOT/rel_path. Skip if file already exists. Returns rel_path or None."""
         if not url:
             return None
+        abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+        if os.path.exists(abs_path) and os.path.getsize(abs_path) > 0:
+            return rel_path
         try:
-            safe_name = slugify(flavor_name)
-            ext = url.split(".")[-1].split("?")[0].lower()
-            if ext not in ["jpg", "jpeg", "png", "webp", "gif"]:
-                ext = "png"
-
-            filename = f"{safe_name}.{ext}"
-            filepath = os.path.join(settings.MEDIA_ROOT, "flavors", filename)
-
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
+            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
             response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
             response.raise_for_status()
-
-            if os.path.exists(filepath):
-                os.remove(filepath)
-
-            with open(filepath, "wb") as f:
+            with open(abs_path, "wb") as f:
                 f.write(response.content)
-
-            return f"flavors/{filename}"
+            return rel_path
         except Exception as e:
-            self.stdout.write(
-                self.style.WARNING(f"Failed to download image for {flavor_name}: {e}")
-            )
+            self.stdout.write(self.style.WARNING(f"Failed to download {url}: {e}"))
             return None
+
+    @staticmethod
+    def _ext_for(url):
+        path = urlparse(url).path
+        ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+        return ext if ext in ("jpg", "jpeg", "png", "webp", "gif") else "png"
+
+    @staticmethod
+    def _hash_for(url):
+        path = urlparse(url).path
+        return hashlib.sha1(path.encode("utf-8")).hexdigest()[:10]
+
+    def download_gallery(self, image_urls, dir_slug):
+        """Download every URL into flavors/<dir_slug>/<i>_<hash>.<ext>. Returns list of rel paths."""
+        paths = []
+        for i, url in enumerate(image_urls):
+            if not url:
+                continue
+            filename = f"{i:02d}_{self._hash_for(url)}.{self._ext_for(url)}"
+            rel = os.path.join("flavors", dir_slug, filename)
+            saved = self.download_image_to_path(url, rel)
+            if saved:
+                paths.append(saved)
+        return paths
 
     def handle(self, *args, **options):
         url = "https://weareholy.com/products.json?limit=250"
@@ -143,12 +156,10 @@ class Command(BaseCommand):
 
             if not flavor:
                 # 2. Try exact name match in category
-                # REMOVED: is_legacy=False
                 flavor = Flavor.objects.filter(name=title, category=category).first()
 
             if not flavor:
                 # 3. Try case-insensitive name match in category (safety for whitespace/case)
-                # REMOVED: is_legacy=False
                 flavor = Flavor.objects.filter(name__iexact=title, category=category).first()
 
             if not flavor:
@@ -156,15 +167,11 @@ class Command(BaseCommand):
                 created_count += 1
             else:
                 updated_count += 1
-                # Ensure external_id is updated if it was missing
                 if not flavor.external_id:
                     flavor.external_id = p["id"]
-
-                # Reactivate the flavor if it was previously marked as legacy
                 if flavor.is_legacy:
                     flavor.is_legacy = False
 
-            # Ensure all synced fields are accurately reflected
             if (
                 flavor.name != title
                 and not Flavor.objects.filter(name=title, category=category)
@@ -177,24 +184,17 @@ class Command(BaseCommand):
             flavor.shop_url = shop_url
             flavor.is_available = is_available
 
-            if image_url:
-                # Check if local file exists
-                file_exists = False
-                if flavor.image:
-                    abs_path = os.path.join(settings.MEDIA_ROOT, flavor.image.name)
-                    if os.path.exists(abs_path):
-                        file_exists = True
-
-                # Download if missing or URL changed
-                if not file_exists or flavor.image_url != image_url:
-                    rel_path = self.download_image(image_url, title)
-                    if rel_path:
-                        flavor.image = rel_path
-                        self.stdout.write(f"Downloaded image for: {title}")
-                    else:
-                        self.stdout.write(
-                            self.style.WARNING(f"Failed to ensure image for: {title}")
-                        )
+            # Download whole gallery into flavors/<external_id>/
+            dir_slug = str(p["id"])
+            local_paths = self.download_gallery(image_urls_list, dir_slug)
+            if local_paths:
+                flavor.local_image_paths = local_paths
+                # Drop main_image_path if it points to a file no longer in the gallery
+                if flavor.main_image_path and flavor.main_image_path not in local_paths:
+                    flavor.main_image_path = None
+            elif not flavor.local_image_paths:
+                # No new paths and nothing previously stored — leave both empty
+                flavor.main_image_path = None
 
             flavor.image_url = image_url
             flavor.image_urls = image_urls_list

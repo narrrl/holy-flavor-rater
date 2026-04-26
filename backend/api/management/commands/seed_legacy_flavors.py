@@ -1,5 +1,7 @@
+import hashlib
 import json
 import os
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -13,29 +15,26 @@ class Command(BaseCommand):
     help = "Adds legacy flavors from JSON files in the legacy/ folder"
 
     def download_image(self, url, flavor_name):
+        """Download legacy image into flavors/legacy_<slug>/00_<hash>.<ext>. Returns rel path."""
         if not url:
             return None
         try:
             safe_name = slugify(flavor_name)
-            ext = url.split(".")[-1].split("?")[0].lower()
-            if ext not in ["jpg", "jpeg", "png", "webp", "gif"]:
+            path = urlparse(url).path
+            ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+            if ext not in ("jpg", "jpeg", "png", "webp", "gif"):
                 ext = "png"
-
-            filename = f"legacy_{safe_name}.{ext}"
-            filepath = os.path.join(settings.MEDIA_ROOT, "flavors", filename)
-
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-
+            url_hash = hashlib.sha1(path.encode("utf-8")).hexdigest()[:10]
+            rel_path = os.path.join("flavors", f"legacy_{safe_name}", f"00_{url_hash}.{ext}")
+            abs_path = os.path.join(settings.MEDIA_ROOT, rel_path)
+            if os.path.exists(abs_path) and os.path.getsize(abs_path) > 0:
+                return rel_path
+            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
             response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
             response.raise_for_status()
-
-            if os.path.exists(filepath):
-                os.remove(filepath)
-
-            with open(filepath, "wb") as f:
+            with open(abs_path, "wb") as f:
                 f.write(response.content)
-
-            return f"flavors/{filename}"
+            return rel_path
         except Exception as e:
             self.stdout.write(
                 self.style.WARNING(f"Failed to download image for {flavor_name}: {e}")
@@ -146,21 +145,18 @@ class Command(BaseCommand):
                 flavor.is_available = False  # Legacy is always unavailable via API
 
                 if image_url:
-                    # Check if local file exists
-                    file_exists = False
-                    if flavor.image:
-                        abs_path = os.path.join(settings.MEDIA_ROOT, flavor.image.name)
-                        if os.path.exists(abs_path):
-                            file_exists = True
-
-                    # Download if missing OR if image_url changed
-                    if not file_exists or flavor.image_url != image_url:
-                        rel_path = self.download_image(image_url, name)
-                        if rel_path:
-                            flavor.image = rel_path
-                            self.stdout.write(f"  -> Updated image for: {name}")
+                    rel_path = self.download_image(image_url, name)
+                    if rel_path:
+                        flavor.local_image_paths = [rel_path]
+                        if (
+                            flavor.main_image_path
+                            and flavor.main_image_path not in flavor.local_image_paths
+                        ):
+                            flavor.main_image_path = None
+                        self.stdout.write(f"  -> Image for: {name}")
 
                 flavor.image_url = image_url
+                flavor.image_urls = [image_url] if image_url else []
                 flavor.save()
                 processed_count += 1
 
