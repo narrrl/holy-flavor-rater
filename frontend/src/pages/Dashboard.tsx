@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Typography,
   CardContent,
@@ -32,7 +32,13 @@ import SearchIcon from '@mui/icons-material/Search';
 import ColorThief from 'colorthief';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import api from '../lib/api';
+import { useDashboard } from '../api/queries/useDashboard';
+import {
+  useDeleteRating,
+  useDeleteReply,
+  useCreateReply,
+  useUpdateRating,
+} from '../api/mutations/useRatingMutations';
 import { useTitle } from '../hooks/useTitle';
 import RatingBadge from '../components/RatingBadge';
 import StatusBadge from '../components/StatusBadge';
@@ -43,56 +49,17 @@ import { PageShell, GlassCard, GlassSurface, EmptyState } from '../components/ui
 import { useToast } from '../hooks/useToast';
 import { useConfirm } from '../hooks/useConfirm';
 
-interface Reply {
-  id: number;
-  user: string;
-  text: string;
-  created_at: string;
-}
-
-interface RatedItem {
-  id: number;
-  flavor: number;
-  flavor_name: string;
-  flavor_image: string | null;
-  category_name: string;
-  category_slug: string;
-  score: number;
-  comment: string | null;
-  created_at: string;
-  replies: Reply[];
-  is_legacy?: boolean;
-  is_available?: boolean;
-}
-
-interface MissingFlavor {
-  id: number;
-  name: string;
-  image_url: string | null;
-  category_name: string;
-  category_slug: string;
-  average_rating: number;
-  followed_average_rating?: number;
-  is_legacy?: boolean;
-  is_available?: boolean;
-}
-
-interface DashboardData {
-  user: { username: string; avatar: string | null };
-  rated_count: number;
-  missing_count: number;
-  missing_flavors: MissingFlavor[];
-  my_ratings: RatedItem[];
-}
-
 const Dashboard: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
   useTitle(t('dashboard.title'));
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useDashboard();
+  const updateRating = useUpdateRating();
+  const deleteRating = useDeleteRating();
+  const createReply = useCreateReply();
+  const deleteReply = useDeleteReply();
   const [activeTab, setActiveTab] = useState(0);
   const [palette, setPalette] = useState<string[]>([]);
 
@@ -124,21 +91,6 @@ const Dashboard: React.FC = () => {
     if (window.history.length > 1) navigate(-1);
     else navigate('/');
   };
-
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await api.get('users/dashboard/');
-      setData(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   useEffect(() => {
     if (data?.user?.avatar) {
@@ -177,9 +129,8 @@ const Dashboard: React.FC = () => {
 
   const handleUpdateRating = async (ratingId: number) => {
     try {
-      await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
+      await updateRating.mutateAsync({ id: ratingId, score: editScore, comment: editComment });
       setEditingRatingId(null);
-      fetchData();
     } catch {
       notify({ message: 'Failed to update review', severity: 'error' });
     }
@@ -188,8 +139,7 @@ const Dashboard: React.FC = () => {
   const handleDeleteRating = async (ratingId: number) => {
     if (!(await confirm({ message: 'Delete this review?', danger: true }))) return;
     try {
-      await api.delete(`ratings/${ratingId}/`);
-      fetchData();
+      await deleteRating.mutateAsync(ratingId);
     } catch {
       notify({ message: 'Failed to delete review', severity: 'error' });
     }
@@ -199,10 +149,9 @@ const Dashboard: React.FC = () => {
     const text = replyInputs[ratingId];
     if (!text) return;
     try {
-      await api.post(`ratings/${ratingId}/reply/`, { text });
+      await createReply.mutateAsync({ ratingId, text });
       setReplyInputs({ ...replyInputs, [ratingId]: '' });
       setExpandedReplies({ ...expandedReplies, [ratingId]: true });
-      fetchData();
     } catch {
       notify({ message: 'Failed to send reply', severity: 'error' });
     }
@@ -211,8 +160,7 @@ const Dashboard: React.FC = () => {
   const handleDeleteReply = async (replyId: number) => {
     if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
-      await api.delete(`replies/${replyId}/`);
-      fetchData();
+      await deleteReply.mutateAsync(replyId);
     } catch {
       notify({ message: 'Failed to delete reply', severity: 'error' });
     }

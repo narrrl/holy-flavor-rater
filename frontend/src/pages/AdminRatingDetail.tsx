@@ -1,60 +1,48 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, Stack, CircularProgress, TextField } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../lib/api';
+import { useAdminRating } from '../api/queries/useAdminQueries';
+import { useDeleteRating, useUpdateRating } from '../api/mutations/useRatingMutations';
 import { useTitle } from '../hooks/useTitle';
 import MentionTextField from '../components/MentionTextField';
 import { PageShell, SectionHeader, FormCard } from '../components/ui';
 import { useToast } from '../hooks/useToast';
 import { useConfirm } from '../hooks/useConfirm';
 
-interface AdminRating {
-  id: number;
-  user: string;
-  score: number;
-  comment: string | null;
-  flavor_name: string;
-}
-
 const AdminRatingDetail: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { data: rating, isLoading: loading, error } = useAdminRating(id);
+  const updateRating = useUpdateRating();
+  const deleteRating = useDeleteRating();
+
   const [score, setScore] = useState(0);
   const [comment, setComment] = useState('');
-  const [rating, setRating] = useState<AdminRating | null>(null);
-  const [loading, setLoading] = useState(true);
   const { notify } = useToast();
   const { confirm } = useConfirm();
 
-  const fetchRating = useCallback(async () => {
-    try {
-      const res = await api.get<AdminRating>(`ratings/${id}/`);
-      setRating(res.data);
-      setScore(res.data.score);
-      setComment(res.data.comment || '');
-    } catch (err) {
-      console.error(err);
-      navigate('/admin-panel');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (rating) {
+      setScore(rating.score);
+      setComment(rating.comment || '');
     }
-  }, [id, navigate]);
+  }, [rating]);
 
   useEffect(() => {
-    fetchRating();
-  }, [fetchRating]);
+    if (error) navigate('/admin-panel');
+  }, [error, navigate]);
 
   useTitle(rating ? `${t('admin.manageRating')}: ${rating.flavor_name}` : 'Rating Management');
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     try {
-      await api.patch(`ratings/${id}/`, { score, comment });
-      fetchRating();
+      await updateRating.mutateAsync({ id: Number(id), score, comment });
       notify({ message: 'Rating updated!', severity: 'success' });
     } catch {
       notify({ message: 'Update failed', severity: 'error' });
@@ -62,9 +50,10 @@ const AdminRatingDetail: React.FC = () => {
   };
 
   const handleDelete = async () => {
+    if (!id) return;
     if (!(await confirm({ message: 'Delete this rating and all replies?', danger: true }))) return;
     try {
-      await api.delete(`ratings/${id}/`);
+      await deleteRating.mutateAsync(Number(id));
       navigate('/admin-panel');
     } catch {
       notify({ message: 'Delete failed', severity: 'error' });

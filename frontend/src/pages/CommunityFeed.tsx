@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Typography,
   Box,
@@ -26,7 +26,14 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import PeopleIcon from '@mui/icons-material/People';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link, useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import {
+  useCommunityFeed,
+  useFollowedTopFlavors,
+  useFollowingList,
+  type FeedRating,
+} from '../api/queries/useCommunityFeed';
+import { useNotificationsQuery } from '../api/queries/useNotifications';
+import { useCreateReply } from '../api/mutations/useRatingMutations';
 import { useTitle } from '../hooks/useTitle';
 import RichText from '../components/RichText';
 import { formatDate } from '../utils/date';
@@ -35,61 +42,6 @@ import MentionTextField from '../components/MentionTextField';
 import RatingBadge from '../components/RatingBadge';
 import { PageShell, HeroBackdrop, SectionHeader, GlassCard, EmptyState } from '../components/ui';
 import { useToast } from '../hooks/useToast';
-
-interface Reply {
-  id: number;
-  user: string;
-  text: string;
-  created_at: string;
-}
-
-interface FeedRating {
-  id: number;
-  user: string;
-  user_id: number;
-  user_avatar: string | null;
-  flavor: number;
-  flavor_name: string;
-  flavor_image: string | null;
-  category_name: string;
-  category_slug: string;
-  score: number;
-  comment: string;
-  created_at: string;
-  replies: Reply[];
-}
-
-interface FollowedUser {
-  id: number;
-  username: string;
-  avatar: string | null;
-}
-
-interface Notification {
-  id: number;
-  actor_username: string;
-  actor_avatar: string | null;
-  notification_type:
-    | 'reply'
-    | 'mention'
-    | 'follow'
-    | 'ticket_new'
-    | 'ticket_reply'
-    | 'profile_comment';
-  rating: number | null;
-  reply: number | null;
-  is_read: boolean;
-  created_at: string;
-  flavor_name: string | null;
-  flavor_id: number | null;
-}
-
-interface TopFlavor {
-  id: number;
-  name: string;
-  image_url: string | null;
-  average_rating: number;
-}
 
 interface CommunityFeedProps {
   adminMode?: boolean;
@@ -125,16 +77,22 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
   useTitle(t('community.title'));
   const navigate = useNavigate();
   const { notify } = useToast();
-  const [ratings, setRatings] = useState<FeedRating[]>([]);
-  const [following, setFollowing] = useState<FollowedUser[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [followingSearch, setFollowingSearch] = useState('');
-  const [topFollowed, setTopFollowed] = useState<TopFlavor[]>([]);
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<number, boolean>>({});
+
+  const isAuthed = !!localStorage.getItem('access');
+  const { data: feed, isLoading: feedLoading, error: feedError } = useCommunityFeed(page);
+  const { data: following = [] } = useFollowingList();
+  const { data: notificationsAll = [] } = useNotificationsQuery(isAuthed);
+  const { data: topFollowed = [] } = useFollowedTopFlavors();
+  const createReply = useCreateReply();
+
+  const ratings: FeedRating[] = feed?.ratings ?? [];
+  const totalPages = feed?.totalPages ?? 1;
+  const notifications = notificationsAll.slice(0, 5);
+  const loading = feedLoading;
 
   const filteredFollowing = following.filter((user) =>
     user.username.toLowerCase().includes(followingSearch.toLowerCase()),
@@ -145,52 +103,14 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
     else navigate('/');
   };
 
-  const fetchFeedData = useCallback(
-    async (pageNum: number) => {
-      setLoading(true);
-      try {
-        const [feedRes, followingRes, topFollowedRes, notifRes] = await Promise.all([
-          api.get(`ratings/feed/?page=${pageNum}`),
-          api.get('users/following_list/'),
-          api.get('flavors/followed_top/'),
-          api.get('notifications/'),
-        ]);
-
-        const feedData = feedRes.data.results || (Array.isArray(feedRes.data) ? feedRes.data : []);
-        setRatings(feedData);
-        const count = feedRes.data.count || 0;
-        setTotalPages(Math.ceil(count / 10));
-
-        const followData = Array.isArray(followingRes.data)
-          ? followingRes.data
-          : followingRes.data.results || [];
-        setFollowing(followData);
-
-        setTopFollowed(Array.isArray(topFollowedRes.data) ? topFollowedRes.data.slice(0, 5) : []);
-
-        const notifData = Array.isArray(notifRes.data)
-          ? notifRes.data
-          : notifRes.data.results || [];
-        setNotifications(notifData.slice(0, 5));
-      } catch (err) {
-        const status = (err as { response?: { status?: number } }).response?.status;
-        if (status === 401) navigate('/login');
-        console.error('Failed to fetch feed data', err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [navigate],
-  );
+  useEffect(() => {
+    if (!isAuthed) navigate('/login');
+  }, [isAuthed, navigate]);
 
   useEffect(() => {
-    const token = localStorage.getItem('access');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    fetchFeedData(page);
-  }, [page, navigate, fetchFeedData]);
+    const status = (feedError as { response?: { status?: number } } | null)?.response?.status;
+    if (status === 401) navigate('/login');
+  }, [feedError, navigate]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
@@ -205,10 +125,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
     const text = replyInputs[ratingId];
     if (!text) return;
     try {
-      const res = await api.post(`ratings/${ratingId}/reply/`, { text });
-      setRatings((prev) =>
-        prev.map((r) => (r.id === ratingId ? { ...r, replies: [...r.replies, res.data] } : r)),
-      );
+      await createReply.mutateAsync({ ratingId, text });
       setReplyInputs((prev) => ({ ...prev, [ratingId]: '' }));
     } catch {
       notify({ message: 'Failed to send reply', severity: 'error' });

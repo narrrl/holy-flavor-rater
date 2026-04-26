@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Typography,
@@ -26,7 +26,17 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import ColorThief from 'colorthief';
-import api from '../lib/api';
+import {
+  usePublicProfile,
+  type MiniUser,
+  type PublicProfileRating,
+} from '../api/queries/usePublicProfile';
+import { useCurrentUserLite } from '../api/queries/useCurrentUserLite';
+import {
+  useAddProfileComment,
+  useDeleteProfileComment,
+  useFollowToggle,
+} from '../api/mutations/useSocialMutations';
 import { useTitle } from '../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
 import RatingBadge from '../components/RatingBadge';
@@ -37,46 +47,6 @@ import { PageShell, GlassCard, GlassSurface, FormCard, EmptyState } from '../com
 import { useToast } from '../hooks/useToast';
 import { useConfirm } from '../hooks/useConfirm';
 
-interface Rating {
-  id: number;
-  flavor: number;
-  flavor_name: string;
-  flavor_image: string | null;
-  category_name: string;
-  score: number;
-  comment: string;
-  created_at: string;
-}
-
-interface ProfileComment {
-  id: number;
-  author_username: string;
-  author_avatar: string | null;
-  text: string;
-  created_at: string;
-}
-
-interface MiniUser {
-  id: number;
-  username: string;
-  avatar: string | null;
-  is_following?: boolean;
-}
-
-interface ProfileData {
-  id: number;
-  username: string;
-  theme: string;
-  avatar: string | null;
-  following_count: number;
-  followers_count: number;
-  is_following: boolean;
-  ratings: Rating[];
-  comments: ProfileComment[];
-  followers: MiniUser[];
-  following: MiniUser[];
-}
-
 interface PublicProfileProps {
   adminMode?: boolean;
 }
@@ -86,37 +56,17 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   const theme = useTheme();
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const [data, setData] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = usePublicProfile(username);
+  const { data: currentUser } = useCurrentUserLite();
+  const followToggle = useFollowToggle();
+  const addComment = useAddProfileComment();
+  const deleteCommentMutation = useDeleteProfileComment();
   const [activeTab, setActiveTab] = useState(0);
   const [categoryTab, setCategoryTab] = useState(0);
-  const [currentUser, setCurrentUser] = useState<{
-    username: string;
-    is_superuser: boolean;
-  } | null>(null);
   const [palette, setPalette] = useState<string[]>([]);
   const [newComment, setNewComment] = useState('');
   const { notify } = useToast();
   const { confirm } = useConfirm();
-
-  const fetchProfile = useCallback(async () => {
-    try {
-      const [profileRes, meRes] = await Promise.all([
-        api.get(`users/profile/${username}/`),
-        localStorage.getItem('access') ? api.get('users/me/') : Promise.resolve({ data: null }),
-      ]);
-      setData(profileRes.data);
-      if (meRes.data) setCurrentUser(meRes.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [username]);
-
-  useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
 
   useEffect(() => {
     if (data?.avatar) {
@@ -156,13 +106,10 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
   const handleFollowToggle = async () => {
     if (!data) return;
     try {
-      if (data.is_following) {
-        await api.post(`users/${data.id}/unfollow/`);
-        setData({ ...data, is_following: false, followers_count: data.followers_count - 1 });
-      } else {
-        await api.post(`users/${data.id}/follow/`);
-        setData({ ...data, is_following: true, followers_count: data.followers_count + 1 });
-      }
+      await followToggle.mutateAsync({
+        userId: data.id,
+        currentlyFollowing: data.is_following,
+      });
     } catch {
       notify({ message: 'Failed to update follow status. Please login.', severity: 'error' });
     }
@@ -170,9 +117,10 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
 
   const handleMiniFollowToggle = async (user: MiniUser) => {
     try {
-      if (user.is_following) await api.post(`users/${user.id}/unfollow/`);
-      else await api.post(`users/${user.id}/follow/`);
-      fetchProfile();
+      await followToggle.mutateAsync({
+        userId: user.id,
+        currentlyFollowing: !!user.is_following,
+      });
     } catch {
       notify({ message: 'Failed', severity: 'error' });
     }
@@ -182,9 +130,8 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
     e.preventDefault();
     if (!newComment.trim() || !data) return;
     try {
-      await api.post(`users/${data.id}/add_comment/`, { text: newComment });
+      await addComment.mutateAsync({ userId: data.id, text: newComment });
       setNewComment('');
-      fetchProfile();
     } catch {
       notify({ message: 'Failed to add comment', severity: 'error' });
     }
@@ -194,8 +141,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
     if (!data) return;
     if (!(await confirm({ message: 'Delete this comment?', danger: true }))) return;
     try {
-      await api.delete(`users/${data.id}/delete_comment/${commentId}/`);
-      fetchProfile();
+      await deleteCommentMutation.mutateAsync({ userId: data.id, commentId });
     } catch {
       notify({ message: 'Failed to delete comment', severity: 'error' });
     }
@@ -218,15 +164,18 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
       </PageShell>
     );
 
-  const categoryGroups = data.ratings.reduce<Record<string, Rating[]>>((acc, rating) => {
-    const cat = rating.category_name || 'Other';
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(rating);
-    return acc;
-  }, {});
+  const categoryGroups = data.ratings.reduce<Record<string, PublicProfileRating[]>>(
+    (acc, rating) => {
+      const cat = rating.category_name || 'Other';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(rating);
+      return acc;
+    },
+    {},
+  );
 
   const ratingCategories = ['All', ...Object.keys(categoryGroups)];
-  const currentRatings: Rating[] =
+  const currentRatings: PublicProfileRating[] =
     categoryTab === 0 ? data.ratings : categoryGroups[ratingCategories[categoryTab]];
 
   const tiers = [

@@ -1,56 +1,45 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Box, Button, Stack, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../lib/api';
+import { useAdminReply } from '../api/queries/useAdminQueries';
+import { useDeleteReply } from '../api/mutations/useRatingMutations';
+import { useUpdateReply } from '../api/mutations/useReplyMutations';
 import { useTitle } from '../hooks/useTitle';
 import MentionTextField from '../components/MentionTextField';
 import { PageShell, SectionHeader, FormCard } from '../components/ui';
 import { useToast } from '../hooks/useToast';
 import { useConfirm } from '../hooks/useConfirm';
 
-interface AdminReply {
-  id: number;
-  user: string;
-  text: string;
-}
-
 const AdminReplyDetail: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const { data: reply, isLoading: loading, error } = useAdminReply(id);
+  const updateReply = useUpdateReply();
+  const deleteReply = useDeleteReply();
+
   const [text, setText] = useState('');
-  const [reply, setReply] = useState<AdminReply | null>(null);
-  const [loading, setLoading] = useState(true);
   const { notify } = useToast();
   const { confirm } = useConfirm();
 
-  const fetchReply = useCallback(async () => {
-    try {
-      const res = await api.get<AdminReply>(`replies/${id}/`);
-      setReply(res.data);
-      setText(res.data.text);
-    } catch (err) {
-      console.error(err);
-      navigate('/admin-panel');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, navigate]);
+  useEffect(() => {
+    if (reply) setText(reply.text);
+  }, [reply]);
 
   useEffect(() => {
-    fetchReply();
-  }, [fetchReply]);
+    if (error) navigate('/admin-panel');
+  }, [error, navigate]);
 
   useTitle(reply ? `${t('admin.manageReply')}` : 'Reply Management');
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
     try {
-      await api.patch(`replies/${id}/`, { text });
-      fetchReply();
+      await updateReply.mutateAsync({ replyId: Number(id), text });
       notify({ message: 'Reply updated!', severity: 'success' });
     } catch {
       notify({ message: 'Update failed', severity: 'error' });
@@ -58,9 +47,10 @@ const AdminReplyDetail: React.FC = () => {
   };
 
   const handleDelete = async () => {
+    if (!id) return;
     if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
-      await api.delete(`replies/${id}/`);
+      await deleteReply.mutateAsync(Number(id));
       navigate('/admin-panel');
     } catch {
       notify({ message: 'Delete failed', severity: 'error' });

@@ -1,4 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useMe } from '../api/queries/useMe';
+import { useBannersList } from '../api/queries/useBanners';
+import {
+  useChangePassword,
+  useConfirmAccountDeletion,
+  useConfirmEmail,
+  useRequestAccountDeletion,
+  useUpdateAvatar,
+  useUpdatePreferences,
+  useUpdateProfile,
+} from '../api/mutations/useSettingsMutations';
 import {
   Typography,
   Box,
@@ -16,7 +27,6 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import api from '../lib/api';
 import { useTranslation } from 'react-i18next';
 import { useTitle } from '../hooks/useTitle';
 import type { CatppuccinTheme } from '../theme';
@@ -28,11 +38,6 @@ interface SettingsProps {
   onThemeChange: (newTheme: CatppuccinTheme) => void;
 }
 
-interface Banner {
-  id: number;
-  name: string;
-}
-
 const readErr = (err: unknown): string | undefined =>
   (err as { response?: { data?: { error?: string } } }).response?.data?.error;
 
@@ -41,6 +46,16 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const navigate = useNavigate();
   useTitle(t('nav.settings'));
   const { confirm } = useConfirm();
+  const { data: me } = useMe();
+  const { data: banners = [] } = useBannersList();
+  const updateAvatarMutation = useUpdateAvatar();
+  const updatePrefs = useUpdatePreferences();
+  const updateProfileMutation = useUpdateProfile();
+  const confirmEmailMutation = useConfirmEmail();
+  const changePasswordMutation = useChangePassword();
+  const requestDeletion = useRequestAccountDeletion();
+  const confirmDeletion = useConfirmAccountDeletion();
+
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [currentEmail, setCurrentEmail] = useState('');
@@ -53,7 +68,6 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const [deletionCode, setDeletionCode] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [banners, setBanners] = useState<Banner[]>([]);
   const [selectedBannerId, setSelectedBannerId] = useState<number | string>('');
 
   const handleGoBack = () => {
@@ -62,33 +76,14 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const [userRes, bannersRes] = await Promise.all([
-          api.get('users/me/'),
-          api.get('banners/'),
-        ]);
-
-        setUsername(userRes.data.username);
-        setEmail(userRes.data.email);
-        setCurrentEmail(userRes.data.email);
-        setAvatar(userRes.data.avatar);
-        setSelectedBannerId(userRes.data.selected_banner || '');
-
-        if (userRes.data.language) {
-          setLanguage(userRes.data.language);
-        }
-
-        const bannersData: Banner[] = Array.isArray(bannersRes.data)
-          ? bannersRes.data
-          : bannersRes.data.results || [];
-        setBanners(bannersData);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchUser();
-  }, []);
+    if (!me) return;
+    setUsername(me.username);
+    setEmail(me.email);
+    setCurrentEmail(me.email);
+    setAvatar(me.avatar);
+    setSelectedBannerId(me.selected_banner || '');
+    if (me.language) setLanguage(me.language);
+  }, [me]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,13 +94,8 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('avatar', file);
-
     try {
-      const res = await api.post('users/update_avatar/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await updateAvatarMutation.mutateAsync(file);
       setAvatar(res.data.avatar);
       setMessage({ type: 'success', text: t('settings.avatarSuccess') });
     } catch (err) {
@@ -117,7 +107,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     setLanguage(newLang);
     i18n.changeLanguage(newLang);
     try {
-      await api.patch('users/update_preferences/', { language: newLang });
+      await updatePrefs.mutateAsync({ language: newLang });
     } catch {
       console.error('Failed to update language on server');
     }
@@ -126,7 +116,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await api.patch('users/update_profile/', { username, email });
+      const res = await updateProfileMutation.mutateAsync({ username, email });
       if (res.data.message) {
         setPendingConfirmation(true);
         setMessage({ type: 'success', text: `${t('settings.updateSuccess')} ${res.data.message}` });
@@ -142,7 +132,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const handleConfirmEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await api.post('users/confirm_email/', { code: confirmationCode });
+      const res = await confirmEmailMutation.mutateAsync(confirmationCode);
       setMessage({ type: 'success', text: t('settings.updateSuccess') });
       setCurrentEmail(res.data.email);
       setPendingConfirmation(false);
@@ -155,7 +145,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('users/change_password/', {
+      await changePasswordMutation.mutateAsync({
         old_password: oldPassword,
         new_password: newPassword,
       });
@@ -169,7 +159,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
 
   const handleRequestDeletion = async () => {
     try {
-      await api.post('users/request_account_deletion/');
+      await requestDeletion.mutateAsync();
       setIsDeleting(true);
       setMessage({ type: 'success', text: t('settings.codeSent') });
     } catch {
@@ -187,7 +177,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     });
     if (!ok) return;
     try {
-      await api.post('users/confirm_account_deletion/', { code: deletionCode });
+      await confirmDeletion.mutateAsync(deletionCode);
       localStorage.removeItem('access');
       localStorage.removeItem('refresh');
       window.location.href = '/';
@@ -281,7 +271,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                     const newId = e.target.value;
                     setSelectedBannerId(newId);
                     try {
-                      await api.patch('users/update_preferences/', { selected_banner: newId });
+                      await updatePrefs.mutateAsync({ selected_banner: newId });
                     } catch {
                       console.error('Failed to update banner preference');
                     }

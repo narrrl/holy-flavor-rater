@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { alpha, useTheme } from '@mui/material';
-import { useBannerFrameGate } from './BannerPerformanceWrapper';
+import { CANVAS_STYLE, useCanvasBanner } from './useCanvasBanner';
 
 interface GenerativeFlowProps {
   username: string;
@@ -16,10 +16,29 @@ interface GenerativeFlowProps {
   };
 }
 
+interface Blob {
+  x: number;
+  y: number;
+  ox: number;
+  oy: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  phase: number;
+  speedFactor: number;
+}
+
+const hashString = (str: string): number => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return hash;
+};
+
 const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette, settings }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const theme = useTheme();
-  const gate = useBannerFrameGate();
 
   const blobCount = settings?.blobCount ?? 8;
   const flowSpeed = settings?.flowSpeed ?? 0.008;
@@ -27,15 +46,7 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
   const blurAmount = settings?.blur ?? 60;
   const distortionFactor = settings?.distortion ?? 1.2;
 
-  const getSeed = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return hash;
-  };
-
-  const seed = useMemo(() => getSeed(username), [username]);
+  const seed = useMemo(() => hashString(username), [username]);
 
   const brightColors = useMemo(() => {
     const colors =
@@ -52,42 +63,17 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
     return sorted.slice(0, 4);
   }, [palette, theme]);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d', { alpha: true });
-    if (!ctx) return;
-
-    let animationFrameId: number;
-    let time = 0;
-
-    interface Blob {
-      x: number;
-      y: number;
-      ox: number;
-      oy: number;
-      vx: number;
-      vy: number;
-      size: number;
-      color: string;
-      phase: number;
-      speedFactor: number;
-    }
-
-    let blobs: Blob[] = [];
-
-    const pseudoRandom = (offset: number) => {
-      const x = Math.sin(seed + offset) * 10000;
-      return x - Math.floor(x);
-    };
-
-    const initBlobs = (width: number, height: number) => {
-      const newBlobs = [];
+  const ref = useCanvasBanner<{ blobs: Blob[]; time: number }>({
+    init: (width, height) => {
+      const pseudoRandom = (offset: number) => {
+        const x = Math.sin(seed + offset) * 10000;
+        return x - Math.floor(x);
+      };
+      const blobs: Blob[] = [];
       for (let i = 0; i < blobCount; i++) {
         const rx = pseudoRandom(i) * width;
         const ry = pseudoRandom(i + 500) * height;
-        newBlobs.push({
+        blobs.push({
           x: rx,
           y: ry,
           ox: rx,
@@ -100,59 +86,15 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
           speedFactor: 0.5 + pseudoRandom(i + 2000),
         });
       }
-      return newBlobs;
-    };
-
-    const resize = () => {
-      const parent = canvas.parentElement;
-      if (parent) {
-        const rect = parent.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
-        canvas.style.width = `${rect.width}px`;
-        canvas.style.height = `${rect.height}px`;
-        blobs = initBlobs(rect.width, rect.height);
-      }
-    };
-
-    const resizeObserver = new ResizeObserver(() => resize());
-    if (canvas.parentElement) resizeObserver.observe(canvas.parentElement);
-    resize();
-
-    const mouse = { x: -1000, y: -1000 };
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
-        mouse.x = -1000;
-        mouse.y = -1000;
-      } else {
-        mouse.x = x;
-        mouse.y = y;
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    const draw = (now = 0) => {
-      const decision = gate(now);
-      if (decision === 'halt') return;
-      if (decision === 'skip') {
-        animationFrameId = requestAnimationFrame(draw);
-        return;
-      }
-      const width = canvas.width / (window.devicePixelRatio || 1);
-      const height = canvas.height / (window.devicePixelRatio || 1);
-      if (!width || !height) {
-        animationFrameId = requestAnimationFrame(draw);
-        return;
-      }
+      return { blobs, time: 0 };
+    },
+    draw: ({ ctx, width, height, state, mouse }) => {
+      const { blobs } = state;
+      state.time += flowSpeed;
+      const time = state.time;
 
       ctx.clearRect(0, 0, width, height);
 
-      // Background Base
       const isLight = theme.palette.mode === 'light';
       const bgGrad = ctx.createRadialGradient(
         width / 2,
@@ -163,7 +105,6 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
         width,
       );
       if (isLight) {
-        // For light themes, use a deeper, more saturated version of the theme color
         bgGrad.addColorStop(
           0,
           alpha(brightColors[brightColors.length - 1] || brightColors[0], 0.6),
@@ -179,18 +120,13 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, width, height);
 
-      time += flowSpeed;
-
-      // Apply filter for "Liquid" look
       ctx.filter = `blur(${blurAmount}px)`;
       ctx.globalCompositeOperation = 'screen';
 
       blobs.forEach((b) => {
-        // Harmonic autonomous drift
         const driftX = Math.sin(time * b.speedFactor + b.phase) * (width / 5);
         const driftY = Math.cos(time * 0.8 * b.speedFactor + b.phase) * (height / 5);
 
-        // Mouse distortion
         const dxMouse = mouse.x - b.ox;
         const dyMouse = mouse.y - b.oy;
         const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
@@ -202,7 +138,6 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
         b.x = b.ox + driftX + mX;
         b.y = b.oy + driftY + mY;
 
-        // Pulsing size
         const pulse = 1 + Math.sin(time + b.phase) * 0.1;
         const currentSize = b.size * pulse;
 
@@ -218,43 +153,11 @@ const GenerativeFlowBanner: React.FC<GenerativeFlowProps> = ({ username, palette
 
       ctx.filter = 'none';
       ctx.globalCompositeOperation = 'source-over';
+    },
+    deps: [seed, brightColors, blobCount, flowSpeed, vibrancy, blurAmount, distortionFactor, theme],
+  });
 
-      animationFrameId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [
-    seed,
-    brightColors,
-    blobCount,
-    flowSpeed,
-    vibrancy,
-    blurAmount,
-    distortionFactor,
-    theme,
-    gate,
-  ]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }}
-    />
-  );
+  return <canvas ref={ref} style={CANVAS_STYLE} />;
 };
 
 export default GenerativeFlowBanner;

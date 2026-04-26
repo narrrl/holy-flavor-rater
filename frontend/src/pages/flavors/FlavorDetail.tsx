@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,7 +20,17 @@ import {
   Switch,
   Divider,
 } from '@mui/material';
-import api from '../../lib/api';
+import { useFlavorDetail, type FlavorDetailRating } from '../../api/queries/useFlavorDetail';
+import { useCurrentUserLite } from '../../api/queries/useCurrentUserLite';
+import { useUpdateFlavor } from '../../api/mutations/useFlavorMutations';
+import {
+  useCreateRating,
+  useDeleteRating,
+  useCreateReply,
+  useDeleteReply,
+  useUpdateRating,
+} from '../../api/mutations/useRatingMutations';
+import { useUpdateReply } from '../../api/mutations/useReplyMutations';
 import { useTitle } from '../../hooks/useTitle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -38,38 +48,6 @@ import { PageShell, HeroBackdrop, GlassCard, SectionHeader, EmptyState } from '.
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 
-interface Reply {
-  id: number;
-  user: string;
-  text: string;
-  created_at: string;
-}
-
-interface Rating {
-  id: number;
-  user: string;
-  user_avatar: string | null;
-  score: number;
-  comment: string;
-  created_at: string;
-  replies: Reply[];
-}
-
-interface Flavor {
-  id: number;
-  name: string;
-  category_name: string;
-  category_slug: string;
-  description: string;
-  average_rating: number;
-  user_rating: number | null;
-  ratings: Rating[];
-  image_url: string | null;
-  is_available: boolean;
-  is_legacy: boolean;
-  shop_url: string | null;
-}
-
 interface FlavorDetailProps {
   adminMode?: boolean;
 }
@@ -81,11 +59,18 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const navigate = useNavigate();
   const { notify } = useToast();
   const { confirm } = useConfirm();
-  const [flavor, setFlavor] = useState<Flavor | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: flavor, isLoading: loading } = useFlavorDetail(id);
+  const { data: meData } = useCurrentUserLite();
+  const currentUser = meData?.username ?? null;
+  const updateFlavor = useUpdateFlavor();
+  const createRating = useCreateRating();
+  const deleteRatingMutation = useDeleteRating();
+  const updateRating = useUpdateRating();
+  const createReply = useCreateReply();
+  const updateReply = useUpdateReply();
+  const deleteReplyMutation = useDeleteReply();
   const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({});
   const [expandedReplies, setExpandedReplies] = useState<{ [key: number]: boolean }>({});
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   // Product Edit state (Admin)
   const [isAdminEditing, setIsAdminEditing] = useState(false);
@@ -111,44 +96,25 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
   const [editReplyText, setEditReplyText] = useState('');
 
-  const fetchFlavor = useCallback(async () => {
-    try {
-      const res = await api.get(`flavors/${id}/`);
-      setFlavor(res.data);
-      setEditFlavorData({
-        name: res.data.name,
-        description: res.data.description,
-        shop_url: res.data.shop_url || '',
-        is_available: res.data.is_available,
-        is_legacy: res.data.is_legacy,
-      });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
   useEffect(() => {
-    const getUser = async () => {
-      try {
-        const res = await api.get('users/me/');
-        setCurrentUser(res.data.username);
-      } catch {
-        /* ignore */
-      }
-    };
-    getUser();
-    fetchFlavor();
-  }, [fetchFlavor]);
+    if (flavor) {
+      setEditFlavorData({
+        name: flavor.name,
+        description: flavor.description,
+        shop_url: flavor.shop_url || '',
+        is_available: flavor.is_available,
+        is_legacy: flavor.is_legacy,
+      });
+    }
+  }, [flavor]);
 
   useTitle(flavor?.name || t('common.loading'));
 
   const handleAdminUpdate = async () => {
+    if (!id) return;
     try {
-      await api.patch(`flavors/${id}/`, editFlavorData);
+      await updateFlavor.mutateAsync({ id, data: editFlavorData });
       setIsAdminEditing(false);
-      fetchFlavor();
     } catch {
       notify({ message: 'Admin update failed', severity: 'error' });
     }
@@ -156,17 +122,14 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !id) return;
 
     const formData = new FormData();
     formData.append('image', file);
 
     try {
       setUploadingImage(true);
-      await api.patch(`flavors/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      fetchFlavor();
+      await updateFlavor.mutateAsync({ id, data: formData, isFormData: true });
     } catch {
       notify({ message: 'Image upload failed', severity: 'error' });
     } finally {
@@ -180,11 +143,11 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
       notify({ message: 'Please select a score', severity: 'warning' });
       return;
     }
+    if (!flavor) return;
     try {
-      await api.post('ratings/', { flavor: flavor?.id, score: newScore, comment: newComment });
+      await createRating.mutateAsync({ flavor: flavor.id, score: newScore, comment: newComment });
       setNewScore(null);
       setNewComment('');
-      fetchFlavor();
     } catch (err) {
       const msg = (err as { response?: { data?: { error?: string } } }).response?.data?.error;
       notify({ message: msg || 'Failed to submit rating', severity: 'error' });
@@ -195,10 +158,9 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
     const text = replyInputs[ratingId];
     if (!text) return;
     try {
-      await api.post(`ratings/${ratingId}/reply/`, { text });
+      await createReply.mutateAsync({ ratingId, text });
       setReplyInputs({ ...replyInputs, [ratingId]: '' });
       setExpandedReplies((prev) => ({ ...prev, [ratingId]: true }));
-      fetchFlavor();
     } catch {
       notify({ message: 'Failed to submit reply', severity: 'error' });
     }
@@ -207,9 +169,8 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const handleUpdateReply = async (replyId: number) => {
     if (!editReplyText) return;
     try {
-      await api.patch(`replies/${replyId}/`, { text: editReplyText });
+      await updateReply.mutateAsync({ replyId, text: editReplyText });
       setEditingReplyId(null);
-      fetchFlavor();
     } catch {
       notify({ message: 'Failed to update reply', severity: 'error' });
     }
@@ -218,8 +179,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const handleDeleteReply = async (replyId: number) => {
     if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
-      await api.delete(`replies/${replyId}/`);
-      fetchFlavor();
+      await deleteReplyMutation.mutateAsync(replyId);
     } catch {
       notify({ message: 'Failed to delete reply', severity: 'error' });
     }
@@ -228,14 +188,13 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const handleDeleteRating = async (ratingId: number) => {
     if (!(await confirm({ message: 'Delete this review?', danger: true }))) return;
     try {
-      await api.delete(`ratings/${ratingId}/`);
-      fetchFlavor();
+      await deleteRatingMutation.mutateAsync(ratingId);
     } catch {
       notify({ message: 'Failed to delete review', severity: 'error' });
     }
   };
 
-  const startEdit = (rating: Rating) => {
+  const startEdit = (rating: FlavorDetailRating) => {
     setEditMode(rating.id);
     setEditScore(rating.score);
     setEditComment(rating.comment || '');
@@ -243,9 +202,8 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
 
   const handleUpdateRating = async (ratingId: number) => {
     try {
-      await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
+      await updateRating.mutateAsync({ id: ratingId, score: editScore, comment: editComment });
       setEditMode(null);
-      fetchFlavor();
     } catch {
       notify({ message: 'Failed to update review', severity: 'error' });
     }
@@ -544,7 +502,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
             {flavor.ratings.length === 0 ? (
               <EmptyState title={t('dashboard.noRatings')} />
             ) : (
-              flavor.ratings.map((rating: Rating) => (
+              flavor.ratings.map((rating: FlavorDetailRating) => (
                 <GlassCard key={rating.id}>
                   <CardContent sx={{ p: 3 }}>
                     {editMode === rating.id ? (

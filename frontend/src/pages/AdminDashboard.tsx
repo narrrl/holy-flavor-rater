@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Typography,
   Box,
@@ -43,7 +44,21 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import InfoIcon from '@mui/icons-material/Info';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import api from '../lib/api';
+import {
+  useAdminConfig,
+  useAdminJobs,
+  useAdminStats,
+  useAdminUsers,
+} from '../api/queries/useAdminQueries';
+import { useBannersList } from '../api/queries/useBanners';
+import {
+  useActivateBanner,
+  useSendTestEmail,
+  useToggleBannerEnabled,
+  useTriggerJob,
+  useUpdateAdminConfig,
+  useUpdateJobSchedule,
+} from '../api/mutations/useAdminMutations';
 import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
 import BannerSettingsDialog from '../components/BannerSettingsDialog';
@@ -125,59 +140,56 @@ const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width:900px)');
   useTitle(t('admin.title'));
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [config, setConfig] = useState<SystemConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const { data: stats = null, isLoading: statsLoading } = useAdminStats() as unknown as {
+    data: Stats | null | undefined;
+    isLoading: boolean;
+  };
+  const { data: users = [], isLoading: usersLoading } = useAdminUsers() as unknown as {
+    data: AdminUser[];
+    isLoading: boolean;
+  };
+  const { data: banners = [], isLoading: bannersLoading } = useBannersList() as unknown as {
+    data: Banner[];
+    isLoading: boolean;
+  };
+  const { data: jobs = [], isLoading: jobsLoading } = useAdminJobs() as unknown as {
+    data: Job[];
+    isLoading: boolean;
+  };
+  const { data: config = null, isLoading: configLoading } = useAdminConfig() as unknown as {
+    data: SystemConfig | null | undefined;
+    isLoading: boolean;
+  };
+  const updateConfigMutation = useUpdateAdminConfig();
+  const triggerJobMutation = useTriggerJob();
+  const updateJobScheduleMutation = useUpdateJobSchedule();
+  const activateBannerMutation = useActivateBanner();
+  const toggleBannerEnabledMutation = useToggleBannerEnabled();
+  const sendTestEmailMutation = useSendTestEmail();
+
+  const loading = statsLoading || usersLoading || bannersLoading || jobsLoading || configLoading;
+
   const [search, setSearch] = useState('');
   const [currentTab, setCurrentTab] = useState(0);
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const { notify } = useToast();
 
-  const fetchData = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const [statsRes, usersRes, bannersRes, jobsRes, configRes] = await Promise.all([
-        api.get('admin-custom/stats/'),
-        api.get('admin-custom/users/'),
-        api.get('banners/'),
-        api.get('admin-custom/jobs/'),
-        api.get('admin-custom/config/'),
-      ]);
-
-      setStats(statsRes.data);
-      setUsers(usersRes.data);
-
-      const bannersData = Array.isArray(bannersRes.data)
-        ? bannersRes.data
-        : bannersRes.data.results || [];
-      setBanners(bannersData);
-
-      setJobs(jobsRes.data);
-      setConfig(configRes.data);
-    } catch (err) {
-      console.error('Data fetch error:', err);
-    }
-
-    if (!silent) setLoading(false);
-  }, []);
-
-  // Poll for job updates if any are running or pending
+  // Poll the jobs query faster while anything is running on the Jobs tab.
   useEffect(() => {
     const anyRunning = jobs.some((j) => j.status === 'running' || j.status === 'pending');
     if (anyRunning && currentTab === 3) {
-      const interval = setInterval(() => fetchData(true), 3000);
+      const interval = setInterval(() => {
+        qc.invalidateQueries({ queryKey: ['adminJobs'] });
+      }, 3000);
       return () => clearInterval(interval);
     }
-  }, [jobs, currentTab, fetchData]);
+  }, [jobs, currentTab, qc]);
 
   const handleUpdateConfig = async (key: string, value: unknown) => {
     try {
-      const res = await api.patch('admin-custom/config/', { [key]: value });
-      setConfig(res.data);
+      await updateConfigMutation.mutateAsync({ key, value });
     } catch {
       notify({ message: 'Failed to update configuration', severity: 'error' });
     }
@@ -185,8 +197,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleTriggerJob = async (id: number) => {
     try {
-      await api.post(`admin-custom/${id}/trigger_job/`);
-      fetchData(true);
+      await triggerJobMutation.mutateAsync(id);
     } catch {
       notify({ message: 'Failed to trigger job', severity: 'error' });
     }
@@ -196,8 +207,7 @@ const AdminDashboard: React.FC = () => {
     try {
       const data: Record<string, unknown> = { interval_hours: interval };
       if (nextRun) data.next_run = nextRun;
-      await api.patch(`admin-custom/${id}/update_job_schedule/`, data);
-      fetchData(true);
+      await updateJobScheduleMutation.mutateAsync({ id, data });
     } catch {
       notify({ message: 'Failed to update schedule', severity: 'error' });
     }
@@ -205,8 +215,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleActivateBanner = async (id: number) => {
     try {
-      await api.post(`banners/${id}/activate/`);
-      fetchData();
+      await activateBannerMutation.mutateAsync(id);
     } catch (err) {
       console.error(err);
     }
@@ -214,8 +223,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleToggleEnabled = async (id: number) => {
     try {
-      await api.post(`banners/${id}/toggle_enabled/`);
-      fetchData();
+      await toggleBannerEnabledMutation.mutateAsync(id);
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
       notify({
@@ -225,13 +233,9 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
   const handleSendTestEmail = async () => {
     try {
-      await api.post('admin-custom/send_test_email/');
+      await sendTestEmailMutation.mutateAsync();
       notify({ message: t('admin.testEmailSuccess'), severity: 'success' });
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
@@ -616,7 +620,10 @@ const AdminDashboard: React.FC = () => {
               title="No banner models found"
               subtitle="No banners registered in the database."
               action={
-                <Button variant="outlined" onClick={() => fetchData()}>
+                <Button
+                  variant="outlined"
+                  onClick={() => qc.invalidateQueries({ queryKey: ['banners'] })}
+                >
                   Retry Loading
                 </Button>
               }
@@ -857,7 +864,7 @@ const AdminDashboard: React.FC = () => {
           setSelectedBanner(null);
         }}
         banner={selectedBanner}
-        onSave={fetchData}
+        onSave={() => qc.invalidateQueries({ queryKey: ['banners'] })}
       />
     </PageShell>
   );

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, CircularProgress, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import api from '../../lib/api';
 import { useTitle } from '../../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
+import { useCategoryFlavors } from '../../api/queries/useCategoryFlavors';
 import {
   PageShell,
   HeroBackdrop,
@@ -13,35 +13,12 @@ import {
   EmptyState,
 } from '../../components/ui';
 
-interface Rating {
-  id: number;
-  user: string;
-  score: number;
-  comment: string;
-  created_at: string;
-}
-
-interface Flavor {
-  id: number;
-  name: string;
-  category_name: string;
-  description: string;
-  average_rating: number;
-  user_rating: number | null;
-  ratings: Rating[];
-  image_url: string | null;
-  is_available: boolean;
-  is_legacy: boolean;
-  shop_url: string | null;
-}
-
 const CategoryFlavors: React.FC = () => {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [flavors, setFlavors] = useState<Flavor[]>([]);
-  const [categoryName, setCategoryName] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { data: flavors = [], isLoading: loading } = useCategoryFlavors(slug);
+  const categoryName = flavors[0]?.category_name || '';
 
   const handleGoBack = () => {
     if (window.history.length > 1) {
@@ -50,25 +27,6 @@ const CategoryFlavors: React.FC = () => {
       navigate('/');
     }
   };
-
-  useEffect(() => {
-    const fetchFlavors = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`flavors/?category__slug=${slug}`);
-        const data: Flavor[] = Array.isArray(res.data) ? res.data : res.data.results || [];
-        setFlavors(data);
-        if (data.length > 0) {
-          setCategoryName(data[0].category_name);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFlavors();
-  }, [slug]);
 
   useTitle(categoryName || 'Flavors');
 

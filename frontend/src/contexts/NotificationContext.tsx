@@ -1,26 +1,14 @@
-import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react';
-import api from '../lib/api';
+import { createContext, useCallback, useEffect, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../hooks/useAuth';
+import { queryKeys } from '../api/keys';
+import { useNotificationsQuery, type Notification } from '../api/queries/useNotifications';
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+} from '../api/mutations/useMarkNotifications';
 
-export interface Notification {
-  id: number;
-  actor_username: string;
-  actor_avatar: string | null;
-  notification_type:
-    | 'reply'
-    | 'mention'
-    | 'follow'
-    | 'ticket_new'
-    | 'ticket_reply'
-    | 'profile_comment';
-  rating: number | null;
-  reply: number | null;
-  is_read: boolean;
-  created_at: string;
-  flavor_name: string | null;
-  flavor_id: number | null;
-  profile_owner_username: string | null;
-}
+export type { Notification };
 
 export interface NotificationContextValue {
   notifications: Notification[];
@@ -33,49 +21,40 @@ export const NotificationContext = createContext<NotificationContextValue | null
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user, setUser, refetchUser } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const qc = useQueryClient();
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const res = await api.get('notifications/');
-      const data = Array.isArray(res.data) ? res.data : res.data.results || [];
-      setNotifications(data);
-    } catch {
-      /* ignore */
-    }
-  }, []);
+  const { data: notifications = [], refetch } = useNotificationsQuery(!!user);
+  const markAllMutation = useMarkAllNotificationsRead();
+  const markOneMutation = useMarkNotificationRead();
 
-  useEffect(() => {
-    if (user) {
-      fetchNotifications();
-    }
-  }, [user, fetchNotifications]);
-
+  // Refetch the auth user on the same 60s cadence so the unread count badge
+  // stays in sync with anything that mutated server-side outside this client.
   useEffect(() => {
     const interval = setInterval(() => {
       if (localStorage.getItem('access')) {
-        fetchNotifications();
         refetchUser();
       }
-    }, 60000);
+    }, 60_000);
     return () => clearInterval(interval);
-  }, [fetchNotifications, refetchUser]);
+  }, [refetchUser]);
+
+  const fetchNotifications = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const markAllRead = useCallback(async () => {
     try {
-      await api.post('notifications/mark_all_read/');
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      await markAllMutation.mutateAsync();
       if (user) setUser({ ...user, unread_notifications_count: 0 });
     } catch {
       /* ignore */
     }
-  }, [user, setUser]);
+  }, [markAllMutation, setUser, user]);
 
   const markRead = useCallback(
     async (id: number) => {
       try {
-        await api.post(`notifications/${id}/mark_read/`);
-        setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+        await markOneMutation.mutateAsync(id);
         if (user) {
           setUser({
             ...user,
@@ -86,8 +65,14 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         /* ignore */
       }
     },
-    [user, setUser],
+    [markOneMutation, setUser, user],
   );
+
+  // Clear cached notifications on logout so the next user doesn't briefly
+  // see the previous user's data.
+  useEffect(() => {
+    if (!user) qc.removeQueries({ queryKey: queryKeys.notifications() });
+  }, [user, qc]);
 
   return (
     <NotificationContext.Provider

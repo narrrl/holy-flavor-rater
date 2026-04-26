@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Typography,
   CardContent,
@@ -12,39 +12,12 @@ import {
   CircularProgress,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import api from '../lib/api';
+import { useCategories, useFlavorsList } from '../api/queries/useFlavorsList';
+import { useCreateRating } from '../api/mutations/useRatingMutations';
 import RatingBadge from '../components/RatingBadge';
 import StatusBadge from '../components/StatusBadge';
 import { PageShell, HeroBackdrop, GlassCard, SectionHeader } from '../components/ui';
 import { useToast } from '../hooks/useToast';
-
-interface Rating {
-  id: number;
-  user: string;
-  score: number;
-  comment: string;
-  created_at: string;
-}
-
-interface Flavor {
-  id: number;
-  name: string;
-  category_name: string;
-  description: string;
-  average_rating: number;
-  user_rating: number | null;
-  ratings: Rating[];
-  image_url: string | null;
-  is_available: boolean;
-  is_legacy?: boolean;
-  shop_url: string | null;
-}
-
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-}
 
 interface RatingInput {
   score: number;
@@ -52,38 +25,23 @@ interface RatingInput {
 }
 
 const FlavorList: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [flavors, setFlavors] = useState<Flavor[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: categories = [], isLoading: catLoading } = useCategories();
+  const { data: flavors = [], isLoading: flavLoading } = useFlavorsList();
+  const createRating = useCreateRating();
   const [ratingInput, setRatingInput] = useState<Record<number, RatingInput>>({});
   const { notify } = useToast();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [catRes, flavRes] = await Promise.all([api.get('categories/'), api.get('flavors/')]);
-        setCategories(catRes.data);
-        setFlavors(flavRes.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const loading = catLoading || flavLoading;
 
   const handleRate = async (flavorId: number) => {
     const input = ratingInput[flavorId];
     if (!input) return;
     try {
-      await api.post('ratings/', {
+      await createRating.mutateAsync({
         flavor: flavorId,
         score: input.score,
         comment: input.comment,
       });
-      const res = await api.get('flavors/');
-      setFlavors(res.data);
       notify({ message: 'Rating submitted!', severity: 'success' });
     } catch {
       notify({

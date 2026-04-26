@@ -16,7 +16,14 @@ import { useTranslation } from 'react-i18next';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import api from '../lib/api';
+import { useCategories } from '../api/queries/useFlavorsList';
+import {
+  useFlavorSearch,
+  useFollowingFeedTop,
+  useNewestFlavors,
+  useRecentReviews,
+  useTopFlavors,
+} from '../api/queries/useMainPageQueries';
 import { useTitle } from '../hooks/useTitle';
 import RatingBadge from '../components/RatingBadge';
 import StatusBadge from '../components/StatusBadge';
@@ -29,50 +36,6 @@ import {
   FlavorCard,
 } from '../components/ui';
 
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-}
-
-interface Flavor {
-  id: number;
-  name: string;
-  category_name: string;
-  description: string;
-  average_rating: number;
-  image_url: string | null;
-  is_available: boolean;
-  is_legacy: boolean;
-  ratings: FeedRating[];
-}
-
-interface FeedRating {
-  id: number;
-  user: string;
-  user_avatar: string | null;
-  flavor: number;
-  flavor_name: string;
-  flavor_image: string | null;
-  flavor_category?: string;
-  score: number;
-  comment: string;
-  created_at: string;
-  replies?: unknown[];
-}
-
-interface Review {
-  id: number;
-  user: string;
-  user_avatar: string | null;
-  flavor_name: string;
-  flavor_image: string | null;
-  score: number;
-  comment: string;
-  created_at: string;
-  flavor: number;
-}
-
 interface MainPageProps {
   adminMode?: boolean;
 }
@@ -80,99 +43,34 @@ interface MainPageProps {
 const MainPage: React.FC<MainPageProps> = ({ adminMode }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [topFlavors, setTopFlavors] = useState<Flavor[]>([]);
-  const [newestFlavors, setNewestFlavors] = useState<Flavor[]>([]);
-  const [recentReviews, setRecentReviews] = useState<Review[]>([]);
-  const [allFlavors, setAllFlavors] = useState<Flavor[]>([]);
-  const [feedRatings, setFeedRatings] = useState<FeedRating[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [categoryLoading, setCategoryLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isFirstRun = useRef(true);
   const location = useLocation();
 
   const query = new URLSearchParams(location.search).get('q') || '';
   const isLoggedIn = !!localStorage.getItem('access');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        if (query) {
-          const res = await api.get(`flavors/?search=${encodeURIComponent(query)}`);
-          setAllFlavors(Array.isArray(res.data) ? res.data : res.data.results || []);
-        } else {
-          const requests = [
-            api.get('flavors/top/'),
-            api.get('ratings/recent/'),
-            api.get('flavors/newest/'),
-            api.get('categories/'),
-          ];
+  const { data: searchResults = [], isLoading: searchLoading } = useFlavorSearch(query);
+  const {
+    data: topFlavors = [],
+    isLoading: topLoading,
+    isFetching: topFetching,
+  } = useTopFlavors(selectedCategorySlug || null);
+  const { data: newestFlavors = [], isLoading: newestLoading } = useNewestFlavors();
+  const { data: recentReviews = [], isLoading: recentLoading } = useRecentReviews();
+  const { data: categories = [], isLoading: catLoading } = useCategories();
+  const { data: feedRatings = [] } = useFollowingFeedTop(isLoggedIn && !query);
 
-          if (isLoggedIn) {
-            requests.push(api.get('ratings/feed/'));
-          }
-
-          const results = await Promise.all(requests);
-
-          setTopFlavors(
-            Array.isArray(results[0].data) ? results[0].data : results[0].data.results || [],
-          );
-          setRecentReviews(
-            Array.isArray(results[1].data) ? results[1].data : results[1].data.results || [],
-          );
-          setNewestFlavors(
-            Array.isArray(results[2].data) ? results[2].data : results[2].data.results || [],
-          );
-          setCategories(
-            Array.isArray(results[3].data) ? results[3].data : results[3].data.results || [],
-          );
-
-          if (isLoggedIn && results[4]) {
-            const feedData = Array.isArray(results[4].data)
-              ? results[4].data
-              : results[4].data.results || [];
-            setFeedRatings(feedData.slice(0, 6));
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [query, isLoggedIn]);
+  const allFlavors = searchResults;
+  const loading = query
+    ? searchLoading
+    : topLoading || newestLoading || recentLoading || catLoading;
+  const categoryLoading = topFetching && !topLoading;
 
   useEffect(() => {
-    if (query) return;
-
-    const fetchTopFlavors = async () => {
-      setCategoryLoading(true);
-      try {
-        const url = selectedCategorySlug
-          ? `flavors/top/?category=${selectedCategorySlug}`
-          : 'flavors/top/';
-        const res = await api.get(url);
-        setTopFlavors(Array.isArray(res.data) ? res.data : res.data.results || []);
-        setActiveIndex(0);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setCategoryLoading(false);
-      }
-    };
-
-    if (isFirstRun.current) {
-      isFirstRun.current = false;
-      return;
-    }
-
-    fetchTopFlavors();
-  }, [selectedCategorySlug, query]);
+    setActiveIndex(0);
+  }, [selectedCategorySlug]);
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: string) => {
     setSelectedCategorySlug(newValue);

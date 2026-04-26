@@ -37,7 +37,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-type RetriableConfig = AxiosRequestConfig & { _retry?: boolean };
+type RetriableConfig = AxiosRequestConfig & {
+  _retry?: boolean;
+  /** When true, a 401 that survives refresh will silently reject instead of
+   *  navigating to /login. Use for background probes (e.g. /users/me/) so
+   *  anonymous visitors aren't bounced off public pages. */
+  skipAuthRedirect?: boolean;
+};
 
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -76,7 +82,11 @@ api.interceptors.response.use(
     refreshPromise = null;
 
     if (!newAccess) {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      if (
+        !original.skipAuthRedirect &&
+        typeof window !== 'undefined' &&
+        window.location.pathname !== '/login'
+      ) {
         window.location.href = '/login';
       }
       return Promise.reject(error);

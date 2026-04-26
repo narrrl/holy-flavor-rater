@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Typography,
   Box,
@@ -24,7 +24,14 @@ import HistoryIcon from '@mui/icons-material/History';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../lib/api';
+import { useAdminUserDetail } from '../api/queries/useAdminQueries';
+import { useDeleteUser, useToggleUserActive } from '../api/mutations/useAdminMutations';
+import {
+  useDeleteRating,
+  useDeleteReply,
+  useUpdateRating,
+} from '../api/mutations/useRatingMutations';
+import { useUpdateReply } from '../api/mutations/useReplyMutations';
 import { useTitle } from '../hooks/useTitle';
 import { formatDate } from '../utils/date';
 import MentionTextField from '../components/MentionTextField';
@@ -72,10 +79,23 @@ const AdminUserDetail: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [user, setUser] = useState<AdminUser | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(0);
+  const {
+    data: user,
+    isLoading: loading,
+    error,
+  } = useAdminUserDetail(id) as {
+    data: AdminUser | undefined;
+    isLoading: boolean;
+    error: unknown;
+  };
+  const toggleActive = useToggleUserActive();
+  const deleteUserMutation = useDeleteUser();
+  const updateRatingMutation = useUpdateRating();
+  const deleteRatingMutation = useDeleteRating();
+  const updateReplyMutation = useUpdateReply();
+  const deleteReplyMutation = useDeleteReply();
 
+  const [activeTab, setActiveTab] = useState(0);
   const [editingRatingId, setEditingRatingId] = useState<number | null>(null);
   const [editScore, setEditScore] = useState(0);
   const [editComment, setEditComment] = useState('');
@@ -86,29 +106,16 @@ const AdminUserDetail: React.FC = () => {
   const { notify } = useToast();
   const { confirm } = useConfirm();
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const res = await api.get(`admin-custom/${id}/user_detail/`);
-      setUser(res.data);
-    } catch (err) {
-      console.error(err);
-      navigate('/admin-panel');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, navigate]);
-
   useEffect(() => {
-    fetchUser();
-  }, [fetchUser]);
+    if (error) navigate('/admin-panel');
+  }, [error, navigate]);
 
   useTitle(user ? `${t('admin.manageUser')}: ${user.username}` : 'User Management');
 
   const handleToggleActive = async () => {
-    if (!user) return;
+    if (!user || !id) return;
     try {
-      await api.patch(`admin-custom/${id}/user_detail/`, { is_active: !user.is_active });
-      fetchUser();
+      await toggleActive.mutateAsync({ id, isActive: user.is_active });
     } catch {
       notify({ message: 'Action failed', severity: 'error' });
     }
@@ -116,9 +123,12 @@ const AdminUserDetail: React.FC = () => {
 
   const handleUpdateRating = async (ratingId: number) => {
     try {
-      await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
+      await updateRatingMutation.mutateAsync({
+        id: ratingId,
+        score: editScore,
+        comment: editComment,
+      });
       setEditingRatingId(null);
-      fetchUser();
     } catch {
       notify({ message: 'Update failed', severity: 'error' });
     }
@@ -127,8 +137,7 @@ const AdminUserDetail: React.FC = () => {
   const handleDeleteRating = async (ratingId: number) => {
     if (!(await confirm({ message: 'Delete this rating?', danger: true }))) return;
     try {
-      await api.delete(`ratings/${ratingId}/`);
-      fetchUser();
+      await deleteRatingMutation.mutateAsync(ratingId);
     } catch {
       notify({ message: 'Delete failed', severity: 'error' });
     }
@@ -136,9 +145,8 @@ const AdminUserDetail: React.FC = () => {
 
   const handleUpdateReply = async (replyId: number) => {
     try {
-      await api.patch(`replies/${replyId}/`, { text: editReplyText });
+      await updateReplyMutation.mutateAsync({ replyId, text: editReplyText });
       setEditingReplyId(null);
-      fetchUser();
     } catch {
       notify({ message: 'Update failed', severity: 'error' });
     }
@@ -147,14 +155,14 @@ const AdminUserDetail: React.FC = () => {
   const handleDeleteReply = async (replyId: number) => {
     if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
     try {
-      await api.delete(`replies/${replyId}/`);
-      fetchUser();
+      await deleteReplyMutation.mutateAsync(replyId);
     } catch {
       notify({ message: 'Delete failed', severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
+    if (!id) return;
     const ok = await confirm({
       title: 'Delete user',
       message: 'PERMANENTLY DELETE THIS USER AND ALL DATA? This cannot be undone.',
@@ -163,7 +171,7 @@ const AdminUserDetail: React.FC = () => {
     });
     if (!ok) return;
     try {
-      await api.delete(`admin-custom/${id}/user_detail/`);
+      await deleteUserMutation.mutateAsync(id);
       navigate('/admin-panel');
     } catch {
       notify({ message: 'Delete failed', severity: 'error' });
