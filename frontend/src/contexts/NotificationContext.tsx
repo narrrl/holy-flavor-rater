@@ -30,13 +30,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   // Refetch the auth user on the same 60s cadence so the unread count badge
   // stays in sync with anything that mutated server-side outside this client.
   useEffect(() => {
+    if (!user) return;
     const interval = setInterval(() => {
-      if (localStorage.getItem('access')) {
-        refetchUser();
-      }
+      refetchUser();
     }, 60_000);
     return () => clearInterval(interval);
-  }, [refetchUser]);
+  }, [refetchUser, user]);
 
   const fetchNotifications = useCallback(async () => {
     await refetch();

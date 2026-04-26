@@ -5,6 +5,9 @@ services:
     container_name: holy-redis
     command: redis-server --appendonly yes --save 60 1
     restart: unless-stopped
+    sysctls:
+      - net.core.somaxconn=512
+      - vm.overcommit_memory=1
     networks:
       - holy-net
     volumes:
@@ -51,6 +54,7 @@ services:
       context: ./backend
     container_name: holy-worker
     command: celery -A holy_backend worker -l info --concurrency=2
+    user: "app"
     restart: unless-stopped
     networks:
       - holy-net
@@ -83,6 +87,7 @@ services:
       context: ./backend
     container_name: holy-beat
     command: celery -A holy_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler --pidfile /tmp/celerybeat.pid
+    user: "app"
     restart: unless-stopped
     networks:
       - holy-net

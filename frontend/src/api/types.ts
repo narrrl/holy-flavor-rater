@@ -1,25 +1,25 @@
-export interface Reply {
-  id: number;
-  user: string;
-  text: string;
-  created_at: string;
-}
+import type { components } from './schema';
 
-export interface RatedItem {
-  id: number;
-  flavor: number;
-  flavor_name: string;
-  flavor_image: string | null;
-  category_name: string;
-  category_slug: string;
-  score: number;
-  comment: string | null;
-  created_at: string;
-  replies: Reply[];
-  is_legacy?: boolean;
-  is_available?: boolean;
-}
+export type Schemas = components['schemas'];
 
+// Re-exported from generated OpenAPI schema.
+// Regenerate with `npm run openapi:sync` after backend serializer changes.
+export type Banner = Schemas['Banner'];
+export type Category = Schemas['Category'];
+export type Flavor = Schemas['Flavor'];
+export type Notification = Schemas['Notification'];
+export type Rating = Schemas['Rating'];
+export type Reply = Schemas['Reply'];
+export type Ticket = Schemas['Ticket'];
+export type TicketMessage = Schemas['TicketMessage'];
+export type User = Schemas['User'];
+
+// `BannerConfig` was the legacy alias for the Banner schema; kept for callers.
+export type BannerConfig = Banner;
+// `RatedItem` was the legacy alias for Rating in dashboard payload.
+export type RatedItem = Rating;
+
+// Custom (non-DRF-serialized) shapes for endpoints without a serializer_class.
 export interface MissingFlavor {
   id: number;
   name: string;
@@ -38,23 +38,4 @@ export interface DashboardData {
   missing_count: number;
   missing_flavors: MissingFlavor[];
   my_ratings: RatedItem[];
-}
-
-export interface BannerConfig {
-  id: number;
-  name: string;
-  slug: string;
-  description: string;
-  is_active: boolean;
-  settings: Record<string, unknown> | null;
-}
-
-export interface NotificationItem {
-  id: number;
-  verb: string;
-  actor: string;
-  target: string | null;
-  url: string | null;
-  is_read: boolean;
-  created_at: string;
 }

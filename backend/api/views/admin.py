@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -14,14 +15,25 @@ from api.serializers import (
     JobSerializer,
     SystemConfigSerializer,
 )
+from api.tasks import (
+    backup_db_task,
+    cleanup_duplicates_task,
+    seed_banners_task,
+    seed_legacy_task,
+    sync_flavors_task,
+)
 
-JOB_TASK_MAP = {
-    "sync_flavors": "api.sync_flavors",
-    "cleanup_duplicates": "api.cleanup_duplicates",
-    "backup_db": "api.backup_db",
-    "seed_legacy": "api.seed_legacy",
-    "seed_banners": "api.seed_banners",
+# Maps Job.name → (celery task name for beat schedules, callable for direct dispatch).
+# Direct callables let .delay() honor CELERY_TASK_ALWAYS_EAGER in dev.
+JOB_TASKS: dict[str, tuple[str, Any]] = {
+    "sync_flavors": ("api.sync_flavors", sync_flavors_task),
+    "cleanup_duplicates": ("api.cleanup_duplicates", cleanup_duplicates_task),
+    "backup_db": ("api.backup_db", backup_db_task),
+    "seed_legacy": ("api.seed_legacy", seed_legacy_task),
+    "seed_banners": ("api.seed_banners", seed_banners_task),
 }
+
+JOB_TASK_MAP = {name: meta[0] for name, meta in JOB_TASKS.items()}
 
 
 def _sync_periodic_task(job: Job) -> None:
@@ -106,25 +118,24 @@ class AdminViewSet(viewsets.ViewSet):
 
     @action(detail=True, methods=["post"])
     def trigger_job(self, request: Request, pk=None) -> Response:
-        from celery import current_app
-
         try:
             job = Job.objects.get(pk=pk)
         except Job.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        task_name = JOB_TASK_MAP.get(job.name)
-        if not task_name:
+        meta = JOB_TASKS.get(job.name)
+        if not meta:
             return Response(
                 {"error": f"No celery task registered for {job.name}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        task_name, task_fn = meta
         job.status = "pending"
         job.error_message = ""
         job.save(update_fields=["status", "error_message"])
 
-        current_app.send_task(task_name)
+        task_fn.delay()
         return Response({"status": "Job queued", "task": task_name})
 
     @action(detail=True, methods=["patch"])

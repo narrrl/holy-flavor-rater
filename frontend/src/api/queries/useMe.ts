@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 export interface CurrentUserFull {
   id: number;
@@ -12,8 +13,9 @@ export interface CurrentUserFull {
   unread_notifications_count?: number;
 }
 
-export const useMe = () =>
-  useQuery({
+export const useMe = () => {
+  const { user } = useAuth();
+  return useQuery({
     queryKey: ['me'],
     queryFn: async () => {
       const res = await api.get<CurrentUserFull>('users/me/', {
@@ -21,5 +23,6 @@ export const useMe = () =>
       });
       return res.data;
     },
-    enabled: !!localStorage.getItem('access'),
+    enabled: !!user,
   });
+};

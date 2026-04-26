@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
+import { useAuth } from '../../hooks/useAuth';
 
 export interface CurrentUserLite {
   username: string;
@@ -10,8 +11,9 @@ export interface CurrentUserLite {
  * Reads /users/me/ for cases where we need a quick "is this me / am I admin"
  * check outside of AuthContext. Disabled when not authenticated.
  */
-export const useCurrentUserLite = () =>
-  useQuery({
+export const useCurrentUserLite = () => {
+  const { user } = useAuth();
+  return useQuery({
     queryKey: ['currentUserLite'],
     queryFn: async () => {
       const res = await api.get<CurrentUserLite>('users/me/', {
@@ -21,6 +23,7 @@ export const useCurrentUserLite = () =>
       });
       return res.data;
     },
-    enabled: !!localStorage.getItem('access'),
+    enabled: !!user,
     staleTime: 60_000,
   });
+};

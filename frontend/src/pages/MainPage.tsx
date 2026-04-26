@@ -20,6 +20,7 @@ import {
   useTopFlavors,
 } from '../api/queries/useMainPageQueries';
 import { useTitle } from '../hooks/useTitle';
+import { useAuth } from '../hooks/useAuth';
 import RatingBadge from '../components/RatingBadge';
 import StatusBadge from '../components/StatusBadge';
 import {
@@ -86,7 +87,8 @@ const MainPage: React.FC<MainPageProps> = (_props) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const query = new URLSearchParams(location.search).get('q') || '';
-  const isLoggedIn = !!localStorage.getItem('access');
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   const { data: searchResults = [], isLoading: searchLoading } = useFlavorSearch(query);
   const { data: topFlavorsAll = [], isLoading: topLoading } = useTopFlavors(null);

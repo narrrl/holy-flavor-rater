@@ -35,6 +35,7 @@ import {
 import { useNotificationsQuery } from '../api/queries/useNotifications';
 import { useCreateReply } from '../api/mutations/useRatingMutations';
 import { useTitle } from '../hooks/useTitle';
+import { useAuth } from '../hooks/useAuth';
 import RichText from '../components/RichText';
 import { formatDate } from '../utils/date';
 import { useTranslation } from 'react-i18next';
@@ -82,7 +83,8 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<number, boolean>>({});
 
-  const isAuthed = !!localStorage.getItem('access');
+  const { user } = useAuth();
+  const isAuthed = !!user;
   const { data: feed, isLoading: feedLoading, error: feedError } = useCommunityFeed(page);
   const { data: following = [] } = useFollowingList();
   const { data: notificationsAll = [] } = useNotificationsQuery(isAuthed);

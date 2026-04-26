@@ -12,7 +12,10 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,json,css}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "schema:export": "cd ../backend && ./venv/bin/python manage.py spectacular --file schema.yaml",
+    "openapi:gen": "openapi-typescript ../backend/schema.yaml -o src/api/schema.d.ts",
+    "openapi:sync": "npm run schema:export && npm run openapi:gen"
   },
   "dependencies": {
     "@catppuccin/palette": "^1.7.1",
@@ -49,6 +52,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "jsdom": "^29.0.2",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
