@@ -20,6 +20,7 @@ export interface MainPageFlavor {
   id: number;
   name: string;
   category_name: string;
+  category_slug: string;
   description: string;
   average_rating: number;
   image_url: string | null;

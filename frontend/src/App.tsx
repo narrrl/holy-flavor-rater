@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Typography,
   Button,
@@ -8,16 +8,16 @@ import {
   Avatar,
   Menu,
   MenuItem,
-  Drawer,
+  SwipeableDrawer,
   Divider,
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Collapse,
   CircularProgress,
   ListItemAvatar,
-  ListSubheader,
   Badge,
   alpha,
   useMediaQuery,
@@ -29,6 +29,18 @@ import NotificationsIcon from '@mui/icons-material/Notifications';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import CollectionsBookmarkOutlinedIcon from '@mui/icons-material/CollectionsBookmarkOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
+import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
 import { useTranslation } from 'react-i18next';
 import api from './lib/api';
 import Footer from './components/Footer';
@@ -61,6 +73,7 @@ const AdminReplyDetail = lazy(() => import('./pages/AdminReplyDetail'));
 const App: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const muiTheme = useMuiTheme();
   const { user, following, loadingUser, logout } = useAuth();
   const { themeName, handleThemeChange } = useTheme();
@@ -72,8 +85,9 @@ const App: React.FC = () => {
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
   const [adminMode, setAdminMode] = useState(localStorage.getItem('admin-mode') === 'true');
-  const isMobile = useMediaQuery('(max-width:1150px)');
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
 
   useEffect(() => {
     api
@@ -115,36 +129,104 @@ const App: React.FC = () => {
     }
   };
 
+  const closeDrawer = () => setDrawerOpen(false);
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+
   const drawer = (
-    <Box sx={{ width: 280 }} role="presentation">
-      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
-        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          <Link
-            to="/"
-            onClick={() => setDrawerOpen(false)}
-            style={{ color: 'inherit', textDecoration: 'none' }}
+    <Box
+      sx={{ width: 300, height: '100%', display: 'flex', flexDirection: 'column' }}
+      role="presentation"
+    >
+      {user ? (
+        <Box
+          component={Link}
+          to={`/profile/${user.username}`}
+          onClick={closeDrawer}
+          sx={{
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            color: 'inherit',
+            textDecoration: 'none',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+        >
+          <Avatar
+            src={user.avatar || undefined}
+            sx={{
+              width: 44,
+              height: 44,
+              border: '2px solid',
+              borderColor: 'primary.main',
+            }}
           >
-            Holy Flavors Archive
-          </Link>
-        </Typography>
-      </Box>
-      <Divider />
-      <List>
+            {user.username.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {user.username}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {t('nav.profile')}
+            </Typography>
+          </Box>
+        </Box>
+      ) : (
+        <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            <Link to="/" onClick={closeDrawer} style={{ color: 'inherit', textDecoration: 'none' }}>
+              Holy Flavors Archive
+            </Link>
+          </Typography>
+        </Box>
+      )}
+
+      <List sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
         <ListItem disablePadding>
-          <ListItemButton component={Link} to="/" onClick={() => setDrawerOpen(false)}>
+          <ListItemButton component={Link} to="/" onClick={closeDrawer} selected={isActive('/')}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <HomeOutlinedIcon />
+            </ListItemIcon>
             <ListItemText primary={t('nav.home')} />
           </ListItemButton>
         </ListItem>
 
         {user && (
           <ListItem disablePadding>
-            <ListItemButton component={Link} to="/community" onClick={() => setDrawerOpen(false)}>
+            <ListItemButton
+              component={Link}
+              to="/community"
+              onClick={closeDrawer}
+              selected={isActive('/community')}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <GroupsOutlinedIcon />
+              </ListItemIcon>
               <ListItemText primary={t('nav.community')} />
             </ListItemButton>
           </ListItem>
         )}
 
-        <ListItemButton onClick={() => setCatOpen(!catOpen)}>
+        <ListItemButton
+          onClick={() => setCatOpen(!catOpen)}
+          selected={location.pathname.startsWith('/category/')}
+        >
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <CategoryOutlinedIcon />
+          </ListItemIcon>
           <ListItemText primary={t('nav.categories')} />
           {catOpen ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
@@ -155,8 +237,9 @@ const App: React.FC = () => {
                 key={cat.slug}
                 component={Link}
                 to={`/category/${cat.slug}`}
-                onClick={() => setDrawerOpen(false)}
-                sx={{ pl: 4 }}
+                onClick={closeDrawer}
+                selected={location.pathname === `/category/${cat.slug}`}
+                sx={{ pl: 7 }}
               >
                 <ListItemText primary={t(`categories.${cat.slug}`, { defaultValue: cat.name })} />
               </ListItemButton>
@@ -164,118 +247,184 @@ const App: React.FC = () => {
           </List>
         </Collapse>
 
-        <Divider sx={{ my: 1 }} />
-
-        {user ? (
+        {user && (
           <>
+            <Divider sx={{ my: 1 }} />
+
             <ListItem disablePadding>
               <ListItemButton
                 component={Link}
                 to={`/profile/${user.username}`}
-                onClick={() => setDrawerOpen(false)}
+                onClick={closeDrawer}
+                selected={location.pathname === `/profile/${user.username}`}
               >
-                <ListItemText
-                  primary={t('nav.profile')}
-                  secondary={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                      <Avatar src={user.avatar || undefined} sx={{ width: 20, height: 20 }}>
-                        {user.username.charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Typography variant="caption" color="text.secondary">
-                        {user.username}
-                      </Typography>
-                    </Box>
-                  }
-                />
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <PersonOutlineOutlinedIcon />
+                </ListItemIcon>
+                <ListItemText primary={t('nav.profile')} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton component={Link} to="/dashboard" onClick={() => setDrawerOpen(false)}>
+              <ListItemButton
+                component={Link}
+                to="/dashboard"
+                onClick={closeDrawer}
+                selected={isActive('/dashboard')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <CollectionsBookmarkOutlinedIcon />
+                </ListItemIcon>
                 <ListItemText primary={t('nav.dashboard')} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton component={Link} to="/settings" onClick={() => setDrawerOpen(false)}>
+              <ListItemButton
+                component={Link}
+                to="/settings"
+                onClick={closeDrawer}
+                selected={isActive('/settings')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <SettingsOutlinedIcon />
+                </ListItemIcon>
                 <ListItemText primary={t('nav.settings')} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton component={Link} to="/support" onClick={() => setDrawerOpen(false)}>
+              <ListItemButton
+                component={Link}
+                to="/support"
+                onClick={closeDrawer}
+                selected={isActive('/support')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <HelpOutlineOutlinedIcon />
+                </ListItemIcon>
                 <ListItemText primary={t('support.title')} />
               </ListItemButton>
             </ListItem>
 
             {user.is_superuser && (
-              <ListItem disablePadding>
-                <ListItemButton onClick={toggleAdminMode}>
-                  <ListItemText
-                    primary={t('admin.adminMode')}
-                    secondary={adminMode ? 'ON' : 'OFF'}
-                    sx={{ color: adminMode ? 'primary.main' : 'inherit' }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            )}
-
-            {user.is_superuser && (
-              <ListItem disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to="/admin-panel"
-                  onClick={() => setDrawerOpen(false)}
-                >
-                  <ListItemText
-                    primary="Admin Panel"
-                    sx={{ color: 'primary.main', fontWeight: 'bold' }}
-                  />
-                </ListItemButton>
-              </ListItem>
+              <>
+                <Divider sx={{ my: 1 }} />
+                <ListItem disablePadding>
+                  <ListItemButton onClick={toggleAdminMode}>
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <ShieldOutlinedIcon color={adminMode ? 'primary' : 'inherit'} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={t('admin.adminMode')}
+                      secondary={adminMode ? 'ON' : 'OFF'}
+                      sx={{ color: adminMode ? 'primary.main' : 'inherit' }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    to="/admin-panel"
+                    onClick={closeDrawer}
+                    selected={isActive('/admin-panel')}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <AdminPanelSettingsOutlinedIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary="Admin Panel"
+                      primaryTypographyProps={{ sx: { color: 'primary.main', fontWeight: 700 } }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              </>
             )}
 
             {following.length > 0 && (
               <>
                 <Divider sx={{ my: 1 }} />
-                <ListSubheader
-                  sx={{ bgcolor: 'transparent', fontWeight: 'bold', lineHeight: '32px' }}
-                >
-                  {t('nav.following')}
-                </ListSubheader>
-                {following.map((f) => (
-                  <ListItem key={f.id} disablePadding>
-                    <ListItemButton
-                      component={Link}
-                      to={`/profile/${f.username}`}
-                      onClick={() => setDrawerOpen(false)}
-                    >
-                      <ListItemAvatar>
-                        <Avatar src={f.avatar || undefined} sx={{ width: 32, height: 32 }}>
-                          {!f.avatar && f.username.charAt(0).toUpperCase()}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={f.username}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
+                <ListItemButton onClick={() => setFollowingOpen(!followingOpen)}>
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    <PeopleOutlineOutlinedIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>{t('nav.following')}</span>
+                        <Typography variant="caption" color="text.secondary">
+                          {following.length}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                  {followingOpen ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+                <Collapse in={followingOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {following.map((f) => (
+                      <ListItem key={f.id} disablePadding>
+                        <ListItemButton
+                          component={Link}
+                          to={`/profile/${f.username}`}
+                          onClick={closeDrawer}
+                          selected={location.pathname === `/profile/${f.username}`}
+                          sx={{ pl: 5 }}
+                        >
+                          <ListItemAvatar sx={{ minWidth: 40 }}>
+                            <Avatar src={f.avatar || undefined} sx={{ width: 28, height: 28 }}>
+                              {!f.avatar && f.username.charAt(0).toUpperCase()}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={f.username}
+                            primaryTypographyProps={{ variant: 'body2' }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
               </>
             )}
+          </>
+        )}
 
+        {!user && (
+          <>
+            <Divider sx={{ my: 1 }} />
             <ListItem disablePadding>
-              <ListItemButton onClick={logout}>
-                <ListItemText primary={t('nav.logout')} sx={{ color: 'error.main' }} />
+              <ListItemButton
+                component={Link}
+                to="/login"
+                onClick={closeDrawer}
+                selected={isActive('/login')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <LoginOutlinedIcon />
+                </ListItemIcon>
+                <ListItemText primary={t('nav.login')} />
               </ListItemButton>
             </ListItem>
           </>
-        ) : (
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/login" onClick={() => setDrawerOpen(false)}>
-              <ListItemText primary={t('nav.login')} />
-            </ListItemButton>
-          </ListItem>
         )}
       </List>
+
+      {user && (
+        <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
+          <ListItemButton
+            onClick={() => {
+              closeDrawer();
+              logout();
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
+              <LogoutOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('nav.logout')}
+              primaryTypographyProps={{ sx: { color: 'error.main', fontWeight: 600 } }}
+            />
+          </ListItemButton>
+        </Box>
+      )}
     </Box>
   );
 
@@ -528,9 +677,16 @@ const App: React.FC = () => {
         </Box>
       </GlassAppBar>
 
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+      <SwipeableDrawer
+        anchor="right"
+        open={drawerOpen}
+        onOpen={() => setDrawerOpen(true)}
+        onClose={() => setDrawerOpen(false)}
+        disableBackdropTransition
+        disableDiscovery
+      >
         {drawer}
-      </Drawer>
+      </SwipeableDrawer>
 
       <Box sx={{ flexGrow: 1, width: '100%' }}>
         <Suspense

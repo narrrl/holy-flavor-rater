@@ -14,7 +14,7 @@ const SCORES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 const RatingDistribution: React.FC<RatingDistributionProps> = ({
   distribution,
   total,
-  height = 56,
+  height = 48,
   showLegend = true,
 }) => {
   const theme = useTheme();
@@ -29,24 +29,25 @@ const RatingDistribution: React.FC<RatingDistributionProps> = ({
 
   const interpolate = (n: number) => {
     const ratio = (n - 1) / 9;
-    return alpha(highColor, 0.25 + ratio * 0.7);
+    return alpha(highColor, 0.3 + ratio * 0.65);
   };
 
   if (sum === 0) return null;
 
   return (
-    <Box sx={{ width: '100%', mb: 1 }}>
+    <Box sx={{ width: '100%' }}>
       {showLegend && (
         <Typography
           variant="caption"
           sx={{
             display: 'block',
-            mb: 0.5,
+            mb: 0.75,
             color: 'text.secondary',
             fontWeight: 700,
             textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            fontSize: '0.65rem',
+            letterSpacing: '0.08em',
+            fontSize: '0.6rem',
+            lineHeight: 1,
           }}
         >
           {t('flavorDetail.ratingDistribution')}
@@ -58,30 +59,26 @@ const RatingDistribution: React.FC<RatingDistributionProps> = ({
         sx={{
           display: 'flex',
           alignItems: 'flex-end',
-          gap: 0.5,
+          gap: 0.4,
           height,
-          px: 0.5,
-          py: 0.5,
-          borderRadius: theme.tokens.radius.sm + 'px',
-          bgcolor: alpha(theme.palette.text.primary, 0.04),
-          border: '1px solid',
-          borderColor: 'divider',
+          width: '100%',
         }}
       >
         {counts.map((c, i) => {
           const score = SCORES[i];
           const ratio = c / max;
-          const minH = c > 0 ? 4 : 2;
           return (
             <Tooltip
               key={score}
-              title={`${score} / 10 — ${c} ${c === 1 ? 'rating' : 'ratings'}`}
+              title={`${score} / 10 — ${c}`}
               placement="top"
               arrow
+              disableInteractive
             >
               <Box
                 sx={{
                   flex: 1,
+                  minWidth: 0,
                   display: 'flex',
                   alignItems: 'flex-end',
                   height: '100%',
@@ -91,10 +88,9 @@ const RatingDistribution: React.FC<RatingDistributionProps> = ({
                 <Box
                   sx={{
                     width: '100%',
-                    height: c > 0 ? `calc(${ratio * 100}% + ${minH}px)` : `${minH}px`,
-                    minHeight: minH,
+                    height: c > 0 ? `max(${ratio * 100}%, 6px)` : '3px',
                     bgcolor: c > 0 ? interpolate(score) : lowColor,
-                    borderRadius: '3px',
+                    borderRadius: '2px',
                     transition: 'height 240ms ease, background-color 200ms ease',
                   }}
                 />
@@ -102,21 +98,6 @@ const RatingDistribution: React.FC<RatingDistributionProps> = ({
             </Tooltip>
           );
         })}
-      </Box>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          mt: 0.25,
-          px: 0.5,
-        }}
-      >
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
-          1
-        </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
-          10
-        </Typography>
       </Box>
     </Box>
   );

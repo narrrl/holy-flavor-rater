@@ -92,7 +92,9 @@ const MainPage: React.FC<MainPageProps> = (_props) => {
   const { data: topFlavorsAll = [], isLoading: topLoading } = useTopFlavors(null);
   const { data: newestFlavors = [], isLoading: newestLoading } = useNewestFlavors();
 
-  const topFlavors = topFlavorsAll.slice(0, TOP_LIMIT);
+  const topFlavors = topFlavorsAll
+    .filter((f) => f.category_slug !== 'packs-and-other')
+    .slice(0, TOP_LIMIT);
   const safeIndex = topFlavors.length > 0 ? activeIndex % topFlavors.length : 0;
   const currentTop = topFlavors[safeIndex];
   const featuredReview = currentTop?.ratings?.find((r) => r.comment) || null;

@@ -7,6 +7,7 @@ import {
   TextField,
   Typography,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +17,8 @@ import { useGlobalSearch } from '../hooks/useGlobalSearch';
 export const GlobalSearch = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const isMobile = useMediaQuery('(max-width:1150px)');
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { query, setQuery, options, loading } = useGlobalSearch();
 
   const handleSearch = (e: React.FormEvent) => {

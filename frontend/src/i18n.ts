@@ -36,7 +36,7 @@ const resources = {
         exploreFlavors: 'Explore New Flavors',
         allRated: "Amazing! You've rated everything! 🏆",
         myReviews: 'My Rated Flavors',
-        exploreNew: 'Explore New',
+        exploreNew: 'To Try',
         editingReview: 'Editing review for {{flavor}}',
         newScore: 'New Score:',
         searchMissing: "Search flavors you haven't rated...",
@@ -134,6 +134,7 @@ const resources = {
         delete: 'Delete',
         save: 'Save',
         cancel: 'Cancel',
+        all: 'All',
       },
       status: {
         limited: 'Limited',
@@ -338,7 +339,7 @@ const resources = {
         exploreFlavors: 'Neue Sorten entdecken',
         allRated: 'Wahnsinn! Du hast alles bewertet! 🏆',
         myReviews: 'Meine Sammlungen',
-        exploreNew: 'Neu entdecken',
+        exploreNew: 'Zum Probieren',
         editingReview: 'Rezension bearbeiten für {{flavor}}',
         newScore: 'Neue Bewertung:',
         searchMissing: 'Suche nach Sorten, die du noch nicht bewertet hast...',
@@ -436,6 +437,7 @@ const resources = {
         delete: 'Löschen',
         save: 'Speichern',
         cancel: 'Abbrechen',
+        all: 'Alle',
       },
       status: {
         limited: 'Limitiert',

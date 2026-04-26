@@ -46,8 +46,7 @@ export const FlavorCard = ({
           flexDirection: 'column',
           position: 'relative',
           overflow: 'hidden',
-          transition:
-            'border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease',
+          transition: 'border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease',
           '&:hover': {
             borderColor: alpha(theme.palette.primary.main, 0.5),
             boxShadow: theme.tokens.elevation.md,
@@ -185,30 +184,16 @@ export const FlavorCard = ({
               justifyContent: 'space-between',
               gap: 1,
               mt: 'auto',
+              minHeight: 24,
             }}
           >
-            {hasRating ? (
-              <RatingBadge score={flavor.average_rating || 0} size="small" />
-            ) : (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.7rem',
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                —
-              </Typography>
-            )}
+            {hasRating && <RatingBadge score={flavor.average_rating || 0} size="small" />}
             {caption && (
               <Typography
                 variant="caption"
                 color="text.secondary"
                 noWrap
-                sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                sx={{ fontWeight: 600, fontSize: '0.7rem', ml: 'auto' }}
               >
                 {caption}
               </Typography>

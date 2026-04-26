@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, alpha, useTheme } from '@mui/material';
+import { Box, alpha, useTheme } from '@mui/material';
 
 interface RatingBadgeProps {
   score: number;
@@ -42,7 +42,7 @@ const RatingBadge: React.FC<RatingBadgeProps> = ({ score, size = 'medium', sx })
     <Box
       sx={{
         display: 'inline-flex',
-        alignItems: 'baseline',
+        alignItems: 'center',
         justifyContent: 'center',
         gap: dims.gap,
         px: dims.px,
@@ -52,10 +52,11 @@ const RatingBadge: React.FC<RatingBadgeProps> = ({ score, size = 'medium', sx })
         color: theme.palette.primary.contrastText,
         boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.28)}, inset 0 1px 0 ${alpha('#ffffff', 0.2)}`,
         minWidth: 'fit-content',
+        lineHeight: 1,
         ...sx,
       }}
     >
-      <Typography
+      <Box
         component="span"
         sx={{
           fontWeight: 800,
@@ -63,11 +64,12 @@ const RatingBadge: React.FC<RatingBadgeProps> = ({ score, size = 'medium', sx })
           fontSize: dims.score,
           fontVariantNumeric: 'tabular-nums',
           letterSpacing: '-0.02em',
+          display: 'inline-block',
         }}
       >
         {display}
-      </Typography>
-      <Typography
+      </Box>
+      <Box
         component="span"
         sx={{
           fontWeight: 700,
@@ -75,10 +77,12 @@ const RatingBadge: React.FC<RatingBadgeProps> = ({ score, size = 'medium', sx })
           fontSize: dims.suffix,
           opacity: 0.75,
           letterSpacing: '0.02em',
+          display: 'inline-block',
+          mt: '1px',
         }}
       >
         / 10
-      </Typography>
+      </Box>
     </Box>
   );
 };

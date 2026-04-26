@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Box, ButtonBase, IconButton, Modal, Typography, alpha, useTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import useEmblaCarousel from 'embla-carousel-react';
-import { GlassCard, GlassSurface } from './Glass';
+import { GlassCard } from './Glass';
 
 export interface HeroGalleryProps {
   images: string[];
@@ -28,8 +28,6 @@ const Carousel: React.FC<CarouselProps> = ({ images, alt, onMainClick, variant }
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
-  const [counterVisible, setCounterVisible] = useState(true);
-  const counterTimeoutRef = useRef<number | null>(null);
 
   const updateState = useCallback(() => {
     if (!emblaApi) return;
@@ -38,23 +36,12 @@ const Carousel: React.FC<CarouselProps> = ({ images, alt, onMainClick, variant }
     setCanNext(emblaApi.canScrollNext());
   }, [emblaApi]);
 
-  const flashCounter = useCallback(() => {
-    setCounterVisible(true);
-    if (counterTimeoutRef.current) window.clearTimeout(counterTimeoutRef.current);
-    counterTimeoutRef.current = window.setTimeout(() => setCounterVisible(false), 1500);
-  }, []);
-
   useEffect(() => {
     if (!emblaApi) return;
     updateState();
     emblaApi.on('select', updateState);
     emblaApi.on('reInit', updateState);
-    emblaApi.on('select', flashCounter);
-    flashCounter();
-    return () => {
-      if (counterTimeoutRef.current) window.clearTimeout(counterTimeoutRef.current);
-    };
-  }, [emblaApi, updateState, flashCounter]);
+  }, [emblaApi, updateState]);
 
   const scrollPrev = () => emblaApi?.scrollPrev();
   const scrollNext = () => emblaApi?.scrollNext();
@@ -117,36 +104,6 @@ const Carousel: React.FC<CarouselProps> = ({ images, alt, onMainClick, variant }
           ))}
         </Box>
       </Box>
-
-      {/* Counter pill */}
-      {images.length > 1 && (
-        <GlassSurface
-          intensity="strong"
-          sx={{
-            position: 'absolute',
-            bottom: 12,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            px: 1.25,
-            py: 0.4,
-            borderRadius: theme.tokens.radius.pill + 'px',
-            opacity: counterVisible ? 0.95 : 0,
-            transition: 'opacity 300ms ease',
-            pointerEvents: 'none',
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              fontVariantNumeric: 'tabular-nums',
-              color: 'text.primary',
-            }}
-          >
-            {selectedIndex + 1} / {images.length}
-          </Typography>
-        </GlassSurface>
-      )}
 
       {/* Chevrons (desktop only) */}
       {images.length > 1 && (
