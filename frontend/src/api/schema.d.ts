@@ -132,6 +132,22 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/api/auth/logout/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post: operations['auth_logout_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/api/auth/token/': {
     parameters: {
       query?: never;
@@ -1639,6 +1655,24 @@ export interface operations {
       };
     };
   };
+  auth_logout_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   auth_token_create: {
     parameters: {
       query?: never;
@@ -2226,7 +2260,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this notification. */
+        id: number;
       };
       cookie?: never;
     };
@@ -2247,7 +2282,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this notification. */
+        id: number;
       };
       cookie?: never;
     };
@@ -2704,7 +2740,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this ticket. */
+        id: number;
       };
       cookie?: never;
     };
@@ -2725,7 +2762,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this ticket. */
+        id: number;
       };
       cookie?: never;
     };
@@ -2752,7 +2790,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this ticket. */
+        id: number;
       };
       cookie?: never;
     };
@@ -2772,7 +2811,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this ticket. */
+        id: number;
       };
       cookie?: never;
     };
@@ -2799,7 +2839,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this ticket. */
+        id: number;
       };
       cookie?: never;
     };
@@ -2826,7 +2867,8 @@ export interface operations {
       query?: never;
       header?: never;
       path: {
-        id: string;
+        /** @description A unique integer value identifying this ticket. */
+        id: number;
       };
       cookie?: never;
     };

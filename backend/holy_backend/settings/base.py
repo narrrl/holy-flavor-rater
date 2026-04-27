@@ -132,7 +132,7 @@ AUTH_USER_MODEL = "api.User"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "api.utils.cookie_auth.CookieJWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
@@ -151,10 +151,19 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+# httpOnly-cookie JWT config. The Authorization header path is kept as a
+# fallback during the rollout — once all clients use cookies it can be removed.
+JWT_AUTH_COOKIE_ACCESS = "access_token"
+JWT_AUTH_COOKIE_REFRESH = "refresh_token"
+JWT_AUTH_COOKIE_SECURE = False  # prod.py overrides to True
+JWT_AUTH_COOKIE_SAMESITE = "Lax"
+JWT_AUTH_COOKIE_PATH = "/"
+
 CORS_ALLOWED_ORIGINS = get_env_list(
     "CORS_ALLOWED_ORIGINS",
     [f"https://{DOMAIN}", "http://localhost:5173", "http://127.0.0.1:5173"],
 )
+CORS_ALLOW_CREDENTIALS = True
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL", f"https://{DOMAIN}").rstrip("/")
 

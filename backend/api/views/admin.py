@@ -22,6 +22,7 @@ from api.tasks import (
     seed_legacy_task,
     sync_flavors_task,
 )
+from api.utils.auth import current_user
 
 # Maps Job.name → (celery task name for beat schedules, callable for direct dispatch).
 # Direct callables let .delay() honor CELERY_TASK_ALWAYS_EAGER in dev.
@@ -155,15 +156,16 @@ class AdminViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=["post"])
     def send_test_email(self, request: Request) -> Response:
+        me = current_user(request)
         try:
             send_mail(
                 "Holy Flavors Admin Test Email",
                 (
-                    f"This is a test email sent to {request.user.email} from the "
+                    f"This is a test email sent to {me.email} from the "
                     f"Holy Flavors Admin Interface."
                 ),
                 settings.DEFAULT_FROM_EMAIL,
-                [request.user.email],
+                [me.email],
                 fail_silently=False,
             )
             return Response({"status": "Test email sent!"})
@@ -193,3 +195,4 @@ class AdminViewSet(viewsets.ViewSet):
         elif request.method == "DELETE":
             user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

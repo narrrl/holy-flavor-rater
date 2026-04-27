@@ -19,6 +19,7 @@ from api.serializers import (
 )
 from api.services.ip_logging import log_user_ip
 from api.tasks import send_email_task
+from api.utils.auth import current_user
 
 
 def _generate_code() -> str:
@@ -42,7 +43,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def following_list(self, request: Request) -> Response:
-        following = request.user.following.all()
+        me = current_user(request)
+        following = me.following.all()
         return Response(self.get_serializer(following, many=True).data)
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
@@ -213,6 +215,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def add_comment(self, request: Request, pk=None) -> Response:
+        me = current_user(request)
         profile_owner = self.get_object()
         text = request.data.get("text")
         if not text:
@@ -220,14 +223,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
         comment = ProfileComment.objects.create(
             profile_owner=profile_owner,
-            author=request.user,
+            author=me,
             text=text,
         )
 
-        if profile_owner != request.user:
+        if profile_owner != me:
             Notification.objects.create(
                 recipient=profile_owner,
-                actor=request.user,
+                actor=me,
                 notification_type="profile_comment",
                 profile_comment=comment,
             )
@@ -244,17 +247,14 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[permissions.IsAuthenticated],
     )
     def delete_comment(self, request: Request, pk=None, comment_id=None) -> Response:
+        me = current_user(request)
         profile_owner = self.get_object()
         try:
             comment = ProfileComment.objects.get(pk=comment_id, profile_owner=profile_owner)
         except ProfileComment.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        if (
-            comment.author != request.user
-            and not request.user.is_superuser
-            and profile_owner != request.user
-        ):
+        if comment.author != me and not me.is_superuser and profile_owner != me:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         comment.delete()
@@ -262,12 +262,13 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def me(self, request: Request) -> Response:
-        log_user_ip(request.user, request)
-        return Response(self.get_serializer(request.user).data)
+        me = current_user(request)
+        log_user_ip(me, request)
+        return Response(self.get_serializer(me).data)
 
     @action(detail=False, methods=["patch"])
     def update_preferences(self, request: Request) -> Response:
-        user = request.user
+        user = current_user(request)
         theme = request.data.get("theme")
         language = request.data.get("language")
         banner_id = request.data.get("selected_banner")
@@ -309,7 +310,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def update_avatar(self, request: Request) -> Response:
-        user = request.user
+        user = current_user(request)
         avatar = request.FILES.get("avatar")
         if not avatar:
             return Response({"error": "No avatar provided"}, status=status.HTTP_400_BAD_REQUEST)
@@ -326,7 +327,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def change_password(self, request: Request) -> Response:
-        user = request.user
+        user = current_user(request)
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
         if not user.check_password(old_password):
@@ -337,7 +338,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["patch"])
     def update_profile(self, request: Request) -> Response:
-        user = request.user
+        user = current_user(request)
         username = request.data.get("username")
         email = request.data.get("email")
 
@@ -370,18 +371,19 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def follow(self, request: Request, pk=None) -> Response:
+        me = current_user(request)
         user_to_follow = self.get_object()
-        if user_to_follow == request.user:
+        if user_to_follow == me:
             return Response(
                 {"error": "You cannot follow yourself"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not request.user.following.filter(pk=user_to_follow.pk).exists():
-            request.user.following.add(user_to_follow)
+        if not me.following.filter(pk=user_to_follow.pk).exists():
+            me.following.add(user_to_follow)
             Notification.objects.create(
                 recipient=user_to_follow,
-                actor=request.user,
+                actor=me,
                 notification_type="follow",
             )
 
@@ -389,17 +391,22 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def unfollow(self, request: Request, pk=None) -> Response:
+        me = current_user(request)
         user_to_unfollow = self.get_object()
-        request.user.following.remove(user_to_unfollow)
+        me.following.remove(user_to_unfollow)
         return Response({"status": "unfollowed"})
 
     @action(detail=False, methods=["post"])
     def confirm_email(self, request: Request) -> Response:
-        user = request.user
+        user = current_user(request)
         code = request.data.get("code")
         if not user.email_confirmation_code or code != user.email_confirmation_code:
             return Response(
                 {"error": "Invalid or expired code"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        if not user.pending_email:
+            return Response(
+                {"error": "No pending email change"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         user.email = user.pending_email
@@ -454,7 +461,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @method_decorator(ratelimit(key="user", rate="3/h", method="POST", block=True))
     def request_account_deletion(self, request: Request) -> Response:
         code = _generate_code()
-        user = request.user
+        user = current_user(request)
         user.email_confirmation_code = code
         user.save()
 
@@ -471,7 +478,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"])
     def confirm_account_deletion(self, request: Request) -> Response:
-        user = request.user
+        user = current_user(request)
         code = request.data.get("code")
         if not user.email_confirmation_code or code != user.email_confirmation_code:
             return Response(
@@ -485,7 +492,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def dashboard(self, request: Request) -> Response:
         from django.db.models import Avg, Q
 
-        user = request.user
+        user = current_user(request)
         rated_ids = user.ratings.values_list("flavor_id", flat=True)
         followed_users = user.following.all()
 
@@ -529,13 +536,17 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        return self.request.user.notifications.select_related(
+        if getattr(self, "swagger_fake_view", False):
+            return Notification.objects.none()
+        me = current_user(self.request)
+        return me.notifications.select_related(
             "actor", "rating__flavor", "reply__rating__flavor"
         ).order_by("-created_at")
 
     @action(detail=False, methods=["post"])
     def mark_all_read(self, request: Request) -> Response:
-        request.user.notifications.filter(is_read=False).update(is_read=True)
+        me = current_user(request)
+        me.notifications.filter(is_read=False).update(is_read=True)
         return Response({"status": "all read"})
 
     @action(detail=True, methods=["post"])

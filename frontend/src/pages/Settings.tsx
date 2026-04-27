@@ -178,8 +178,6 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     if (!ok) return;
     try {
       await confirmDeletion.mutateAsync(deletionCode);
-      localStorage.removeItem('access');
-      localStorage.removeItem('refresh');
       window.location.href = '/';
     } catch {
       setMessage({ type: 'error', text: 'Invalid code. Deletion failed.' });

@@ -7,7 +7,9 @@ from django.urls import include, path
 from django.views.generic.base import TemplateView
 from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from rest_framework_simplejwt.views import TokenVerifyView
+
+from api.views.auth import CookieLogoutView, CookieTokenObtainPairView, CookieTokenRefreshView
 
 
 def health_check(request):
@@ -25,12 +27,13 @@ urlpatterns = [
     # Ensure admin ends with a slash for Django's redirection logic
     path(f"{admin_url}/", admin.site.urls),
     path("api/", include("api.urls")),
-    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/token/", CookieTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/auth/token/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
-    # Legacy alias: old DRF TokenAuth endpoint now returns a JWT pair so clients
-    # relying on POST /api/token/ keep working for one release.
-    path("api/token/", TokenObtainPairView.as_view(), name="api_token_legacy"),
+    path("api/auth/logout/", CookieLogoutView.as_view(), name="auth_logout"),
+    # Legacy alias: old DRF TokenAuth endpoint now sets cookies just like the
+    # canonical login route so clients relying on POST /api/token/ keep working.
+    path("api/token/", CookieTokenObtainPairView.as_view(), name="api_token_legacy"),
     path("api-auth/", include("rest_framework.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from api.models import Notification, Ticket, TicketMessage, User
 from api.serializers import TicketMessageSerializer, TicketSerializer
+from api.utils.auth import current_user
 
 
 class TicketViewSet(viewsets.ModelViewSet):
@@ -13,52 +14,57 @@ class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.is_superuser:
+        if getattr(self, "swagger_fake_view", False):
+            return Ticket.objects.none()
+        me = current_user(self.request)
+        if me.is_superuser:
             return (
                 Ticket.objects.all()
                 .prefetch_related("messages", "messages__user")
                 .order_by("-updated_at")
             )
         return (
-            Ticket.objects.filter(user=self.request.user)
+            Ticket.objects.filter(user=me)
             .prefetch_related("messages", "messages__user")
             .order_by("-updated_at")
         )
 
     def perform_create(self, serializer):
-        ticket = serializer.save(user=self.request.user)
-        admins = User.objects.filter(is_superuser=True).exclude(pk=self.request.user.pk)
+        me = current_user(self.request)
+        ticket = serializer.save(user=me)
+        admins = User.objects.filter(is_superuser=True).exclude(pk=me.pk)
         for admin in admins:
             Notification.objects.create(
                 recipient=admin,
-                actor=self.request.user,
+                actor=me,
                 notification_type="ticket_new",
                 ticket=ticket,
             )
 
     @action(detail=True, methods=["post"])
     def add_message(self, request: Request, pk=None) -> Response:
+        me = current_user(request)
         ticket = self.get_object()
         text = request.data.get("text")
         if not text:
             return Response({"error": "Text is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        msg = TicketMessage.objects.create(ticket=ticket, user=request.user, text=text)
+        msg = TicketMessage.objects.create(ticket=ticket, user=me, text=text)
 
-        if request.user.is_superuser:
-            if ticket.user != request.user:
+        if me.is_superuser:
+            if ticket.user != me:
                 Notification.objects.create(
                     recipient=ticket.user,
-                    actor=request.user,
+                    actor=me,
                     notification_type="ticket_reply",
                     ticket=ticket,
                 )
         else:
-            admins = User.objects.filter(is_superuser=True).exclude(pk=request.user.pk)
+            admins = User.objects.filter(is_superuser=True).exclude(pk=me.pk)
             for admin in admins:
                 Notification.objects.create(
                     recipient=admin,
-                    actor=request.user,
+                    actor=me,
                     notification_type="ticket_reply",
                     ticket=ticket,
                 )

@@ -1,40 +1,21 @@
 import axios from 'axios';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
-const ACCESS_KEY = 'access';
-const REFRESH_KEY = 'refresh';
+/**
+ * httpOnly-cookie auth: the backend sets `access_token` + `refresh_token` cookies
+ * on login. We don't read or write them from JS — `withCredentials` is enough.
+ */
 
-export function getAccessToken(): string | null {
-  return localStorage.getItem(ACCESS_KEY);
-}
-
-export function setTokens(access: string, refresh?: string): void {
-  localStorage.setItem(ACCESS_KEY, access);
-  if (refresh) {
-    localStorage.setItem(REFRESH_KEY, refresh);
-  }
-}
-
-export function clearTokens(): void {
-  localStorage.removeItem(ACCESS_KEY);
-  localStorage.removeItem(REFRESH_KEY);
-}
-
-/** One-time migration: remove the legacy DRF TokenAuth key from localStorage. */
+/** One-time migration: remove the legacy localStorage tokens (DRF and old JWT). */
 export function clearLegacyToken(): void {
   localStorage.removeItem('token');
+  localStorage.removeItem('access');
+  localStorage.removeItem('refresh');
 }
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api/',
-});
-
-api.interceptors.request.use((config) => {
-  const access = getAccessToken();
-  if (access) {
-    config.headers.Authorization = `Bearer ${access}`;
-  }
-  return config;
+  withCredentials: true,
 });
 
 type RetriableConfig = AxiosRequestConfig & {
@@ -45,21 +26,14 @@ type RetriableConfig = AxiosRequestConfig & {
   skipAuthRedirect?: boolean;
 };
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refresh = localStorage.getItem(REFRESH_KEY);
-  if (!refresh) return null;
-
+async function refreshAccessToken(): Promise<boolean> {
   try {
-    const res = await axios.post(`${api.defaults.baseURL}auth/token/refresh/`, { refresh });
-    const newAccess = res.data.access as string;
-    const newRefresh = res.data.refresh as string | undefined;
-    setTokens(newAccess, newRefresh);
-    return newAccess;
+    await axios.post(`${api.defaults.baseURL}auth/token/refresh/`, {}, { withCredentials: true });
+    return true;
   } catch {
-    clearTokens();
-    return null;
+    return false;
   }
 }
 
@@ -72,16 +46,16 @@ api.interceptors.response.use(
     }
 
     const url = original.url ?? '';
-    if (url.includes('auth/token/')) {
+    if (url.includes('auth/token/') || url.includes('auth/logout/')) {
       return Promise.reject(error);
     }
 
     original._retry = true;
     refreshPromise = refreshPromise ?? refreshAccessToken();
-    const newAccess = await refreshPromise;
+    const ok = await refreshPromise;
     refreshPromise = null;
 
-    if (!newAccess) {
+    if (!ok) {
       if (
         !original.skipAuthRedirect &&
         typeof window !== 'undefined' &&
@@ -92,10 +66,6 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    original.headers = {
-      ...(original.headers ?? {}),
-      Authorization: `Bearer ${newAccess}`,
-    };
     return api(original);
   },
 );

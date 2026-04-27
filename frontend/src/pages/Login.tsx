@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Typography, TextField, Button, Tab, Tabs, Alert, Stack, Box } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link } from 'react-router-dom';
-import api, { setTokens } from '../lib/api';
+import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
 import { PageShell, GlassCard, FormCard } from '../components/ui';
@@ -31,8 +31,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     setMessage(null);
     try {
-      const res = await api.post('auth/token/', { username, password });
-      setTokens(res.data.access, res.data.refresh);
+      await api.post('auth/token/', { username, password });
       window.location.href = '/';
     } catch (err) {
       const data = readError(err).response?.data;

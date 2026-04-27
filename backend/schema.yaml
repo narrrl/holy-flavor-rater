@@ -16,7 +16,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -32,7 +32,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -48,7 +48,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -63,7 +63,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -78,7 +78,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -88,7 +88,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -97,7 +97,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -107,7 +107,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -117,7 +117,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -127,7 +127,7 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           description: No response body
@@ -137,7 +137,18 @@ paths:
       tags:
       - admin-custom
       security:
-      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      - {}
       responses:
         '200':
           description: No response body
@@ -228,7 +239,7 @@ paths:
       tags:
       - banners
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -256,7 +267,7 @@ paths:
               $ref: '#/components/schemas/Banner'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -277,7 +288,7 @@ paths:
       tags:
       - banners
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -310,7 +321,7 @@ paths:
               $ref: '#/components/schemas/Banner'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -341,7 +352,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedBanner'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -361,7 +372,7 @@ paths:
       tags:
       - banners
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -390,7 +401,7 @@ paths:
               $ref: '#/components/schemas/Banner'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -423,7 +434,7 @@ paths:
               $ref: '#/components/schemas/Banner'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -437,7 +448,7 @@ paths:
       tags:
       - banners
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -459,7 +470,7 @@ paths:
       tags:
       - categories
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -481,7 +492,7 @@ paths:
       tags:
       - categories
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -517,7 +528,7 @@ paths:
       tags:
       - flavors
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -543,7 +554,7 @@ paths:
               $ref: '#/components/schemas/Flavor'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -564,7 +575,7 @@ paths:
       tags:
       - flavors
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -597,7 +608,7 @@ paths:
               $ref: '#/components/schemas/Flavor'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -628,7 +639,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedFlavor'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -648,7 +659,7 @@ paths:
       tags:
       - flavors
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -658,7 +669,7 @@ paths:
       tags:
       - flavors
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -672,7 +683,7 @@ paths:
       tags:
       - flavors
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -687,7 +698,7 @@ paths:
       tags:
       - flavors
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -702,7 +713,7 @@ paths:
       tags:
       - flavors
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -717,7 +728,7 @@ paths:
       tags:
       - notifications
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -734,12 +745,13 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this notification.
         required: true
       tags:
       - notifications
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -754,7 +766,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this notification.
         required: true
       tags:
       - notifications
@@ -771,7 +784,7 @@ paths:
               $ref: '#/components/schemas/Notification'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -797,7 +810,7 @@ paths:
               $ref: '#/components/schemas/Notification'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -818,7 +831,7 @@ paths:
       tags:
       - ratings
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -844,7 +857,7 @@ paths:
               $ref: '#/components/schemas/Rating'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -865,7 +878,7 @@ paths:
       tags:
       - ratings
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -898,7 +911,7 @@ paths:
               $ref: '#/components/schemas/Rating'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -929,7 +942,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedRating'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -949,7 +962,7 @@ paths:
       tags:
       - ratings
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -978,7 +991,7 @@ paths:
               $ref: '#/components/schemas/Rating'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -992,7 +1005,7 @@ paths:
       tags:
       - ratings
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1006,7 +1019,7 @@ paths:
       tags:
       - ratings
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -1028,7 +1041,7 @@ paths:
       tags:
       - replies
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1053,7 +1066,7 @@ paths:
               $ref: '#/components/schemas/Reply'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -1074,7 +1087,7 @@ paths:
       tags:
       - replies
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1106,7 +1119,7 @@ paths:
               $ref: '#/components/schemas/Reply'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1137,7 +1150,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedReply'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1157,7 +1170,7 @@ paths:
       tags:
       - replies
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1174,7 +1187,7 @@ paths:
       tags:
       - tickets
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1199,7 +1212,7 @@ paths:
               $ref: '#/components/schemas/Ticket'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -1214,12 +1227,13 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this ticket.
         required: true
       tags:
       - tickets
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1233,7 +1247,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this ticket.
         required: true
       tags:
       - tickets
@@ -1250,7 +1265,7 @@ paths:
               $ref: '#/components/schemas/Ticket'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1264,7 +1279,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this ticket.
         required: true
       tags:
       - tickets
@@ -1280,7 +1296,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedTicket'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1294,12 +1310,13 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this ticket.
         required: true
       tags:
       - tickets
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1310,7 +1327,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this ticket.
         required: true
       tags:
       - tickets
@@ -1327,7 +1345,7 @@ paths:
               $ref: '#/components/schemas/Ticket'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1342,7 +1360,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this ticket.
         required: true
       tags:
       - tickets
@@ -1359,7 +1378,7 @@ paths:
               $ref: '#/components/schemas/Ticket'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1407,7 +1426,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1432,7 +1451,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '201':
           content:
@@ -1453,7 +1472,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1485,7 +1504,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1516,7 +1535,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUser'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1536,7 +1555,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1565,7 +1584,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1591,7 +1610,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -1620,7 +1639,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1653,7 +1672,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1679,7 +1698,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1705,7 +1724,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -1732,7 +1751,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1758,7 +1777,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1772,7 +1791,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1786,7 +1805,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1800,7 +1819,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1822,7 +1841,7 @@ paths:
       tags:
       - users
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -1849,7 +1868,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1875,7 +1894,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -1902,7 +1921,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -1929,7 +1948,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -1956,7 +1975,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -1981,7 +2000,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUser'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -2006,7 +2025,7 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedUser'
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       responses:
         '200':
           content:
@@ -2032,7 +2051,7 @@ paths:
               $ref: '#/components/schemas/User'
         required: true
       security:
-      - jwtAuth: []
+      - cookieAuth: []
       - {}
       responses:
         '200':
@@ -2962,7 +2981,7 @@ components:
       - unread_notifications_count
       - username
   securitySchemes:
-    jwtAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: access_token

@@ -1,6 +1,7 @@
 import hashlib
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 
 import requests
@@ -8,6 +9,8 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from api.models import Category, Flavor
+
+_DOWNLOAD_WORKERS = 8
 
 
 class Command(BaseCommand):
@@ -50,17 +53,30 @@ class Command(BaseCommand):
         return hashlib.sha1(path.encode("utf-8")).hexdigest()[:10]
 
     def download_gallery(self, image_urls, dir_slug):
-        """Download every URL into flavors/<dir_slug>/<i>_<hash>.<ext>. Returns list of rel paths."""
-        paths = []
+        """Download every URL into flavors/<dir_slug>/<i>_<hash>.<ext>. Returns list of rel paths.
+
+        Downloads run in parallel; ordering of returned paths matches input ordering so
+        the gallery index is preserved.
+        """
+        targets: list[tuple[int, str, str]] = []
         for i, url in enumerate(image_urls):
             if not url:
                 continue
             filename = f"{i:02d}_{self._hash_for(url)}.{self._ext_for(url)}"
             rel = os.path.join("flavors", dir_slug, filename)
-            saved = self.download_image_to_path(url, rel)
-            if saved:
-                paths.append(saved)
-        return paths
+            targets.append((i, url, rel))
+
+        if not targets:
+            return []
+
+        results: dict[int, str] = {}
+        with ThreadPoolExecutor(max_workers=_DOWNLOAD_WORKERS) as ex:
+            futures = {ex.submit(self.download_image_to_path, url, rel): i for i, url, rel in targets}
+            for fut, i in futures.items():
+                saved = fut.result()
+                if saved:
+                    results[i] = saved
+        return [results[i] for i, _, _ in targets if i in results]
 
     def handle(self, *args, **options):
         url = "https://weareholy.com/products.json?limit=250"

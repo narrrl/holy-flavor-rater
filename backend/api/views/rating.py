@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from api.models import Notification, Rating, Reply
 from api.serializers import RatingSerializer, ReplySerializer
 from api.services.mentions import parse_mentions
+from api.utils.auth import current_user
 from api.views._pagination import FeedPagination
 
 
@@ -22,12 +23,13 @@ class RatingViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
+        me = current_user(self.request)
         flavor = serializer.validated_data["flavor"]
-        if Rating.objects.filter(user=self.request.user, flavor=flavor).exists():
+        if Rating.objects.filter(user=me, flavor=flavor).exists():
             raise serializers.ValidationError("You have already rated this flavor.")
-        rating = serializer.save(user=self.request.user)
+        rating = serializer.save(user=me)
         if rating.comment:
-            parse_mentions(rating.comment, self.request.user, rating=rating)
+            parse_mentions(rating.comment, me, rating=rating)
 
     def get_queryset(self):
         return (
@@ -38,7 +40,8 @@ class RatingViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def feed(self, request: Request) -> Response:
-        followed_users = request.user.following.all()
+        me = current_user(request)
+        followed_users = me.following.all()
         feed_ratings = (
             Rating.objects.filter(user__in=followed_users)
             .select_related("user", "flavor", "flavor__category")
@@ -75,23 +78,24 @@ class RatingViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def reply(self, request: Request, pk=None) -> Response:
+        me = current_user(request)
         rating = self.get_object()
         text = request.data.get("text")
         if not text:
             return Response({"error": "Text is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        reply = Reply.objects.create(user=request.user, rating=rating, text=text)
+        reply = Reply.objects.create(user=me, rating=rating, text=text)
 
-        if rating.user != request.user:
+        if rating.user != me:
             Notification.objects.create(
                 recipient=rating.user,
-                actor=request.user,
+                actor=me,
                 notification_type="reply",
                 rating=rating,
                 reply=reply,
             )
 
-        parse_mentions(text, request.user, rating=rating, reply=reply)
+        parse_mentions(text, me, rating=rating, reply=reply)
 
         return Response(
             ReplySerializer(reply, context={"request": request}).data,
@@ -108,13 +112,15 @@ class ReplyViewSet(viewsets.ModelViewSet):
         return Reply.objects.select_related("user", "rating").order_by("created_at")
 
     def perform_update(self, serializer):
+        me = current_user(self.request)
         reply = self.get_object()
-        if reply.user != self.request.user and not self.request.user.is_superuser:
+        if reply.user != me and not me.is_superuser:
             raise PermissionDenied("You cannot edit this reply.")
         new_reply = serializer.save()
-        parse_mentions(new_reply.text, self.request.user, rating=new_reply.rating, reply=new_reply)
+        parse_mentions(new_reply.text, me, rating=new_reply.rating, reply=new_reply)
 
     def perform_destroy(self, instance):
-        if instance.user != self.request.user and not self.request.user.is_superuser:
+        me = current_user(self.request)
+        if instance.user != me and not me.is_superuser:
             raise PermissionDenied("You cannot delete this reply.")
         instance.delete()

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import api, { clearTokens } from '../lib/api';
+import api from '../lib/api';
 
 export interface AuthUser {
   username: string;
@@ -23,7 +23,7 @@ export interface AuthContextValue {
   following: FollowingEntry[];
   loadingUser: boolean;
   refetchUser: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -35,14 +35,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loadingUser, setLoadingUser] = useState(true);
 
   const refetchUser = useCallback(async () => {
-    const token = localStorage.getItem('access');
-    if (!token) {
-      setUser(null);
-      setLoadingUser(false);
-      return;
-    }
     try {
-      const res = await api.get('users/me/');
+      const res = await api.get('users/me/', {
+        ...({ skipAuthRedirect: true } as object),
+      });
       if (res.data?.username) {
         setUser(res.data);
         if (res.data.theme) localStorage.setItem('theme', res.data.theme);
@@ -70,8 +66,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     refetchUser();
   }, [refetchUser]);
 
-  const logout = useCallback(() => {
-    clearTokens();
+  const logout = useCallback(async () => {
+    try {
+      await api.post('auth/logout/');
+    } catch {
+      /* ignore — cookies still get cleared on server when refresh expires */
+    }
     setUser(null);
     setFollowing([]);
     i18n.changeLanguage(navigator.language.split('-')[0] || 'en');

@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -11,40 +12,36 @@ class JWTAuthTests(APITestCase):
         self.password = "correct-horse-battery-staple"
         self.user = User.objects.create_user(username=self.username, password=self.password)
 
-    def test_obtain_pair_returns_access_and_refresh(self) -> None:
-        url = reverse("token_obtain_pair")
-        response = self.client.post(
-            url,
-            {"username": self.username, "password": self.password},
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", response.data)
-        self.assertIn("refresh", response.data)
-
-    def test_access_token_authenticates_protected_endpoint(self) -> None:
-        pair = self.client.post(
+    def _login(self):
+        return self.client.post(
             reverse("token_obtain_pair"),
             {"username": self.username, "password": self.password},
             format="json",
-        ).data
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {pair['access']}")
+        )
+
+    def test_obtain_pair_sets_cookies(self) -> None:
+        response = self._login()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"status": "ok"})
+        self.assertIn(settings.JWT_AUTH_COOKIE_ACCESS, response.cookies)
+        self.assertIn(settings.JWT_AUTH_COOKIE_REFRESH, response.cookies)
+        access = response.cookies[settings.JWT_AUTH_COOKIE_ACCESS]
+        self.assertTrue(access["httponly"])
+        self.assertEqual(access["samesite"], settings.JWT_AUTH_COOKIE_SAMESITE)
+
+    def test_cookie_authenticates_protected_endpoint(self) -> None:
+        self._login()
+        # APIClient persists Set-Cookie across calls, so the next request is
+        # authenticated by the cookie alone.
         response = self.client.get("/api/notifications/", follow=True)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_refresh_issues_new_access_token(self) -> None:
-        pair = self.client.post(
-            reverse("token_obtain_pair"),
-            {"username": self.username, "password": self.password},
-            format="json",
-        ).data
-        response = self.client.post(
-            reverse("token_refresh"),
-            {"refresh": pair["refresh"]},
-            format="json",
-        )
+    def test_refresh_uses_cookie_when_body_omitted(self) -> None:
+        self._login()
+        response = self.client.post(reverse("token_refresh"), format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", response.data)
+        self.assertEqual(response.data, {"status": "ok"})
+        self.assertIn(settings.JWT_AUTH_COOKIE_ACCESS, response.cookies)
 
     def test_invalid_refresh_is_rejected(self) -> None:
         response = self.client.post(
@@ -53,3 +50,15 @@ class JWTAuthTests(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout_clears_cookies_and_blacklists_refresh(self) -> None:
+        self._login()
+        response = self.client.post(reverse("auth_logout"), format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # set-cookie should be present with empty/expired value to clear them.
+        self.assertEqual(
+            response.cookies[settings.JWT_AUTH_COOKIE_ACCESS].value, ""
+        )
+        self.assertEqual(
+            response.cookies[settings.JWT_AUTH_COOKIE_REFRESH].value, ""
+        )

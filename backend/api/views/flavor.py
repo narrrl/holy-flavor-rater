@@ -12,6 +12,7 @@ from api.services.search import (
     filter_flavors_by_query,
     score_relevance,
 )
+from api.utils.auth import current_user
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -95,7 +96,7 @@ class FlavorViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], permission_classes=[permissions.IsAuthenticated])
     def followed_top(self, request: Request) -> Response:
-        followed_users = request.user.following.all()
+        followed_users = current_user(request).following.all()
         top_flavors = (
             Flavor.objects.filter(ratings__user__in=followed_users)
             .annotate(average_rating=Avg("ratings__score"))
