@@ -27,7 +27,7 @@ services:
     networks:
       - holy-net
     ports:
-      - "8000:8000"
+      - 8000
     env_file:
       - .env
     volumes:
@@ -125,7 +125,7 @@ services:
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
       - FLOWER_BASIC_AUTH=${FLOWER_BASIC_AUTH:-admin:change-me}
     ports:
-      - "5555:5555"
+      - 5555
     networks:
       - holy-net
     depends_on:
@@ -145,7 +145,7 @@ services:
     container_name: holy-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - 80
     networks:
       - holy-net
     env_file:
