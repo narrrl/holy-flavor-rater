@@ -24,6 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "theme",
             "language",
+            "drawer_anchor",
             "avatar",
             "following_count",
             "followers_count",

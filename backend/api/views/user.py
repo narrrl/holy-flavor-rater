@@ -271,6 +271,7 @@ class UserViewSet(viewsets.ModelViewSet):
         user = current_user(request)
         theme = request.data.get("theme")
         language = request.data.get("language")
+        drawer_anchor = request.data.get("drawer_anchor")
         banner_id = request.data.get("selected_banner")
 
         updated = False
@@ -279,6 +280,9 @@ class UserViewSet(viewsets.ModelViewSet):
             updated = True
         if language in dict(User.LANGUAGE_CHOICES):
             user.language = language
+            updated = True
+        if drawer_anchor in dict(User.DRAWER_ANCHOR_CHOICES):
+            user.drawer_anchor = drawer_anchor
             updated = True
 
         if banner_id is not None:
@@ -303,6 +307,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     "status": "preferences updated",
                     "theme": user.theme,
                     "language": user.language,
+                    "drawer_anchor": user.drawer_anchor,
                     "selected_banner": (user.selected_banner.id if user.selected_banner else None),
                 }
             )

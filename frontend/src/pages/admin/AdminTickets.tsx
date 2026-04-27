@@ -1,51 +1,81 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Typography,
-  Box,
-  CardContent,
-  Button,
-  TextField,
-  Stack,
-  Chip,
-  Divider,
-  Collapse,
-  CircularProgress,
-  IconButton,
   alpha,
+  Avatar,
+  Box,
+  Button,
+  CardContent,
+  Chip,
+  CircularProgress,
+  Collapse,
+  Divider,
+  IconButton,
+  Stack,
+  TextField,
+  Typography,
+  useTheme,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
-import AddIcon from '@mui/icons-material/Add';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { useTickets } from '../api/queries/useTickets';
-import { useNotificationsQuery } from '../api/queries/useNotifications';
-import { useAddTicketMessage, useCreateTicket } from '../api/mutations/useTicketMutations';
-import { useTitle } from '../hooks/useTitle';
-import { formatDate } from '../utils/date';
-import { PageShell, SectionHeader, GlassCard, FormCard, EmptyState } from '../components/ui';
-import { useToast } from '../hooks/useToast';
-import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { useTickets } from '../../api/queries/useTickets';
+import { useNotificationsQuery } from '../../api/queries/useNotifications';
+import {
+  useAddTicketMessage,
+  useDeleteTicket,
+  useUpdateTicketStatus,
+} from '../../api/mutations/useTicketMutations';
+import { formatDate } from '../../utils/date';
+import { GlassCard, EmptyState } from '../../components/ui';
+import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
 
 type ChipStatusColor = 'error' | 'warning' | 'success' | 'default';
+type ButtonStatusColor = 'error' | 'warning' | 'success' | 'primary';
 
-const Support: React.FC = () => {
+const getChipColor = (status: string): ChipStatusColor => {
+  switch (status) {
+    case 'open':
+      return 'error';
+    case 'in_progress':
+      return 'warning';
+    case 'resolved':
+      return 'success';
+    default:
+      return 'default';
+  }
+};
+
+const getButtonColor = (status: string): ButtonStatusColor => {
+  switch (status) {
+    case 'open':
+      return 'error';
+    case 'in_progress':
+      return 'warning';
+    case 'resolved':
+      return 'success';
+    default:
+      return 'primary';
+  }
+};
+
+const AdminTickets: React.FC = () => {
   const { t } = useTranslation();
+  const theme = useTheme();
   const navigate = useNavigate();
-  useTitle(t('support.title'));
-  const { user, loadingUser } = useAuth();
-  const { data: tickets = [], isLoading: loading } = useTickets();
+  const { data: tickets = [], isLoading } = useTickets();
   const { data: notifications = [] } = useNotificationsQuery(true);
-  const createTicketMutation = useCreateTicket();
   const addMessage = useAddTicketMessage();
+  const updateStatusMutation = useUpdateTicketStatus();
+  const deleteTicketMutation = useDeleteTicket();
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [subject, setSubject] = useState('');
-  const [description, setDescription] = useState('');
   const [replyText, setReplyText] = useState<Record<number, string>>({});
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [readTicketIds, setReadTicketIds] = useState<Set<number>>(new Set());
-  const { notify } = useToast();
 
   const unreadTicketIds = useMemo(() => {
     const ids = new Set<number>();
@@ -58,6 +88,11 @@ const Support: React.FC = () => {
     return ids;
   }, [notifications, readTicketIds]);
 
+  const filtered = useMemo(() => {
+    if (statusFilter === 'all') return tickets;
+    return tickets.filter((tk) => tk.status === statusFilter);
+  }, [tickets, statusFilter]);
+
   const handleExpand = (ticketId: number) => {
     if (expandedId === ticketId) {
       setExpandedId(null);
@@ -66,22 +101,6 @@ const Support: React.FC = () => {
     setExpandedId(ticketId);
     if (unreadTicketIds.has(ticketId)) {
       setReadTicketIds((prev) => new Set(prev).add(ticketId));
-    }
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await createTicketMutation.mutateAsync({ subject, description });
-      setSubject('');
-      setDescription('');
-      setShowCreate(false);
-      notify({
-        message: t('support.ticketCreated', { defaultValue: 'Ticket created' }),
-        severity: 'success',
-      });
-    } catch {
-      notify({ message: 'Failed to create ticket', severity: 'error' });
     }
   };
 
@@ -96,93 +115,64 @@ const Support: React.FC = () => {
     }
   };
 
-  const getChipColor = (status: string): ChipStatusColor => {
-    switch (status) {
-      case 'open':
-        return 'error';
-      case 'in_progress':
-        return 'warning';
-      case 'resolved':
-        return 'success';
-      default:
-        return 'default';
+  const handleUpdateStatus = async (ticketId: number, status: string) => {
+    try {
+      await updateStatusMutation.mutateAsync({ ticketId, status });
+      notify({ message: `Status set to ${t(`support.${status}`)}`, severity: 'success' });
+    } catch {
+      notify({ message: 'Failed to update status', severity: 'error' });
     }
   };
 
-  if (!loadingUser && user?.is_superuser) {
-    return <Navigate to="/admin-panel/tickets" replace />;
+  const handleDeleteTicket = async (ticketId: number) => {
+    if (!(await confirm({ message: 'Delete this ticket?', danger: true }))) return;
+    try {
+      await deleteTicketMutation.mutateAsync(ticketId);
+      notify({ message: 'Ticket deleted', severity: 'success' });
+    } catch {
+      notify({ message: 'Failed to delete ticket', severity: 'error' });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
-  if (loading)
-    return (
-      <PageShell>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-          <CircularProgress />
-        </Box>
-      </PageShell>
-    );
-
   return (
-    <PageShell>
-      <Button
-        variant="outlined"
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate(-1)}
-        sx={{ alignSelf: 'flex-start', borderRadius: 2 }}
+    <Box>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', md: 'center' }}
+        spacing={2}
+        sx={{ mb: 3 }}
       >
-        {t('common.back')}
-      </Button>
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+          {t('support.title')} ({filtered.length})
+        </Typography>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          {(['all', 'open', 'in_progress', 'resolved', 'closed'] as const).map((s) => (
+            <Chip
+              key={s}
+              label={s === 'all' ? t('common.all', { defaultValue: 'All' }) : t(`support.${s}`)}
+              clickable
+              variant={statusFilter === s ? 'filled' : 'outlined'}
+              color={s === 'all' ? 'default' : getChipColor(s)}
+              onClick={() => setStatusFilter(s)}
+            />
+          ))}
+        </Stack>
+      </Stack>
 
-      <SectionHeader
-        title={t('support.title')}
-        action={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setShowCreate(!showCreate)}
-            sx={{ borderRadius: 2 }}
-          >
-            {t('support.createTicket')}
-          </Button>
-        }
-      />
-
-      <Collapse in={showCreate}>
-        <FormCard
-          title={t('support.createTicket')}
-          onSubmit={handleCreate}
-          actions={
-            <Button type="submit" variant="contained" sx={{ borderRadius: 2 }}>
-              {t('support.createTicket')}
-            </Button>
-          }
-        >
-          <TextField
-            fullWidth
-            label={t('support.subject')}
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
-          />
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label={t('support.description')}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-          />
-        </FormCard>
-      </Collapse>
-
-      <SectionHeader title={t('support.myTickets')} compact />
-
-      {tickets.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState title={t('support.noTickets')} />
       ) : (
         <Stack spacing={2}>
-          {tickets.map((ticket) => (
+          {filtered.map((ticket) => (
             <GlassCard
               key={ticket.id}
               sx={{
@@ -216,6 +206,13 @@ const Support: React.FC = () => {
                       <Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
                           {ticket.subject}
+                          <Typography
+                            component="span"
+                            variant="caption"
+                            sx={{ ml: 1, color: 'primary.main' }}
+                          >
+                            ({ticket.username})
+                          </Typography>
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {formatDate(ticket.created_at)}
@@ -237,15 +234,96 @@ const Support: React.FC = () => {
                         size="small"
                         sx={{ fontWeight: 'bold' }}
                       />
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteTicket(ticket.id);
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
                     </Stack>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      mt: 1,
+                      p: 1,
+                      borderRadius: 2,
+                      bgcolor: alpha(theme.palette.action.active, 0.05),
+                    }}
+                  >
+                    <Avatar
+                      src={ticket.user_avatar || undefined}
+                      sx={{ width: 24, height: 24, fontSize: '0.7rem' }}
+                    >
+                      {ticket.username.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontWeight: 'bold',
+                          display: 'block',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {ticket.username} •{' '}
+                        <span style={{ opacity: 0.7 }}>{ticket.user_email}</span>
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/profile/${ticket.username}`);
+                      }}
+                      sx={{ minWidth: 0, py: 0, textTransform: 'none', fontSize: '0.7rem' }}
+                    >
+                      View Profile
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/admin-panel/users/${ticket.user}`);
+                      }}
+                      sx={{ minWidth: 0, py: 0, textTransform: 'none', fontSize: '0.7rem' }}
+                    >
+                      {t('admin.manageUser')}
+                    </Button>
                   </Box>
                 </Box>
 
                 <Collapse in={expandedId === ticket.id}>
                   <Divider />
-                  <Box
-                    sx={{ p: 2, bgcolor: (theme) => alpha(theme.palette.background.default, 0.5) }}
-                  >
+                  <Box sx={{ p: 2, bgcolor: (th) => alpha(th.palette.background.default, 0.5) }}>
+                    <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: 'auto', pb: 1 }}>
+                      {(['open', 'in_progress', 'resolved', 'closed'] as const).map((s) => (
+                        <Button
+                          key={s}
+                          size="small"
+                          variant={ticket.status === s ? 'contained' : 'outlined'}
+                          onClick={() => handleUpdateStatus(ticket.id, s)}
+                          color={getButtonColor(s)}
+                          sx={{
+                            textTransform: 'none',
+                            borderRadius: 4,
+                            fontSize: '0.7rem',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {t(`support.${s}`)}
+                        </Button>
+                      ))}
+                    </Stack>
+
                     <Typography
                       variant="body2"
                       paragraph
@@ -325,8 +403,8 @@ const Support: React.FC = () => {
           ))}
         </Stack>
       )}
-    </PageShell>
+    </Box>
   );
 };
 
-export default Support;
+export default AdminTickets;

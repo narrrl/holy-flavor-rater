@@ -32,10 +32,6 @@ import {
   EmptyState,
 } from '../components/ui';
 
-interface MainPageProps {
-  adminMode?: boolean;
-}
-
 const TOP_LIMIT = 5;
 
 const FlavorCardSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
@@ -81,7 +77,7 @@ const HeroCarouselSkeleton: React.FC = () => (
   </GlassCard>
 );
 
-const MainPage: React.FC<MainPageProps> = (_props) => {
+const MainPage: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const [activeIndex, setActiveIndex] = useState(0);

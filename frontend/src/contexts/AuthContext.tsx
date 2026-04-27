@@ -9,6 +9,7 @@ export interface AuthUser {
   is_superuser: boolean;
   theme?: string;
   language?: string;
+  drawer_anchor?: 'left' | 'right';
 }
 
 export interface FollowingEntry {

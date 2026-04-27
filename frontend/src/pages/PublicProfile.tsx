@@ -47,11 +47,7 @@ import { PageShell, GlassCard, GlassSurface, FormCard, EmptyState } from '../com
 import { useToast } from '../hooks/useToast';
 import { useConfirm } from '../hooks/useConfirm';
 
-interface PublicProfileProps {
-  adminMode?: boolean;
-}
-
-const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
+const PublicProfile: React.FC = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { username } = useParams<{ username: string }>();
@@ -635,7 +631,7 @@ const PublicProfile: React.FC<PublicProfileProps> = ({ adminMode }) => {
                                   </Typography>
                                 </CardContent>
                               </Link>
-                              {adminMode && (
+                              {currentUser?.is_superuser && (
                                 <Box sx={{ px: 1, pb: 1 }}>
                                   <Button
                                     size="small"

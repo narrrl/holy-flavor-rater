@@ -44,10 +44,6 @@ import RatingBadge from '../components/RatingBadge';
 import { PageShell, HeroBackdrop, SectionHeader, GlassCard, EmptyState } from '../components/ui';
 import { useToast } from '../hooks/useToast';
 
-interface CommunityFeedProps {
-  adminMode?: boolean;
-}
-
 const SidebarCard: React.FC<{
   icon: React.ReactNode;
   title: React.ReactNode;
@@ -73,7 +69,7 @@ const SidebarCard: React.FC<{
   </GlassCard>
 );
 
-const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
+const CommunityFeed: React.FC = () => {
   const { t } = useTranslation();
   useTitle(t('community.title'));
   const navigate = useNavigate();
@@ -212,7 +208,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                       <RatingBadge score={rating.score} />
                     </Box>
 
-                    {adminMode && (
+                    {user?.is_superuser && (
                       <Button
                         size="small"
                         variant="outlined"
@@ -317,7 +313,7 @@ const CommunityFeed: React.FC<CommunityFeedProps> = ({ adminMode }) => {
                               <Typography variant="body2">
                                 <RichText text={reply.text} />
                               </Typography>
-                              {adminMode && (
+                              {user?.is_superuser && (
                                 <Button
                                   size="small"
                                   sx={{ minWidth: 0, py: 0, fontSize: '0.7rem' }}

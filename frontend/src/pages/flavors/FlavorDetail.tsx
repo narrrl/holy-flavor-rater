@@ -56,11 +56,7 @@ import RatingForm from './components/RatingForm';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 
-interface FlavorDetailProps {
-  adminMode?: boolean;
-}
-
-const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
+const FlavorDetail: React.FC = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { id } = useParams<{ id: string }>();
@@ -70,6 +66,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const { data: flavor, isLoading: loading } = useFlavorDetail(id);
   const { data: meData } = useCurrentUserLite();
   const currentUser = meData?.username ?? null;
+  const isSuperuser = !!meData?.is_superuser;
   const updateFlavor = useUpdateFlavor();
   const deleteRatingMutation = useDeleteRating();
   const updateRating = useUpdateRating();
@@ -257,7 +254,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
             />
             <GlassCard sx={{ mt: { xs: 0, lg: 2 } }}>
               <CardContent sx={{ p: 3 }}>
-                {adminMode && (
+                {isSuperuser && (
                   <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
                     {!isAdminEditing ? (
                       <Button
@@ -522,7 +519,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                           </Box>
                           <Stack direction="row" spacing={1} alignItems="center">
                             <RatingBadge score={rating.score} />
-                            {adminMode && (
+                            {isSuperuser && (
                               <Button
                                 size="small"
                                 variant="outlined"
@@ -686,7 +683,7 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
                                   </Button>
                                 </Box>
                               )}
-                              {adminMode && (
+                              {isSuperuser && (
                                 <Button
                                   size="small"
                                   variant="text"

@@ -26,8 +26,15 @@ class User(AbstractUser):
         ("en", "English"),
         ("de", "Deutsch"),
     ]
+    DRAWER_ANCHOR_CHOICES = [
+        ("left", "Left"),
+        ("right", "Right"),
+    ]
     theme = models.CharField(max_length=20, choices=THEME_CHOICES, default="holy_light")
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default="en")
+    drawer_anchor = models.CharField(
+        max_length=5, choices=DRAWER_ANCHOR_CHOICES, default="left"
+    )
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     pending_email = models.EmailField(max_length=254, blank=True, null=True)
     email_confirmation_code = models.CharField(max_length=6, blank=True, null=True)

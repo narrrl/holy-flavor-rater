@@ -24,6 +24,8 @@ import {
   ListSubheader,
   Divider,
   Grid,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +34,7 @@ import { useTitle } from '../hooks/useTitle';
 import type { CatppuccinTheme } from '../theme';
 import { PageShell, GlassCard, FormCard } from '../components/ui';
 import { useConfirm } from '../hooks/useConfirm';
+import { useDrawerAnchor } from '../hooks/useDrawerAnchor';
 
 interface SettingsProps {
   themeName: CatppuccinTheme;
@@ -46,6 +49,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const navigate = useNavigate();
   useTitle(t('nav.settings'));
   const { confirm } = useConfirm();
+  const { anchor: drawerAnchor, setAnchor: setDrawerAnchor } = useDrawerAnchor();
   const { data: me } = useMe();
   const { data: banners = [] } = useBannersList();
   const updateAvatarMutation = useUpdateAvatar();
@@ -295,6 +299,31 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                   <MenuItem value="de">Deutsch</MenuItem>
                 </Select>
               </FormControl>
+
+              <Divider sx={{ my: 2 }} />
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={drawerAnchor === 'right'}
+                    onChange={(e) => setDrawerAnchor(e.target.checked ? 'right' : 'left')}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography variant="body1">
+                      {t('settings.leftHandMode', { defaultValue: 'Left-hand mode' })}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('settings.leftHandModeHint', {
+                        defaultValue:
+                          'Mobile drawer slides in from the right (better for left-handed thumb reach).',
+                      })}
+                    </Typography>
+                  </Box>
+                }
+                sx={{ alignItems: 'flex-start', mt: 1 }}
+              />
             </GlassCard>
 
             {/* Avatar: NOT a FormCard — file input lives outside any form */}
