@@ -71,7 +71,9 @@ class Command(BaseCommand):
 
         results: dict[int, str] = {}
         with ThreadPoolExecutor(max_workers=_DOWNLOAD_WORKERS) as ex:
-            futures = {ex.submit(self.download_image_to_path, url, rel): i for i, url, rel in targets}
+            futures = {
+                ex.submit(self.download_image_to_path, url, rel): i for i, url, rel in targets
+            }
             for fut, i in futures.items():
                 saved = fut.result()
                 if saved:

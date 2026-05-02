@@ -160,10 +160,7 @@ class AdminViewSet(viewsets.ViewSet):
         try:
             send_mail(
                 "Holy Flavors Admin Test Email",
-                (
-                    f"This is a test email sent to {me.email} from the "
-                    f"Holy Flavors Admin Interface."
-                ),
+                (f"This is a test email sent to {me.email} from the Holy Flavors Admin Interface."),
                 settings.DEFAULT_FROM_EMAIL,
                 [me.email],
                 fail_silently=False,

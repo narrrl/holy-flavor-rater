@@ -56,9 +56,5 @@ class JWTAuthTests(APITestCase):
         response = self.client.post(reverse("auth_logout"), format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # set-cookie should be present with empty/expired value to clear them.
-        self.assertEqual(
-            response.cookies[settings.JWT_AUTH_COOKIE_ACCESS].value, ""
-        )
-        self.assertEqual(
-            response.cookies[settings.JWT_AUTH_COOKIE_REFRESH].value, ""
-        )
+        self.assertEqual(response.cookies[settings.JWT_AUTH_COOKIE_ACCESS].value, "")
+        self.assertEqual(response.cookies[settings.JWT_AUTH_COOKIE_REFRESH].value, "")

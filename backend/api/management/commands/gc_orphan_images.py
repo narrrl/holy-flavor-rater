@@ -42,9 +42,7 @@ class Command(BaseCommand):
         referenced_dirs: set[str] = set()
         legacy_image_files: set[str] = set()
 
-        for flavor in Flavor.objects.all().only(
-            "local_image_paths", "main_image_path", "image"
-        ):
+        for flavor in Flavor.objects.all().only("local_image_paths", "main_image_path", "image"):
             paths = list(flavor.local_image_paths or [])
             if flavor.main_image_path:
                 paths.append(flavor.main_image_path)
@@ -86,7 +84,9 @@ class Command(BaseCommand):
                         entry.unlink()
 
         verb = "Would delete" if dry_run else "Deleted"
-        self.stdout.write(self.style.SUCCESS(f"{verb}: {len(deleted_dirs)} dirs, {len(deleted_files)} files"))
+        self.stdout.write(
+            self.style.SUCCESS(f"{verb}: {len(deleted_dirs)} dirs, {len(deleted_files)} files")
+        )
         for path in deleted_dirs:
             self.stdout.write(f"  dir  {path}")
         for path in deleted_files:

@@ -35,8 +35,6 @@ class CookieJWTScheme(OpenApiAuthenticationExtension):
         }
 
 
-
-
 def set_jwt_cookies(response, access: str | None, refresh: str | None) -> None:
     """Attach access/refresh tokens to the response as httpOnly cookies."""
     from datetime import timedelta
