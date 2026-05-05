@@ -70,8 +70,8 @@ const App: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const [drawerOpen, setDrawerOpen] = useState(!isMobile);
 
   useEffect(() => {
     api
@@ -110,8 +110,8 @@ const App: React.FC = () => {
   const hamburger = (
     <IconButton
       color="inherit"
-      onClick={() => setDrawerOpen(true)}
-      aria-label="open navigation"
+      onClick={() => setDrawerOpen((o) => !o)}
+      aria-label="toggle navigation"
       sx={{ mx: 0.5 }}
     >
       <MenuIcon />
@@ -217,7 +217,7 @@ const App: React.FC = () => {
       }}
     >
       <GlassAppBar>
-        {isMobile && mobileAnchor === 'left' && hamburger}
+        {mobileAnchor === 'left' && hamburger}
 
         <Typography
           variant="h6"
@@ -292,23 +292,25 @@ const App: React.FC = () => {
             </>
           )}
 
-          {isMobile && mobileAnchor === 'right' && hamburger}
+          {mobileAnchor === 'right' && hamburger}
         </Box>
       </GlassAppBar>
 
-      <SwipeableDrawer
-        anchor={mobileAnchor}
-        open={drawerOpen}
-        onOpen={() => setDrawerOpen(true)}
-        onClose={() => setDrawerOpen(false)}
-        disableBackdropTransition
-        disableDiscovery
-      >
-        <NavSidebar categories={categories} onNavigate={() => setDrawerOpen(false)} />
-      </SwipeableDrawer>
+      {isMobile && (
+        <SwipeableDrawer
+          anchor={mobileAnchor}
+          open={drawerOpen}
+          onOpen={() => setDrawerOpen(true)}
+          onClose={() => setDrawerOpen(false)}
+          disableBackdropTransition
+          disableDiscovery
+        >
+          <NavSidebar categories={categories} onNavigate={() => setDrawerOpen(false)} />
+        </SwipeableDrawer>
+      )}
 
       <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
-        {!isMobile && (
+        {!isMobile && drawerOpen && (
           <Box
             component="aside"
             sx={{
