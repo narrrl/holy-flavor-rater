@@ -210,7 +210,6 @@ const App: React.FC = () => {
         flexDirection: 'column',
         minHeight: '100vh',
         width: '100%',
-        overflowX: 'hidden',
       }}
     >
       {isMobile && (
@@ -250,6 +249,16 @@ const App: React.FC = () => {
           onClose={() => setDrawerOpen(false)}
           disableBackdropTransition
           disableDiscovery
+          slotProps={{
+            paper: {
+              sx: {
+                height: '100vh',
+                maxHeight: '100vh',
+                top: 0,
+                bottom: 0,
+              },
+            },
+          }}
         >
           <NavSidebar categories={categories} onNavigate={() => setDrawerOpen(false)} />
         </SwipeableDrawer>
