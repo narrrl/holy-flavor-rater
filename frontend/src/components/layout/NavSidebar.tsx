@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Avatar,
+  Badge,
   Box,
+  Button,
   Collapse,
   Divider,
   List,
@@ -11,7 +13,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
   Typography,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
@@ -25,27 +31,60 @@ import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
+import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
+import { GlobalSearch } from '../../app/GlobalSearch';
+import { formatDate } from '../../utils/date';
+import type { Notification } from '../../contexts/NotificationContext';
 
 export const NAV_SIDEBAR_WIDTH = 280;
 
 export interface NavSidebarProps {
   categories: { name: string; slug: string }[];
   onNavigate?: () => void;
+  showSearch?: boolean;
+  showNotifications?: boolean;
 }
 
-export const NavSidebar = ({ categories, onNavigate }: NavSidebarProps) => {
+export const NavSidebar = ({
+  categories,
+  onNavigate,
+  showSearch = false,
+  showNotifications = false,
+}: NavSidebarProps) => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
+  const theme = useTheme();
   const { user, following, logout } = useAuth();
+  const { notifications, markAllRead, markRead } = useNotifications();
   const [catOpen, setCatOpen] = useState(false);
   const [followingOpen, setFollowingOpen] = useState(false);
+  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
 
   const close = () => onNavigate?.();
   const isActive = (path: string) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+
+  const handleNotificationClick = async (notif: Notification) => {
+    if (!notif.is_read) await markRead(notif.id);
+    setNotifAnchorEl(null);
+    close();
+    if (notif.notification_type.startsWith('ticket')) {
+      navigate(user?.is_superuser ? '/admin-panel/tickets' : '/support');
+    } else if (notif.notification_type === 'profile_comment') {
+      navigate(`/profile/${user?.username}`);
+    } else if (notif.notification_type === 'follow') {
+      navigate(`/profile/${notif.actor_username}`);
+    } else if (notif.flavor_id) {
+      window.location.href = `/flavor/${notif.flavor_id}`;
+    }
+  };
+
+  const unreadCount = user?.unread_notifications_count || 0;
 
   return (
     <Box
@@ -103,13 +142,11 @@ export const NavSidebar = ({ categories, onNavigate }: NavSidebarProps) => {
             </Typography>
           </Box>
         </Box>
-      ) : (
+      ) : null}
+
+      {showSearch && (
         <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-            <Link to="/" onClick={close} style={{ color: 'inherit', textDecoration: 'none' }}>
-              Holy Flavors Archive
-            </Link>
-          </Typography>
+          <GlobalSearch compact />
         </Box>
       )}
 
@@ -135,6 +172,21 @@ export const NavSidebar = ({ categories, onNavigate }: NavSidebarProps) => {
                 <GroupsOutlinedIcon />
               </ListItemIcon>
               <ListItemText primary={t('nav.community')} />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        {user && showNotifications && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={(e) => setNotifAnchorEl(e.currentTarget)}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <Badge badgeContent={unreadCount} color="error">
+                  <NotificationsOutlinedIcon />
+                </Badge>
+              </ListItemIcon>
+              <ListItemText
+                primary={t('nav.notifications', { defaultValue: 'Notifications' })}
+              />
             </ListItemButton>
           </ListItem>
         )}
@@ -331,6 +383,88 @@ export const NavSidebar = ({ categories, onNavigate }: NavSidebarProps) => {
             />
           </ListItemButton>
         </Box>
+      )}
+
+      {showNotifications && (
+        <Menu
+          anchorEl={notifAnchorEl}
+          open={Boolean(notifAnchorEl)}
+          onClose={() => setNotifAnchorEl(null)}
+          anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'center', horizontal: 'left' }}
+          elevation={3}
+          PaperProps={{ sx: { width: 320, maxHeight: 400, borderRadius: 1, ml: 1 } }}
+        >
+          <Box
+            sx={{
+              p: 1.5,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              {t('nav.notifications', { defaultValue: 'Notifications' })}
+            </Typography>
+            {unreadCount > 0 && (
+              <Button size="small" onClick={markAllRead}>
+                {t('community.markAllRead', { defaultValue: 'Mark all read' })}
+              </Button>
+            )}
+          </Box>
+          {notifications.length === 0 ? (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                {t('community.noNotifications', { defaultValue: 'No notifications yet' })}
+              </Typography>
+            </Box>
+          ) : (
+            notifications.map((n) => (
+              <MenuItem
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
+                  whiteSpace: 'normal',
+                  display: 'flex',
+                  gap: 2,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
+                  {n.actor_username.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                    <strong>{n.actor_username}</strong>{' '}
+                    {n.notification_type === 'reply'
+                      ? `replied to your review on ${n.flavor_name}`
+                      : n.notification_type === 'mention'
+                        ? `mentioned you on ${n.flavor_name}`
+                        : n.notification_type === 'follow'
+                          ? t('community.notifFollow')
+                          : n.notification_type === 'profile_comment'
+                            ? `left a message on your guestbook`
+                            : n.notification_type === 'ticket_new'
+                              ? t('community.notifTicketNew')
+                              : user?.is_superuser
+                                ? t('community.notifTicketReplyAdmin')
+                                : t('community.notifTicketReply')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatDate(n.created_at)}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            ))
+          )}
+        </Menu>
       )}
     </Box>
   );

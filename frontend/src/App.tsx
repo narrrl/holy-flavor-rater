@@ -18,7 +18,6 @@ import {
 import { GlassAppBar } from './components/ui';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { useTranslation } from 'react-i18next';
 import api from './lib/api';
 import Footer from './components/Footer';
@@ -62,16 +61,15 @@ const App: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const muiTheme = useMuiTheme();
-  const { user, loadingUser, logout } = useAuth();
+  const { user, loadingUser } = useAuth();
   const { themeName, handleThemeChange } = useTheme();
   const { notifications, markAllRead, markRead } = useNotifications();
   const { anchor: mobileAnchor } = useDrawerAnchor();
 
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
-  const [drawerOpen, setDrawerOpen] = useState(!isMobile);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -90,7 +88,6 @@ const App: React.FC = () => {
 
   const onThemeChange = async (name: CatppuccinTheme) => {
     await handleThemeChange(name, !!user);
-    setAnchorEl(null);
   };
 
   const handleNotificationClick = async (notif: Notification) => {
@@ -216,85 +213,34 @@ const App: React.FC = () => {
         overflowX: 'hidden',
       }}
     >
-      <GlassAppBar>
-        {mobileAnchor === 'left' && hamburger}
+      {isMobile && (
+        <GlassAppBar>
+          {mobileAnchor === 'left' && hamburger}
 
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            fontWeight: 'bold',
-            mr: { xs: 0, sm: 2 },
-          }}
-        >
-          <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-              Holy Flavors Archive
-            </Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-              HFA
-            </Box>
-          </Link>
-        </Typography>
+          <GlobalSearch />
 
-        <GlobalSearch />
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {!loadingUser && (
+              <>
+                {user && notificationsMenu}
 
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {!loadingUser && (
-            <>
-              {user && notificationsMenu}
-
-              {user ? (
-                <Box sx={{ display: isMobile ? 'none' : 'flex', ml: 1 }}>
-                  <IconButton
-                    color="inherit"
-                    onClick={(e) => setAnchorEl(e.currentTarget)}
-                    aria-label="account menu"
+                {!user && (
+                  <Button
+                    variant="contained"
+                    component={Link}
+                    to="/login"
+                    sx={{ borderRadius: 2, ml: 1 }}
                   >
-                    <Avatar
-                      src={user.avatar || undefined}
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        border: '2px solid',
-                        borderColor: 'primary.main',
-                      }}
-                    >
-                      {user.username.charAt(0).toUpperCase()}
-                    </Avatar>
-                  </IconButton>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={() => setAnchorEl(null)}
-                    elevation={3}
-                    sx={{ mt: 1 }}
-                  >
-                    <MenuItem
-                      onClick={() => {
-                        setAnchorEl(null);
-                        logout();
-                      }}
-                      sx={{ color: 'error.main', gap: 1.5 }}
-                    >
-                      <LogoutOutlinedIcon fontSize="small" />
-                      {t('nav.logout')}
-                    </MenuItem>
-                  </Menu>
-                </Box>
-              ) : (
-                <Box sx={{ display: isMobile ? 'none' : 'block' }}>
-                  <Button variant="contained" component={Link} to="/login" sx={{ borderRadius: 2 }}>
-                    Login
+                    {t('nav.login')}
                   </Button>
-                </Box>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
 
-          {mobileAnchor === 'right' && hamburger}
-        </Box>
-      </GlassAppBar>
+            {mobileAnchor === 'right' && hamburger}
+          </Box>
+        </GlassAppBar>
+      )}
 
       {isMobile && (
         <SwipeableDrawer
@@ -310,23 +256,26 @@ const App: React.FC = () => {
       )}
 
       <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
-        {!isMobile && drawerOpen && (
+        {!isMobile && (
           <Box
             component="aside"
             sx={{
               width: NAV_SIDEBAR_WIDTH,
               flexShrink: 0,
               position: 'sticky',
-              top: { xs: 56, sm: 64 },
+              top: 0,
               alignSelf: 'flex-start',
-              height: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' },
+              height: '100vh',
               borderRight: '1px solid',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
+              borderColor: (theme) => theme.tokens.glass.border,
+              bgcolor: (theme) =>
+                alpha(theme.palette.background.default, theme.palette.mode === 'light' ? 0.65 : 0.45),
+              backdropFilter: (theme) => theme.tokens.glass.blurStrong,
+              WebkitBackdropFilter: (theme) => theme.tokens.glass.blurStrong,
               zIndex: 1,
             }}
           >
-            <NavSidebar categories={categories} />
+            <NavSidebar categories={categories} showSearch showNotifications />
           </Box>
         )}
 

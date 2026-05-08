@@ -14,7 +14,11 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGlobalSearch } from '../hooks/useGlobalSearch';
 
-export const GlobalSearch = () => {
+export interface GlobalSearchProps {
+  compact?: boolean;
+}
+
+export const GlobalSearch = ({ compact = false }: GlobalSearchProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -31,7 +35,7 @@ export const GlobalSearch = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1, mx: isMobile ? 1 : 4 }}>
+    <Box sx={{ flexGrow: 1, mx: compact ? 0 : isMobile ? 1 : 4 }}>
       <Autocomplete
         fullWidth
         freeSolo
