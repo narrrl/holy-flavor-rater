@@ -305,8 +305,8 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
               <FormControlLabel
                 control={
                   <Switch
-                    checked={drawerAnchor === 'right'}
-                    onChange={(e) => setDrawerAnchor(e.target.checked ? 'right' : 'left')}
+                    checked={drawerAnchor === 'left'}
+                    onChange={(e) => setDrawerAnchor(e.target.checked ? 'left' : 'right')}
                   />
                 }
                 label={
@@ -317,7 +317,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                     <Typography variant="caption" color="text.secondary">
                       {t('settings.leftHandModeHint', {
                         defaultValue:
-                          'Mobile drawer slides in from the right (better for left-handed thumb reach).',
+                          'Mobile drawer slides in from the left (better for left-handed thumb reach).',
                       })}
                     </Typography>
                   </Box>

@@ -8,7 +8,7 @@ const STORAGE_KEY = 'drawer-anchor';
 
 const readLocal = (): DrawerAnchor => {
   const raw = localStorage.getItem(STORAGE_KEY);
-  return raw === 'right' ? 'right' : 'left';
+  return raw === 'left' ? 'left' : 'right';
 };
 
 export interface UseDrawerAnchorResult {
