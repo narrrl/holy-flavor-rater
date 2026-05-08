@@ -269,7 +269,10 @@ const App: React.FC = () => {
               borderRight: '1px solid',
               borderColor: (theme) => theme.tokens.glass.border,
               bgcolor: (theme) =>
-                alpha(theme.palette.background.default, theme.palette.mode === 'light' ? 0.65 : 0.45),
+                alpha(
+                  theme.palette.background.default,
+                  theme.palette.mode === 'light' ? 0.65 : 0.45,
+                ),
               backdropFilter: (theme) => theme.tokens.glass.blurStrong,
               WebkitBackdropFilter: (theme) => theme.tokens.glass.blurStrong,
               zIndex: 1,

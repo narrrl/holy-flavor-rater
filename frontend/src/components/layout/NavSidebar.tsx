@@ -184,9 +184,7 @@ export const NavSidebar = ({
                   <NotificationsOutlinedIcon />
                 </Badge>
               </ListItemIcon>
-              <ListItemText
-                primary={t('nav.notifications', { defaultValue: 'Notifications' })}
-              />
+              <ListItemText primary={t('nav.notifications', { defaultValue: 'Notifications' })} />
             </ListItemButton>
           </ListItem>
         )}
