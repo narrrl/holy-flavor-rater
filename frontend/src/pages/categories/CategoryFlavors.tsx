@@ -1,164 +1,82 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  Typography, 
-  Box, 
-  Card, 
-  CardContent, 
-  CircularProgress,
-  Container,
-  Button
-} from '@mui/material';
+import React from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Box, CircularProgress, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import api from '../../api';
 import { useTitle } from '../../hooks/useTitle';
-import RatingBadge from '../../components/RatingBadge';
-import StatusBadge from '../../components/StatusBadge';
 import { useTranslation } from 'react-i18next';
-
-interface Rating {
-    id: number;
-    user: string;
-    score: number;
-    comment: string;
-    created_at: string;
-}
-
-interface Flavor {
-  id: number;
-  name: string;
-  category_name: string;
-  description: string;
-  average_rating: number;
-  user_rating: number | null;
-  ratings: Rating[];
-  image_url: string | null;
-  is_available: boolean;
-  is_legacy: boolean;
-  shop_url: string | null;
-}
+import { useCategoryFlavors } from '../../api/queries/useCategoryFlavors';
+import {
+  PageShell,
+  HeroBackdrop,
+  SectionHeader,
+  FlavorCard,
+  EmptyState,
+} from '../../components/ui';
 
 const CategoryFlavors: React.FC = () => {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [flavors, setFlavors] = useState<Flavor[]>([]);
-  const [categoryName, setCategoryName] = useState('');
-  const [loading, setLoading] = useState(true);
+  const { data: flavors = [], isLoading: loading } = useCategoryFlavors(slug);
+  const categoryName = flavors[0]?.category_name || '';
 
   const handleGoBack = () => {
-      if (window.history.length > 1) {
-          navigate(-1);
-      } else {
-          navigate('/');
-      }
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
-
-  useEffect(() => {
-    const fetchFlavors = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`flavors/?category__slug=${slug}`);
-        const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
-        setFlavors(data);
-        if (data.length > 0) {
-          setCategoryName(data[0].category_name);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFlavors();
-  }, [slug]);
 
   useTitle(categoryName || 'Flavors');
 
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
+  if (loading)
+    return (
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
+    );
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, sm: 4, md: 6 }, py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" gutterBottom>{categoryName || 'Flavors'}</Typography>
-          <Button 
-            variant="outlined" 
-            onClick={handleGoBack}
-            startIcon={<ArrowBackIcon />}
-            sx={{ 
-                borderRadius: 2, 
-                textTransform: 'none', 
-                fontWeight: 'bold',
-                color: 'text.secondary',
-                borderColor: 'divider',
-                '&:hover': {
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    bgcolor: 'transparent'
-                }
-            }}
-          >
-            {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-          </Button>
-      </Box>
+    <PageShell hero={<HeroBackdrop variant="mesh" />}>
+      <Button
+        variant="outlined"
+        onClick={handleGoBack}
+        startIcon={<ArrowBackIcon />}
+        sx={{ alignSelf: 'flex-start', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+      >
+        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
+      </Button>
 
-      <Box sx={{ 
-          display: 'grid', 
-          gridTemplateColumns: {
+      <SectionHeader title={categoryName || 'Flavors'} />
+
+      {flavors.length === 0 ? (
+        <EmptyState title="No flavors here yet" subtitle="Check back soon." />
+      ) : (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
               xs: '1fr',
-              sm: 'repeat(auto-fill, minmax(280px, 1fr))',
-              lg: 'repeat(auto-fill, minmax(240px, 1fr))'
-          },
-          gap: 3 
-      }}>
-        {flavors.map(flavor => (
-          <Box key={flavor.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.02)' } }}>
-              <Box component={Link} to={`/flavor/${flavor.id}`} sx={{ textDecoration: 'none', color: 'inherit', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ position: 'absolute', top: 10, right: 10, zIndex: 1 }}>
-                    <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} size="small" />
-                </Box>
-                {flavor.image_url && (
-                    <Box 
-                        sx={{ 
-                            width: '100%', 
-                            aspectRatio: '1/1', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            bgcolor: 'background.default',
-                            borderBottom: '1px solid',
-                            borderColor: 'divider',
-                            overflow: 'hidden'
-                        }}
-                    >
-                        <Box 
-                            component="img" 
-                            src={flavor.image_url} 
-                            sx={{ 
-                                width: '100%', 
-                                height: '100%', 
-                                objectFit: 'cover',
-                                transition: 'transform 0.5s ease',
-                                '&:hover': { transform: 'scale(1.1)' }
-                            }} 
-                        />
-                    </Box>
-                )}
-                <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" sx={{ fontSize: '1.1rem', mb: 1 }}>{flavor.name}</Typography>
-                    
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <RatingBadge score={flavor.average_rating || 0} size="small" />
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">{flavor.ratings.length} reviews</Typography>
-                </CardContent>
-              </Box>
-            </Card>
-          </Box>
-        ))}
-      </Box>
-    </Container>
+              sm: 'repeat(auto-fill, minmax(260px, 1fr))',
+              lg: 'repeat(auto-fill, minmax(240px, 1fr))',
+            },
+            gap: 3,
+          }}
+        >
+          {flavors.map((flavor) => (
+            <FlavorCard
+              key={flavor.id}
+              flavor={flavor}
+              showCategory={false}
+              caption={`${flavor.ratings.length} reviews`}
+            />
+          ))}
+        </Box>
+      )}
+    </PageShell>
   );
 };
 

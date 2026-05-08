@@ -1,56 +1,83 @@
 import React from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
-import HistoryIcon from '@mui/icons-material/History';
-import BlockIcon from '@mui/icons-material/Block';
+import { useTranslation } from 'react-i18next';
 
 interface StatusBadgeProps {
-    isLegacy?: boolean;
-    isAvailable?: boolean;
-    size?: 'small' | 'medium';
-    sx?: any;
+  isLegacy?: boolean;
+  isAvailable?: boolean;
+  size?: 'small' | 'medium';
+  sx?: any;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ isLegacy, isAvailable, size = 'medium', sx }) => {
-    const theme = useTheme();
-    const isSmall = size === 'small';
+const sizeMap = {
+  small: { px: 0.85, py: 0.3, dot: 5, font: '0.55rem', gap: 0.5 },
+  medium: { px: 1.1, py: 0.45, dot: 6, font: '0.65rem', gap: 0.6 },
+} as const;
 
-    if (isAvailable && !isLegacy) return null;
+const StatusBadge: React.FC<StatusBadgeProps> = ({
+  isLegacy,
+  isAvailable,
+  size = 'medium',
+  sx,
+}) => {
+  const theme = useTheme();
+  const { t } = useTranslation();
 
-    const label = isLegacy ? 'Limited' : 'Out of Stock';
-    const color = isLegacy ? theme.palette.warning.main : theme.palette.error.main;
-    const Icon = isLegacy ? HistoryIcon : BlockIcon;
+  if (isAvailable && !isLegacy) return null;
 
-    return (
-        <Box sx={{ 
-            display: 'inline-flex', 
-            alignItems: 'center',
-            gap: 0.5,
-            bgcolor: alpha(color, 0.9),
-            color: '#fff',
-            px: isSmall ? 0.8 : 1.2, 
-            py: isSmall ? 0.2 : 0.4, 
-            borderRadius: 1.5,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            backdropFilter: 'blur(4px)',
-            border: '1px solid',
-            borderColor: alpha('#fff', 0.2),
-            ...sx
-        }}>
-            <Icon sx={{ fontSize: isSmall ? '0.7rem' : '0.9rem' }} />
-            <Typography 
-                variant="caption" 
-                sx={{ 
-                    fontWeight: '900', 
-                    textTransform: 'uppercase', 
-                    letterSpacing: 0.5,
-                    fontSize: isSmall ? '0.55rem' : '0.65rem',
-                    lineHeight: 1
-                }}
-            >
-                {label}
-            </Typography>
-        </Box>
-    );
+  const dims = sizeMap[size];
+  const accent = isLegacy ? theme.palette.warning.main : theme.palette.error.main;
+  const label = isLegacy
+    ? t('status.limited', { defaultValue: 'Limited' })
+    : t('status.outOfStock', { defaultValue: 'Out of Stock' });
+
+  const isLight = theme.palette.mode === 'light';
+  const surface = alpha(theme.palette.background.paper, isLight ? 0.85 : 0.55);
+
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: dims.gap,
+        bgcolor: surface,
+        backdropFilter: theme.tokens.glass.blur,
+        WebkitBackdropFilter: theme.tokens.glass.blur,
+        color: 'text.primary',
+        px: dims.px,
+        py: dims.py,
+        borderRadius: theme.tokens.radius.pill + 'px',
+        border: '1px solid',
+        borderColor: alpha(accent, 0.4),
+        boxShadow: `0 2px 8px ${alpha(accent, 0.18)}`,
+        ...sx,
+      }}
+    >
+      <Box
+        sx={{
+          width: dims.dot,
+          height: dims.dot,
+          borderRadius: '50%',
+          bgcolor: accent,
+          boxShadow: `0 0 0 2px ${alpha(accent, 0.2)}`,
+          flexShrink: 0,
+        }}
+      />
+      <Typography
+        component="span"
+        sx={{
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          fontSize: dims.font,
+          lineHeight: 1,
+          color: 'text.primary',
+        }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
 };
 
 export default StatusBadge;

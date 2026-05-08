@@ -1,98 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import { 
-    Container, Typography, Box, Button, 
-    Stack, CircularProgress, TextField, Paper
-} from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import { Box, Button, Stack, CircularProgress, TextField } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../api';
+import { useAdminRating } from '../api/queries/useAdminQueries';
+import { useDeleteRating, useUpdateRating } from '../api/mutations/useRatingMutations';
 import { useTitle } from '../hooks/useTitle';
 import MentionTextField from '../components/MentionTextField';
+import { PageShell, SectionHeader, FormCard } from '../components/ui';
+import { useToast } from '../hooks/useToast';
+import { useConfirm } from '../hooks/useConfirm';
 
 const AdminRatingDetail: React.FC = () => {
-    const { t } = useTranslation();
-    const navigate = useNavigate();
-    const { id } = useParams<{ id: string }>();
-    const [score, setScore] = useState(0);
-    const [comment, setComment] = useState('');
-    const [rating, setRating] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const { data: rating, isLoading: loading, error } = useAdminRating(id);
+  const updateRating = useUpdateRating();
+  const deleteRating = useDeleteRating();
 
-    const fetchRating = async () => {
-        try {
-            const res = await api.get(`ratings/${id}/`);
-            setRating(res.data);
-            setScore(res.data.score);
-            setComment(res.data.comment || '');
-        } catch (err) {
-            console.error(err);
-            navigate('/admin-panel');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const [score, setScore] = useState(0);
+  const [comment, setComment] = useState('');
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
 
-    useEffect(() => {
-        fetchRating();
-    }, [id]);
+  useEffect(() => {
+    if (rating) {
+      setScore(rating.score);
+      setComment(rating.comment || '');
+    }
+  }, [rating]);
 
-    useTitle(rating ? `${t('admin.manageRating')}: ${rating.flavor_name}` : 'Rating Management');
+  useEffect(() => {
+    if (error) navigate('/admin-panel');
+  }, [error, navigate]);
 
-    const handleUpdate = async () => {
-        try {
-            await api.patch(`ratings/${id}/`, { score, comment });
-            fetchRating();
-            alert('Rating updated!');
-        } catch (err) { alert('Update failed'); }
-    };
+  useTitle(rating ? `${t('admin.manageRating')}: ${rating.flavor_name}` : 'Rating Management');
 
-    const handleDelete = async () => {
-        if (!window.confirm('Delete this rating and all replies?')) return;
-        try {
-            await api.delete(`ratings/${id}/`);
-            navigate('/admin-panel');
-        } catch (err) { alert('Delete failed'); }
-    };
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+    try {
+      await updateRating.mutateAsync({ id: Number(id), score, comment });
+      notify({ message: 'Rating updated!', severity: 'success' });
+    } catch {
+      notify({ message: 'Update failed', severity: 'error' });
+    }
+  };
 
-    if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
+  const handleDelete = async () => {
+    if (!id) return;
+    if (!(await confirm({ message: 'Delete this rating and all replies?', danger: true }))) return;
+    try {
+      await deleteRating.mutateAsync(Number(id));
+      navigate('/admin-panel');
+    } catch {
+      notify({ message: 'Delete failed', severity: 'error' });
+    }
+  };
 
+  if (loading)
     return (
-        <Container maxWidth="sm" sx={{ py: 4 }}>
-            <Button 
-                variant="outlined" 
-                startIcon={<ArrowBackIcon />} 
-                onClick={() => navigate(-1)}
-                sx={{ mb: 4, borderRadius: 2 }}
-            >
-                {t('common.back')}
-            </Button>
-
-            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 4 }}>{t('admin.manageRating')}</Typography>
-
-            <Paper sx={{ p: 3, borderRadius: 4 }}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    {rating.flavor_name} (User: {rating.user})
-                </Typography>
-                <Stack spacing={3} sx={{ mt: 3 }}>
-                    <TextField 
-                        label="Score" type="number" 
-                        slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
-                        value={score} onChange={(e) => setScore(Number(e.target.value))}
-                    />
-                    <MentionTextField 
-                        multiline rows={4} 
-                        value={comment} onChange={setComment}
-                    />
-                    <Stack direction="row" spacing={2}>
-                        <Button variant="contained" fullWidth onClick={handleUpdate}>{t('common.save')}</Button>
-                        <Button variant="outlined" color="error" fullWidth startIcon={<DeleteIcon />} onClick={handleDelete}>{t('common.delete')}</Button>
-                    </Stack>
-                </Stack>
-            </Paper>
-        </Container>
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
     );
+
+  if (!rating) return null;
+
+  return (
+    <PageShell>
+      <Button
+        variant="outlined"
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate(-1)}
+        sx={{ alignSelf: 'flex-start', borderRadius: 2 }}
+      >
+        {t('common.back')}
+      </Button>
+
+      <SectionHeader title={t('admin.manageRating')} />
+
+      <Box sx={{ maxWidth: 560, width: '100%' }}>
+        <FormCard
+          title={rating.flavor_name}
+          subtitle={`User: ${rating.user}`}
+          onSubmit={handleUpdate}
+          actions={
+            <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+              <Button variant="contained" fullWidth type="submit">
+                {t('common.save')}
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                fullWidth
+                startIcon={<DeleteIcon />}
+                onClick={handleDelete}
+              >
+                {t('common.delete')}
+              </Button>
+            </Stack>
+          }
+        >
+          <TextField
+            label="Score"
+            type="number"
+            slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
+            value={score}
+            onChange={(e) => setScore(Number(e.target.value))}
+          />
+          <MentionTextField multiline rows={4} value={comment} onChange={setComment} />
+        </FormCard>
+      </Box>
+    </PageShell>
+  );
 };
 
 export default AdminRatingDetail;

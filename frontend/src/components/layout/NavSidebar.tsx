@@ -1,0 +1,469 @@
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Avatar,
+  Badge,
+  Box,
+  Button,
+  Collapse,
+  Divider,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Typography,
+  alpha,
+  useTheme,
+} from '@mui/material';
+import ExpandLess from '@mui/icons-material/ExpandLess';
+import ExpandMore from '@mui/icons-material/ExpandMore';
+import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import CollectionsBookmarkOutlinedIcon from '@mui/icons-material/CollectionsBookmarkOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
+import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
+import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
+import { GlobalSearch } from '../../app/GlobalSearch';
+import { formatDate } from '../../utils/date';
+import type { Notification } from '../../contexts/NotificationContext';
+
+export const NAV_SIDEBAR_WIDTH = 280;
+
+export interface NavSidebarProps {
+  categories: { name: string; slug: string }[];
+  onNavigate?: () => void;
+  showSearch?: boolean;
+  showNotifications?: boolean;
+}
+
+export const NavSidebar = ({
+  categories,
+  onNavigate,
+  showSearch = false,
+  showNotifications = false,
+}: NavSidebarProps) => {
+  const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const { user, following, logout } = useAuth();
+  const { notifications, markAllRead, markRead } = useNotifications();
+  const [catOpen, setCatOpen] = useState(false);
+  const [followingOpen, setFollowingOpen] = useState(false);
+  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
+
+  const close = () => onNavigate?.();
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+
+  const handleNotificationClick = async (notif: Notification) => {
+    if (!notif.is_read) await markRead(notif.id);
+    setNotifAnchorEl(null);
+    close();
+    if (notif.notification_type.startsWith('ticket')) {
+      navigate(user?.is_superuser ? '/admin-panel/tickets' : '/support');
+    } else if (notif.notification_type === 'profile_comment') {
+      navigate(`/profile/${user?.username}`);
+    } else if (notif.notification_type === 'follow') {
+      navigate(`/profile/${notif.actor_username}`);
+    } else if (notif.flavor_id) {
+      window.location.href = `/flavor/${notif.flavor_id}`;
+    }
+  };
+
+  const unreadCount = user?.unread_notifications_count || 0;
+
+  return (
+    <Box
+      sx={{
+        width: NAV_SIDEBAR_WIDTH,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+      role="presentation"
+    >
+      {user ? (
+        <Box
+          component={Link}
+          to={`/profile/${user.username}`}
+          onClick={close}
+          sx={{
+            p: 2,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            color: 'inherit',
+            textDecoration: 'none',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            '&:hover': { bgcolor: 'action.hover' },
+          }}
+        >
+          <Avatar
+            src={user.avatar || undefined}
+            sx={{
+              width: 44,
+              height: 44,
+              border: '2px solid',
+              borderColor: 'primary.main',
+            }}
+          >
+            {user.username.charAt(0).toUpperCase()}
+          </Avatar>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {user.username}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {t('nav.profile')}
+            </Typography>
+          </Box>
+        </Box>
+      ) : null}
+
+      {showSearch && (
+        <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <GlobalSearch compact />
+        </Box>
+      )}
+
+      <List sx={{ flex: 1, overflowY: 'auto', py: 1 }}>
+        <ListItem disablePadding>
+          <ListItemButton component={Link} to="/" onClick={close} selected={isActive('/')}>
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <HomeOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText primary={t('nav.home')} />
+          </ListItemButton>
+        </ListItem>
+
+        {user && (
+          <ListItem disablePadding>
+            <ListItemButton
+              component={Link}
+              to="/community"
+              onClick={close}
+              selected={isActive('/community')}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <GroupsOutlinedIcon />
+              </ListItemIcon>
+              <ListItemText primary={t('nav.community')} />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        {user && showNotifications && (
+          <ListItem disablePadding>
+            <ListItemButton onClick={(e) => setNotifAnchorEl(e.currentTarget)}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <Badge badgeContent={unreadCount} color="error">
+                  <NotificationsOutlinedIcon />
+                </Badge>
+              </ListItemIcon>
+              <ListItemText primary={t('nav.notifications', { defaultValue: 'Notifications' })} />
+            </ListItemButton>
+          </ListItem>
+        )}
+
+        <ListItemButton
+          onClick={() => setCatOpen(!catOpen)}
+          selected={location.pathname.startsWith('/category/')}
+        >
+          <ListItemIcon sx={{ minWidth: 40 }}>
+            <CategoryOutlinedIcon />
+          </ListItemIcon>
+          <ListItemText primary={t('nav.categories')} />
+          {catOpen ? <ExpandLess /> : <ExpandMore />}
+        </ListItemButton>
+        <Collapse in={catOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {categories.map((cat) => (
+              <ListItemButton
+                key={cat.slug}
+                component={Link}
+                to={`/category/${cat.slug}`}
+                onClick={close}
+                selected={location.pathname === `/category/${cat.slug}`}
+                sx={{ pl: 7 }}
+              >
+                <ListItemText primary={t(`categories.${cat.slug}`, { defaultValue: cat.name })} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Collapse>
+
+        {user && (
+          <>
+            <Divider sx={{ my: 1 }} />
+
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to={`/profile/${user.username}`}
+                onClick={close}
+                selected={location.pathname === `/profile/${user.username}`}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <PersonOutlineOutlinedIcon />
+                </ListItemIcon>
+                <ListItemText primary={t('nav.profile')} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/dashboard"
+                onClick={close}
+                selected={isActive('/dashboard')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <CollectionsBookmarkOutlinedIcon />
+                </ListItemIcon>
+                <ListItemText primary={t('nav.dashboard')} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/settings"
+                onClick={close}
+                selected={isActive('/settings')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <SettingsOutlinedIcon />
+                </ListItemIcon>
+                <ListItemText primary={t('nav.settings')} />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/support"
+                onClick={close}
+                selected={isActive('/support')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <HelpOutlineOutlinedIcon />
+                </ListItemIcon>
+                <ListItemText primary={t('support.title')} />
+              </ListItemButton>
+            </ListItem>
+
+            {user.is_superuser && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <ListItem disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    to="/admin-panel"
+                    onClick={close}
+                    selected={isActive('/admin-panel')}
+                  >
+                    <ListItemIcon sx={{ minWidth: 40 }}>
+                      <AdminPanelSettingsOutlinedIcon color="primary" />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={t('admin.panelTitle', { defaultValue: 'Admin Panel' })}
+                      primaryTypographyProps={{ sx: { color: 'primary.main', fontWeight: 700 } }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              </>
+            )}
+
+            {following.length > 0 && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <ListItemButton onClick={() => setFollowingOpen(!followingOpen)}>
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    <PeopleOutlineOutlinedIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <span>{t('nav.following')}</span>
+                        <Typography variant="caption" color="text.secondary">
+                          {following.length}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                  {followingOpen ? <ExpandLess /> : <ExpandMore />}
+                </ListItemButton>
+                <Collapse in={followingOpen} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {following.map((f) => (
+                      <ListItem key={f.id} disablePadding>
+                        <ListItemButton
+                          component={Link}
+                          to={`/profile/${f.username}`}
+                          onClick={close}
+                          selected={location.pathname === `/profile/${f.username}`}
+                          sx={{ pl: 5 }}
+                        >
+                          <ListItemAvatar sx={{ minWidth: 40 }}>
+                            <Avatar src={f.avatar || undefined} sx={{ width: 28, height: 28 }}>
+                              {!f.avatar && f.username.charAt(0).toUpperCase()}
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={f.username}
+                            primaryTypographyProps={{ variant: 'body2' }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                </Collapse>
+              </>
+            )}
+          </>
+        )}
+
+        {!user && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/login"
+                onClick={close}
+                selected={isActive('/login')}
+              >
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <LoginOutlinedIcon />
+                </ListItemIcon>
+                <ListItemText primary={t('nav.login')} />
+              </ListItemButton>
+            </ListItem>
+          </>
+        )}
+      </List>
+
+      {user && (
+        <Box sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
+          <ListItemButton
+            onClick={() => {
+              close();
+              logout();
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
+              <LogoutOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('nav.logout')}
+              primaryTypographyProps={{ sx: { color: 'error.main', fontWeight: 600 } }}
+            />
+          </ListItemButton>
+        </Box>
+      )}
+
+      {showNotifications && (
+        <Menu
+          anchorEl={notifAnchorEl}
+          open={Boolean(notifAnchorEl)}
+          onClose={() => setNotifAnchorEl(null)}
+          anchorOrigin={{ vertical: 'center', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'center', horizontal: 'left' }}
+          elevation={3}
+          PaperProps={{ sx: { width: 320, maxHeight: 400, borderRadius: 1, ml: 1 } }}
+        >
+          <Box
+            sx={{
+              p: 1.5,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+              {t('nav.notifications', { defaultValue: 'Notifications' })}
+            </Typography>
+            {unreadCount > 0 && (
+              <Button size="small" onClick={markAllRead}>
+                {t('community.markAllRead', { defaultValue: 'Mark all read' })}
+              </Button>
+            )}
+          </Box>
+          {notifications.length === 0 ? (
+            <Box sx={{ p: 4, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                {t('community.noNotifications', { defaultValue: 'No notifications yet' })}
+              </Typography>
+            </Box>
+          ) : (
+            notifications.map((n) => (
+              <MenuItem
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: n.is_read ? 'transparent' : alpha(theme.palette.primary.main, 0.05),
+                  whiteSpace: 'normal',
+                  display: 'flex',
+                  gap: 2,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
+                  {n.actor_username.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
+                    <strong>{n.actor_username}</strong>{' '}
+                    {n.notification_type === 'reply'
+                      ? `replied to your review on ${n.flavor_name}`
+                      : n.notification_type === 'mention'
+                        ? `mentioned you on ${n.flavor_name}`
+                        : n.notification_type === 'follow'
+                          ? t('community.notifFollow')
+                          : n.notification_type === 'profile_comment'
+                            ? `left a message on your guestbook`
+                            : n.notification_type === 'ticket_new'
+                              ? t('community.notifTicketNew')
+                              : user?.is_superuser
+                                ? t('community.notifTicketReplyAdmin')
+                                : t('community.notifTicketReply')}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatDate(n.created_at)}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            ))
+          )}
+        </Menu>
+      )}
+    </Box>
+  );
+};

@@ -1,47 +1,46 @@
 #!/bin/sh
 
-# Exit on error
 set -e
 
-# Apply database migrations
+# Worker/beat share the backend image but must not re-run migrate/seed on every
+# restart. Set SKIP_INIT=true on those services. Only the primary backend
+# container runs the init block below.
+if [ "${SKIP_INIT:-false}" = "true" ]; then
+    echo "SKIP_INIT=true — skipping migrations/seed."
+    if [ "$#" -gt 0 ]; then
+        echo "Executing: $@"
+        exec "$@"
+    fi
+    echo "No command given with SKIP_INIT=true; exiting."
+    exit 0
+fi
+
 echo "Applying database migrations..."
-python manage.py makemigrations
-python manage.py migrate
+python manage.py migrate --noinput
 
-# Create cache table for ratelimiting
-echo "Creating cache table..."
-python manage.py createcachetable
-
-# Collect static files
 echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
-# Ensure media and cache directories exist
 mkdir -p media/flavors
-mkdir -p django_cache
-chmod -R 777 django_cache
 
-# Sync flavors from the API
-echo "Syncing flavors..."
-python manage.py sync_flavors
-
-# Merge any duplicates that might have been created
-echo "Cleaning up duplicates..."
-python manage.py cleanup_duplicates
-
-# Seed legacy flavors if needed
-echo "Seeding legacy flavors..."
-python manage.py seed_legacy_flavors
-
-# Auto-sync banner models and settings from JSON files
-echo "Syncing banner configurations..."
-python manage.py seed_banners
+# One-shot seed jobs. These should run on image first boot, not on every
+# restart. A marker file on the bind-mounted volume gates them.
+SEED_MARKER="/app/.seeded"
+if [ ! -f "$SEED_MARKER" ]; then
+    echo "First boot — running initial seed commands..."
+    python manage.py sync_flavors || echo "sync_flavors failed (non-fatal on first boot)"
+    python manage.py cleanup_duplicates || echo "cleanup_duplicates failed (non-fatal)"
+    python manage.py seed_legacy_flavors || echo "seed_legacy_flavors failed (non-fatal)"
+    python manage.py seed_banners || echo "seed_banners failed (non-fatal)"
+    touch "$SEED_MARKER"
+else
+    echo "Seed marker present — skipping seed commands. Trigger them from /admin if needed."
+fi
 
 if [ "$#" -gt 0 ]; then
     echo "Executing custom command: $@"
     exec "$@"
 fi
 
-# Start the server using Gunicorn
 echo "Starting Gunicorn..."
 exec gunicorn holy_backend.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120

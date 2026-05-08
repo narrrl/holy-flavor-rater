@@ -1,16 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  Typography, 
-  Box, 
-  Card, 
-  CardContent, 
-  Rating as MuiRating, 
-  Button, 
+import {
+  Typography,
+  Box,
+  CardContent,
+  Button,
   Avatar,
   CircularProgress,
-  Container,
   Grid,
   Chip,
   Stack,
@@ -20,9 +17,18 @@ import {
   TextField,
   FormControlLabel,
   Switch,
-  Divider
+  Divider,
 } from '@mui/material';
-import api from '../../api';
+import { useFlavorDetail, type FlavorDetailRating } from '../../api/queries/useFlavorDetail';
+import { useCurrentUserLite } from '../../api/queries/useCurrentUserLite';
+import { useUpdateFlavor } from '../../api/mutations/useFlavorMutations';
+import {
+  useDeleteRating,
+  useCreateReply,
+  useDeleteReply,
+  useUpdateRating,
+} from '../../api/mutations/useRatingMutations';
+import { useUpdateReply } from '../../api/mutations/useReplyMutations';
 import { useTitle } from '../../hooks/useTitle';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
@@ -36,69 +42,51 @@ import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
 import RatingBadge from '../../components/RatingBadge';
 import StatusBadge from '../../components/StatusBadge';
+import {
+  PageShell,
+  HeroBackdrop,
+  GlassCard,
+  SectionHeader,
+  EmptyState,
+  HeroGallery,
+  ScoreInput,
+  RatingDistribution,
+} from '../../components/ui';
+import RatingForm from './components/RatingForm';
+import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
 
-interface Reply {
-    id: number;
-    user: string;
-    text: string;
-    created_at: string;
-}
-
-interface Rating {
-    id: number;
-    user: string;
-    user_avatar: string | null;
-    score: number;
-    comment: string;
-    created_at: string;
-    replies: Reply[];
-}
-
-interface Flavor {
-  id: number;
-  name: string;
-  category_name: string;
-  category_slug: string;
-  description: string;
-  average_rating: number;
-  user_rating: number | null;
-  ratings: Rating[];
-  image_url: string | null;
-  is_available: boolean;
-  is_legacy: boolean;
-  shop_url: string | null;
-}
-
-interface FlavorDetailProps {
-    adminMode?: boolean;
-}
-
-const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
+const FlavorDetail: React.FC = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [flavor, setFlavor] = useState<Flavor | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [replyInputs, setReplyInputs] = useState<{[key: number]: string}>({});
-  const [expandedReplies, setExpandedReplies] = useState<{[key: number]: boolean}>({});
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  
+  const { notify } = useToast();
+  const { confirm } = useConfirm();
+  const { data: flavor, isLoading: loading } = useFlavorDetail(id);
+  const { data: meData } = useCurrentUserLite();
+  const currentUser = meData?.username ?? null;
+  const isSuperuser = !!meData?.is_superuser;
+  const updateFlavor = useUpdateFlavor();
+  const deleteRatingMutation = useDeleteRating();
+  const updateRating = useUpdateRating();
+  const createReply = useCreateReply();
+  const updateReply = useUpdateReply();
+  const deleteReplyMutation = useDeleteReply();
+  const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({});
+  const [expandedReplies, setExpandedReplies] = useState<{ [key: number]: boolean }>({});
+
   // Product Edit state (Admin)
   const [isAdminEditing, setIsAdminEditing] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [editFlavorData, setEditFlavorData] = useState({
-      name: '',
-      description: '',
-      shop_url: '',
-      is_available: true,
-      is_legacy: false
+    name: '',
+    description: '',
+    shop_url: '',
+    is_available: true,
+    is_legacy: false,
   });
 
-  // Rating form state
-  const [newScore, setNewScore] = useState<number | null>(null);
-  const [newComment, setNewComment] = useState('');
-  
   // Edit state
   const [editMode, setEditMode] = useState<number | null>(null);
   const [editScore, setEditScore] = useState(0);
@@ -108,531 +96,683 @@ const FlavorDetail: React.FC<FlavorDetailProps> = ({ adminMode }) => {
   const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
   const [editReplyText, setEditReplyText] = useState('');
 
-  const fetchFlavor = async () => {
-    try {
-      const res = await api.get(`flavors/${id}/`);
-      setFlavor(res.data);
-      setEditFlavorData({
-          name: res.data.name,
-          description: res.data.description,
-          shop_url: res.data.shop_url || '',
-          is_available: res.data.is_available,
-          is_legacy: res.data.is_legacy
-      });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    const getUser = async () => {
-        try {
-            const res = await api.get('users/me/');
-            setCurrentUser(res.data.username);
-        } catch (e) { /* ignore */ }
-    };
-    getUser();
-    fetchFlavor();
-  }, [id]);
+    if (flavor) {
+      setEditFlavorData({
+        name: flavor.name,
+        description: flavor.description,
+        shop_url: flavor.shop_url || '',
+        is_available: flavor.is_available,
+        is_legacy: flavor.is_legacy,
+      });
+    }
+  }, [flavor]);
 
   useTitle(flavor?.name || t('common.loading'));
 
+  const galleryImages = useMemo(() => flavor?.image_urls ?? [], [flavor?.image_urls]);
+
   const handleAdminUpdate = async () => {
-      try {
-          await api.patch(`flavors/${id}/`, editFlavorData);
-          setIsAdminEditing(false);
-          fetchFlavor();
-      } catch (err) {
-          alert('Admin update failed');
-      }
+    if (!id) return;
+    try {
+      await updateFlavor.mutateAsync({ id, data: editFlavorData });
+      setIsAdminEditing(false);
+    } catch {
+      notify({ message: 'Admin update failed', severity: 'error' });
+    }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
 
-      const formData = new FormData();
-      formData.append('image', file);
+    const formData = new FormData();
+    formData.append('image', file);
 
-      try {
-          setUploadingImage(true);
-          await api.patch(`flavors/${id}/`, formData, {
-              headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          fetchFlavor();
-      } catch (err) {
-          alert('Image upload failed');
-      } finally {
-          setUploadingImage(false);
-      }
-  };
-
-  const handleRatingSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!newScore) {
-          alert('Please select a score');
-          return;
-      }
-      try {
-          await api.post('ratings/', { flavor: flavor?.id, score: newScore, comment: newComment });
-          setNewScore(null);
-          setNewComment('');
-          fetchFlavor();
-      } catch (err: any) {
-          alert(err.response?.data?.error || 'Failed to submit rating');
-      }
+    try {
+      setUploadingImage(true);
+      await updateFlavor.mutateAsync({ id, data: formData, isFormData: true });
+    } catch {
+      notify({ message: 'Image upload failed', severity: 'error' });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleReplySubmit = async (ratingId: number) => {
-      const text = replyInputs[ratingId];
-      if (!text) return;
-      try {
-          await api.post(`ratings/${ratingId}/reply/`, { text });
-          setReplyInputs({ ...replyInputs, [ratingId]: '' });
-          // Auto-expand replies when submitting a new one
-          setExpandedReplies(prev => ({ ...prev, [ratingId]: true }));
-          fetchFlavor();
-      } catch (err) {
-          alert('Failed to submit reply');
-      }
+    const text = replyInputs[ratingId];
+    if (!text) return;
+    try {
+      await createReply.mutateAsync({ ratingId, text });
+      setReplyInputs({ ...replyInputs, [ratingId]: '' });
+      setExpandedReplies((prev) => ({ ...prev, [ratingId]: true }));
+    } catch {
+      notify({ message: 'Failed to submit reply', severity: 'error' });
+    }
   };
 
   const handleUpdateReply = async (replyId: number) => {
-      if (!editReplyText) return;
-      try {
-          await api.patch(`replies/${replyId}/`, { text: editReplyText });
-          setEditingReplyId(null);
-          fetchFlavor();
-      } catch (err) {
-          alert('Failed to update reply');
-      }
+    if (!editReplyText) return;
+    try {
+      await updateReply.mutateAsync({ replyId, text: editReplyText });
+      setEditingReplyId(null);
+    } catch {
+      notify({ message: 'Failed to update reply', severity: 'error' });
+    }
   };
 
   const handleDeleteReply = async (replyId: number) => {
-      if (!confirm('Delete this reply?')) return;
-      try {
-          await api.delete(`replies/${replyId}/`);
-          fetchFlavor();
-      } catch (err) {
-          alert('Failed to delete reply');
-      }
+    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
+    try {
+      await deleteReplyMutation.mutateAsync(replyId);
+    } catch {
+      notify({ message: 'Failed to delete reply', severity: 'error' });
+    }
   };
 
   const handleDeleteRating = async (ratingId: number) => {
-      if (!confirm('Are you sure?')) return;
-      try {
-          await api.delete(`ratings/${ratingId}/`);
-          fetchFlavor();
-      } catch (err) {
-          alert('Failed to delete review');
-      }
+    if (!(await confirm({ message: 'Delete this review?', danger: true }))) return;
+    try {
+      await deleteRatingMutation.mutateAsync(ratingId);
+    } catch {
+      notify({ message: 'Failed to delete review', severity: 'error' });
+    }
   };
 
-  const startEdit = (rating: Rating) => {
-      setEditMode(rating.id);
-      setEditScore(rating.score);
-      setEditComment(rating.comment || '');
+  const startEdit = (rating: FlavorDetailRating) => {
+    setEditMode(rating.id);
+    setEditScore(rating.score);
+    setEditComment(rating.comment || '');
   };
 
   const handleUpdateRating = async (ratingId: number) => {
-      try {
-          await api.patch(`ratings/${ratingId}/`, { score: editScore, comment: editComment });
-          setEditMode(null);
-          fetchFlavor();
-      } catch (err) {
-          alert('Failed to update review');
-      }
+    try {
+      await updateRating.mutateAsync({ id: ratingId, score: editScore, comment: editComment });
+      setEditMode(null);
+    } catch {
+      notify({ message: 'Failed to update review', severity: 'error' });
+    }
   };
 
   const handleGoBack = () => {
-      if (window.history.length > 1) {
-          navigate(-1);
-      } else {
-          navigate('/');
-      }
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
 
-  if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}><CircularProgress /></Box>;
-  if (!flavor) return <Typography>Flavor not found</Typography>;
+  if (loading)
+    return (
+      <PageShell>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </PageShell>
+    );
+  if (!flavor)
+    return (
+      <PageShell>
+        <Typography>{t('flavorDetail.flavorNotFound')}</Typography>
+      </PageShell>
+    );
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Top Bar */}
-      <Box sx={{ mb: 4 }}>
-          <Button 
-            variant="outlined" 
-            onClick={handleGoBack}
-            startIcon={<ArrowBackIcon />}
-            sx={{ 
-                borderRadius: 2, 
-                textTransform: 'none', 
-                fontWeight: 'bold',
-                color: 'text.secondary',
-                borderColor: 'divider',
-                '&:hover': {
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    bgcolor: 'transparent'
-                }
-            }}
-          >
-            {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-          </Button>
-      </Box>
+    <PageShell hero={<HeroBackdrop variant="minimal" />}>
+      <Button
+        variant="outlined"
+        onClick={handleGoBack}
+        startIcon={<ArrowBackIcon />}
+        sx={{
+          alignSelf: 'flex-start',
+          borderRadius: 2,
+          textTransform: 'none',
+          fontWeight: 'bold',
+          color: 'text.secondary',
+        }}
+      >
+        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
+      </Button>
 
-      {/* Main Content Grid */}
       <Grid container spacing={4}>
-          {/* Left: Product Info Card */}
-          <Grid size={{ xs: 12, lg: 4 }}>
-              <Box sx={{ position: { md: 'sticky' }, top: 100 }}>
-                  <Card elevation={0} sx={{ 
-                      borderRadius: 4, 
-                      border: '1px solid', 
-                      borderColor: 'divider',
-                      bgcolor: (theme) => alpha(theme.palette.background.paper, 0.6),
-                      backdropFilter: 'blur(12px)',
-                      overflow: 'hidden'
-                  }}>
-                                                <Box sx={{ 
-                                                p: 4, 
-                                                display: 'flex', 
-                                                alignItems: 'center', 
-                                                justifyContent: 'center',
-                                                bgcolor: 'action.hover',
-                                                position: 'relative',
-                                                aspectRatio: '1/1'
-                                            }}>
-                                                <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 1 }}>
-                                                    <StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} />
-                                                </Box>
-                                                {flavor.image_url ? (                              <Box 
-                                component="img" 
-                                src={flavor.image_url} 
-                                sx={{ 
-                                    width: '100%', 
-                                    height: '100%', 
-                                    objectFit: 'contain',
-                                    filter: 'drop-shadow(0px 10px 20px rgba(0,0,0,0.15))'
-                                }} 
-                              />
-                          ) : (
-                              <Typography color="text.secondary">No Image</Typography>
-                          )}
+        {/* Left: Product Info Card */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          <Box sx={{ position: { md: 'sticky' }, top: 100 }}>
+            <HeroGallery
+              images={galleryImages}
+              alt={flavor.name}
+              badge={<StatusBadge isLegacy={flavor.is_legacy} isAvailable={flavor.is_available} />}
+            />
+            <Box
+              sx={{
+                display: { xs: 'block', lg: 'none' },
+                height: 2,
+                my: 2,
+                background: theme.tokens.accent.softGradient,
+                borderRadius: 1,
+              }}
+            />
+            <GlassCard sx={{ mt: { xs: 0, lg: 2 } }}>
+              <CardContent sx={{ p: 3 }}>
+                {isSuperuser && (
+                  <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                    {!isAdminEditing ? (
+                      <Button
+                        startIcon={<EditIcon />}
+                        size="small"
+                        onClick={() => setIsAdminEditing(true)}
+                      >
+                        Edit Product (Admin)
+                      </Button>
+                    ) : (
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          startIcon={<SaveIcon />}
+                          size="small"
+                          color="success"
+                          variant="contained"
+                          onClick={handleAdminUpdate}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          startIcon={<CancelIcon />}
+                          size="small"
+                          onClick={() => setIsAdminEditing(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </Stack>
+                    )}
+                  </Box>
+                )}
+
+                {isAdminEditing ? (
+                  <Stack spacing={2} sx={{ mb: 2 }}>
+                    <TextField
+                      label="Name"
+                      fullWidth
+                      size="small"
+                      value={editFlavorData.name}
+                      onChange={(e) =>
+                        setEditFlavorData({ ...editFlavorData, name: e.target.value })
+                      }
+                    />
+                    <TextField
+                      label="Description"
+                      fullWidth
+                      size="small"
+                      multiline
+                      rows={4}
+                      value={editFlavorData.description}
+                      onChange={(e) =>
+                        setEditFlavorData({ ...editFlavorData, description: e.target.value })
+                      }
+                    />
+                    <TextField
+                      label="Shop URL"
+                      fullWidth
+                      size="small"
+                      value={editFlavorData.shop_url}
+                      onChange={(e) =>
+                        setEditFlavorData({ ...editFlavorData, shop_url: e.target.value })
+                      }
+                    />
+
+                    <Box>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        size="small"
+                        fullWidth
+                        disabled={uploadingImage}
+                      >
+                        {uploadingImage ? 'Uploading...' : 'Upload Custom Image'}
+                        <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                      </Button>
+                    </Box>
+
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={editFlavorData.is_available}
+                          onChange={(e) =>
+                            setEditFlavorData({ ...editFlavorData, is_available: e.target.checked })
+                          }
+                        />
+                      }
+                      label="In Stock"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={editFlavorData.is_legacy}
+                          onChange={(e) =>
+                            setEditFlavorData({ ...editFlavorData, is_legacy: e.target.checked })
+                          }
+                        />
+                      }
+                      label="Legacy / Limited"
+                    />
+                    <Divider sx={{ my: 1 }} />
+                  </Stack>
+                ) : (
+                  <>
+                    <Chip
+                      label={flavor.category_name}
+                      size="small"
+                      sx={{
+                        mb: 2,
+                        fontWeight: 'bold',
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: 'primary.main',
+                      }}
+                    />
+                    <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, lineHeight: 1.2 }}>
+                      {flavor.name}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      <RatingBadge score={flavor.average_rating || 0} size="large" />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontWeight: 'bold' }}
+                      >
+                        {flavor.ratings.length} {t('common.reviews')}
+                      </Typography>
+                    </Box>
+
+                    {flavor.ratings.length > 0 && (
+                      <Box sx={{ mb: 3 }}>
+                        <RatingDistribution
+                          distribution={flavor.rating_distribution}
+                          total={flavor.ratings.length}
+                        />
                       </Box>
-                      <CardContent sx={{ p: 3 }}>
-                          {adminMode && (
-                              <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                                  {!isAdminEditing ? (
-                                      <Button startIcon={<EditIcon />} size="small" onClick={() => setIsAdminEditing(true)}>
-                                          Edit Product (Admin)
-                                      </Button>
-                                  ) : (
-                                      <Stack direction="row" spacing={1}>
-                                          <Button startIcon={<SaveIcon />} size="small" color="success" variant="contained" onClick={handleAdminUpdate}>
-                                              Save
-                                          </Button>
-                                          <Button startIcon={<CancelIcon />} size="small" onClick={() => setIsAdminEditing(false)}>
-                                              Cancel
-                                          </Button>
-                                      </Stack>
-                                  )}
-                              </Box>
-                          )}
+                    )}
 
-                          {isAdminEditing ? (
-                              <Stack spacing={2} sx={{ mb: 2 }}>
-                                  <TextField 
-                                    label="Name" fullWidth size="small" 
-                                    value={editFlavorData.name} 
-                                    onChange={(e) => setEditFlavorData({...editFlavorData, name: e.target.value})} 
-                                  />
-                                  <TextField 
-                                    label="Description" fullWidth size="small" multiline rows={4}
-                                    value={editFlavorData.description} 
-                                    onChange={(e) => setEditFlavorData({...editFlavorData, description: e.target.value})} 
-                                  />
-                                  <TextField 
-                                    label="Shop URL" fullWidth size="small"
-                                    value={editFlavorData.shop_url} 
-                                    onChange={(e) => setEditFlavorData({...editFlavorData, shop_url: e.target.value})} 
-                                  />
-                                  
-                                  <Box>
-                                      <Button variant="outlined" component="label" size="small" fullWidth disabled={uploadingImage}>
-                                          {uploadingImage ? 'Uploading...' : 'Upload Custom Image'}
-                                          <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-                                      </Button>
-                                  </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}
+                    >
+                      <RichText text={flavor.description} />
+                    </Typography>
+                  </>
+                )}
 
-                                  <FormControlLabel 
-                                    control={<Switch checked={editFlavorData.is_available} onChange={(e) => setEditFlavorData({...editFlavorData, is_available: e.target.checked})} />} 
-                                    label="In Stock" 
-                                  />
-                                  <FormControlLabel 
-                                    control={<Switch checked={editFlavorData.is_legacy} onChange={(e) => setEditFlavorData({...editFlavorData, is_legacy: e.target.checked})} />} 
-                                    label="Legacy / Limited" 
-                                  />
-                                  <Divider sx={{ my: 1 }} />
-                              </Stack>
-                          ) : (
-                              <>
-                                <Chip 
-                                    label={flavor.category_name} 
-                                    size="small" 
-                                    sx={{ mb: 2, fontWeight: 'bold', bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main' }} 
-                                />
-                                <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, lineHeight: 1.2 }}>
-                                    {flavor.name}
-                                </Typography>
-                                
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                                    <RatingBadge score={flavor.average_rating || 0} size="large" />
-                                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
-                                        {flavor.ratings.length} {t('common.reviews')}
-                                    </Typography>
-                                </Box>
+                {flavor.shop_url && !isAdminEditing && (
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    component="a"
+                    href={flavor.shop_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    startIcon={<ShoppingCartIcon />}
+                    sx={{
+                      borderRadius: 3,
+                      py: 1.5,
+                      fontSize: '1rem',
+                      fontWeight: '900',
+                      boxShadow: (theme) => `0 8px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    }}
+                  >
+                    {t('common.buyNow')}
+                  </Button>
+                )}
+              </CardContent>
+            </GlassCard>
+          </Box>
+        </Grid>
 
-                                <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}>
-                                    <RichText text={flavor.description} />
-                                </Typography>
-                              </>
-                          )}
+        {/* Right: Ratings & Comments */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          <SectionHeader
+            title={t('flavorDetail.ratingsAndComments')}
+            subtitle={
+              flavor.ratings.length === 0
+                ? t('flavorDetail.beTheFirst')
+                : t('flavorDetail.joinDiscussion', { count: flavor.ratings.length })
+            }
+            compact
+          />
 
-                          {flavor.shop_url && !isAdminEditing && (
-                              <Button 
-                                variant="contained" 
-                                fullWidth
-                                size="large" 
-                                component="a" 
-                                href={flavor.shop_url} 
-                                target="_blank" 
-                                startIcon={<ShoppingCartIcon />}
-                                sx={{ 
-                                    borderRadius: 3, 
-                                    py: 1.5, 
-                                    fontSize: '1rem', 
-                                    fontWeight: '900',
-                                    boxShadow: (theme) => `0 8px 20px ${alpha(theme.palette.primary.main, 0.3)}` 
+          {/* Add Rating Form */}
+          {currentUser && flavor.user_rating === null && (
+            <Box sx={{ mb: 4 }}>
+              <RatingForm flavorId={flavor.id} />
+            </Box>
+          )}
+
+          <Stack spacing={2.5}>
+            {flavor.ratings.length === 0 ? (
+              <EmptyState title={t('dashboard.noRatings')} />
+            ) : (
+              flavor.ratings.map((rating: FlavorDetailRating) => (
+                <GlassCard key={rating.id}>
+                  <CardContent sx={{ p: 3 }}>
+                    {editMode === rating.id ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <ScoreInput
+                          value={editScore || null}
+                          onChange={(val) => setEditScore(val)}
+                          size="small"
+                          ariaLabel={t('flavorDetail.scoreLabel')}
+                        />
+                        <MentionTextField
+                          multiline
+                          rows={3}
+                          value={editComment}
+                          onChange={(val) => setEditComment(val)}
+                        />
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>
+                            {t('common.save')}
+                          </Button>
+                          <Button variant="outlined" onClick={() => setEditMode(null)}>
+                            {t('common.cancel')}
+                          </Button>
+                        </Box>
+                      </Box>
+                    ) : (
+                      <>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            mb: 2,
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none' }}>
+                              <Avatar
+                                src={rating.user_avatar || undefined}
+                                sx={{
+                                  width: 44,
+                                  height: 44,
+                                  border: '2px solid',
+                                  borderColor: 'divider',
                                 }}
                               >
-                                  {t('common.buyNow')}
-                              </Button>
-                          )}
-                      </CardContent>
-                  </Card>
-              </Box>
-          </Grid>
-
-          {/* Right: Ratings & Comments */}
-          <Grid size={{ xs: 12, lg: 8 }}>
-              <Box sx={{ mb: 4 }}>
-                  <Typography variant="h4" sx={{ fontWeight: '800', mb: 1 }}>Ratings & Comments</Typography>
-                  <Typography variant="subtitle1" color="text.secondary">
-                      {flavor.ratings.length === 0 ? "Be the first to rate this flavor!" : `Join the discussion with ${flavor.ratings.length} other fans.`}
-                  </Typography>
-              </Box>
-
-              {/* Add Rating Form */}
-              {currentUser && flavor.user_rating === null && (
-                  <Card variant="outlined" sx={{ mb: 4, borderRadius: 4, border: '2px dashed', borderColor: 'divider', bgcolor: 'transparent' }}>
-                      <CardContent sx={{ p: 3 }}>
-                          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Rate this flavor</Typography>
-                          <form onSubmit={handleRatingSubmit}>
-                              <Box sx={{ mb: 3 }}>
-                                  <MuiRating max={10} value={newScore} onChange={(_, val) => setNewScore(val)} size="large" />
-                              </Box>
-                              <MentionTextField
-                                  multiline
-                                  rows={3}
-                                  placeholder="Share your thoughts..."
-                                  value={newComment}
-                                  onChange={(val) => setNewComment(val)}
-                              />
-                              <Button 
-                                variant="contained" 
-                                type="submit" 
-                                disabled={!newScore} 
-                                sx={{ mt: 2, borderRadius: 2, fontWeight: 'bold' }}
+                                {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
+                              </Avatar>
+                            </Link>
+                            <Box>
+                              <Link
+                                to={`/profile/${rating.user}`}
+                                style={{ textDecoration: 'none', color: 'inherit' }}
                               >
-                                  Submit Review
+                                <Typography
+                                  variant="subtitle2"
+                                  sx={{ fontWeight: 'bold', fontSize: '1rem' }}
+                                >
+                                  {rating.user}
+                                </Typography>
+                              </Link>
+                              <Typography variant="caption" color="text.secondary">
+                                {formatDate(rating.created_at)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <RatingBadge score={rating.score} />
+                            {isSuperuser && (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color="secondary"
+                                onClick={() => navigate(`/admin-panel/rating/${rating.id}`)}
+                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                              >
+                                {t('admin.manageRating')}
                               </Button>
-                          </form>
-                      </CardContent>
-                  </Card>
-              )}
+                            )}
+                          </Stack>
+                        </Box>
 
-              <Stack spacing={2.5}>
-                {flavor.ratings.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', py: 8, bgcolor: 'action.hover', borderRadius: 4, border: '1px solid', borderColor: 'divider' }}>
-                        <Typography color="text.secondary">{t('dashboard.noRatings')}</Typography>
-                    </Box>
-                ) : (
-                    flavor.ratings.map((rating: Rating) => (
-                        <Card key={rating.id} elevation={0} sx={{ 
-                            borderRadius: 4, 
-                            border: '1px solid', 
-                            borderColor: 'divider',
-                            bgcolor: (theme) => alpha(theme.palette.background.paper, 0.8)
-                        }}>
-                            <CardContent sx={{ p: 3 }}>
-                                {editMode === rating.id ? (
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                        <MuiRating max={10} value={editScore} onChange={(_, val) => setEditScore(val || 0)} size="large" />
-                                        <MentionTextField 
-                                            multiline 
-                                            rows={3} 
-                                            value={editComment} 
-                                            onChange={(val) => setEditComment(val)}
-                                        />
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                            <Button variant="contained" onClick={() => handleUpdateRating(rating.id)}>{t('common.save')}</Button>
-                                            <Button variant="outlined" onClick={() => setEditMode(null)}>{t('common.cancel')}</Button>
-                                        </Box>
-                                    </Box>
-                                ) : (
-                                    <>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none' }}>
-                                                    <Avatar src={rating.user_avatar || undefined} sx={{ width: 44, height: 44, border: '2px solid', borderColor: 'divider' }}>
-                                                        {!rating.user_avatar && rating.user.charAt(0).toUpperCase()}
-                                                    </Avatar>
-                                                </Link>
-                                                <Box>
-                                                    <Link to={`/profile/${rating.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>{rating.user}</Typography>
-                                                    </Link>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {formatDate(rating.created_at)}
-                                                    </Typography>
-                                                </Box>
-                                            </Box>
-                                            <Stack direction="row" spacing={1} alignItems="center">
-                                                <RatingBadge score={rating.score} />
-                                                {adminMode && (
-                                                    <Button 
-                                                        size="small" variant="outlined" color="secondary"
-                                                        onClick={() => navigate(`/admin-panel/rating/${rating.id}`)}
-                                                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
-                                                    >
-                                                        {t('admin.manageRating')}
-                                                    </Button>
-                                                )}
-                                            </Stack>
-                                        </Box>
+                        {rating.comment ? (
+                          <Typography
+                            variant="body1"
+                            sx={{ mb: 2, lineHeight: 1.6, color: 'text.primary' }}
+                          >
+                            <RichText text={rating.comment} />
+                          </Typography>
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 2, fontStyle: 'italic' }}
+                          >
+                            {t('flavorDetail.noComment')}
+                          </Typography>
+                        )}
 
-                                        {rating.comment ? (
-                                            <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6, color: 'text.primary' }}>
-                                                <RichText text={rating.comment} />
-                                            </Typography>
-                                        ) : (
-                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>No comment provided.</Typography>
-                                        )}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Button
+                            size="small"
+                            startIcon={<CommentIcon fontSize="small" />}
+                            onClick={() =>
+                              setExpandedReplies((prev) => ({
+                                ...prev,
+                                [rating.id]: !prev[rating.id],
+                              }))
+                            }
+                            sx={{
+                              textTransform: 'none',
+                              color: 'text.secondary',
+                              fontWeight: 'bold',
+                            }}
+                          >
+                            {rating.replies.length > 0
+                              ? `${rating.replies.length} ${t('common.replies')}`
+                              : t('common.reply')}
+                          </Button>
 
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Button 
-                                                size="small" 
-                                                startIcon={<CommentIcon fontSize="small" />} 
-                                                onClick={() => setExpandedReplies(prev => ({ ...prev, [rating.id]: !prev[rating.id] }))}
-                                                sx={{ textTransform: 'none', color: 'text.secondary', fontWeight: 'bold' }}
-                                            >
-                                                {rating.replies.length > 0 ? `${rating.replies.length} ${t('common.replies')}` : t('common.reply')}
-                                            </Button>
-                                            
-                                            {currentUser === rating.user && (
-                                                <Box>
-                                                    <Button size="small" onClick={() => startEdit(rating)} sx={{ minWidth: 0, mr: 1, fontWeight: 'bold' }}>{t('common.edit')}</Button>
-                                                    <Button size="small" color="error" onClick={() => handleDeleteRating(rating.id)} sx={{ minWidth: 0, fontWeight: 'bold' }}>{t('common.delete')}</Button>
-                                                </Box>
-                                            )}
-                                        </Box>
-                                    </>
-                                )}
+                          {currentUser === rating.user && (
+                            <Box>
+                              <Button
+                                size="small"
+                                onClick={() => startEdit(rating)}
+                                sx={{ minWidth: 0, mr: 1, fontWeight: 'bold' }}
+                              >
+                                {t('common.edit')}
+                              </Button>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteRating(rating.id)}
+                                sx={{ minWidth: 0, fontWeight: 'bold' }}
+                              >
+                                {t('common.delete')}
+                              </Button>
+                            </Box>
+                          )}
+                        </Box>
+                      </>
+                    )}
 
-                                {/* Replies Section */}
-                                <Collapse in={expandedReplies[rating.id]}>
-                                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                                        {rating.replies.map((reply: any) => (
-                                            <Box key={reply.id} sx={{ mb: 2, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}>
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                        <Link to={`/profile/${reply.user}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>
-                                                                {reply.user} 
-                                                                {reply.user === rating.user && <VerifiedIcon sx={{ fontSize: '0.8rem', color: 'primary.main', ml: 0.5, verticalAlign: 'middle' }} />}
-                                                            </Typography>
-                                                        </Link>
-                                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                                                            {formatDate(reply.created_at)}
-                                                        </Typography>
-                                                    </Box>
-                                                    {currentUser === reply.user && editingReplyId !== reply.id && (
-                                                        <Box>
-                                                            <Button size="small" sx={{ minWidth: 0, py: 0, fontSize: '0.7rem', fontWeight: 'bold' }} onClick={() => { setEditingReplyId(reply.id); setEditReplyText(reply.text); }}>{t('common.edit')}</Button>
-                                                            <Button size="small" color="error" sx={{ minWidth: 0, py: 0, fontSize: '0.7rem', fontWeight: 'bold' }} onClick={() => handleDeleteReply(reply.id)}>{t('common.delete')}</Button>
-                                                        </Box>
-                                                    )}
-                                                    {adminMode && (
-                                                        <Button 
-                                                            size="small" variant="text" color="secondary"
-                                                            onClick={() => navigate(`/admin-panel/reply/${reply.id}`)}
-                                                            sx={{ minWidth: 0, py: 0, fontSize: '0.7rem', fontWeight: 'bold' }}
-                                                        >
-                                                            {t('admin.manageReply')}
-                                                        </Button>
-                                                    )}
-                                                </Box>
-                                                {editingReplyId === reply.id ? (
-                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
-                                                        <MentionTextField 
-                                                            multiline 
-                                                            value={editReplyText} 
-                                                            onChange={(val) => setEditReplyText(val)}
-                                                        />
-                                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                                            <Button variant="contained" size="small" onClick={() => handleUpdateReply(reply.id)}>{t('common.save')}</Button>
-                                                            <Button variant="outlined" size="small" onClick={() => setEditingReplyId(null)}>{t('common.cancel')}</Button>
-                                                        </Box>
-                                                    </Box>
-                                                ) : (
-                                                    <Typography variant="body2" sx={{ lineHeight: 1.5, color: 'text.primary' }}>
-                                                        <RichText text={reply.text} />
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                        ))}
-                                        
-                                        {currentUser && (
-                                            <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
-                                                <MentionTextField 
-                                                    placeholder={t('community.writeReply')} 
-                                                    value={replyInputs[rating.id] || ''} 
-                                                    onChange={(val) => setReplyInputs({ ...replyInputs, [rating.id]: val })} 
-                                                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleReplySubmit(rating.id)}
-                                                />
-                                                <Button 
-                                                    variant="contained" 
-                                                    size="small" 
-                                                    disabled={!replyInputs[rating.id]} 
-                                                    onClick={() => handleReplySubmit(rating.id)} 
-                                                    sx={{ px: 2, fontWeight: 'bold', height: 40, alignSelf: 'flex-start' }}
-                                                >
-                                                    {t('common.reply')}
-                                                </Button>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Collapse>
-                            </CardContent>
-                        </Card>
-                    ))
-                )}
-              </Stack>
-          </Grid>
+                    {/* Replies Section */}
+                    <Collapse in={expandedReplies[rating.id]}>
+                      <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                        {rating.replies.map((reply) => (
+                          <Box
+                            key={reply.id}
+                            sx={{
+                              mb: 2,
+                              pl: 2,
+                              borderLeft: '3px solid',
+                              borderColor: 'primary.main',
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                mb: 0.5,
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Link
+                                  to={`/profile/${reply.user}`}
+                                  style={{ textDecoration: 'none', color: 'inherit' }}
+                                >
+                                  <Typography
+                                    variant="subtitle2"
+                                    sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}
+                                  >
+                                    {reply.user}
+                                    {reply.user === rating.user && (
+                                      <VerifiedIcon
+                                        sx={{
+                                          fontSize: '0.8rem',
+                                          color: 'primary.main',
+                                          ml: 0.5,
+                                          verticalAlign: 'middle',
+                                        }}
+                                      />
+                                    )}
+                                  </Typography>
+                                </Link>
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{ fontSize: '0.7rem' }}
+                                >
+                                  {formatDate(reply.created_at)}
+                                </Typography>
+                              </Box>
+                              {currentUser === reply.user && editingReplyId !== reply.id && (
+                                <Box>
+                                  <Button
+                                    size="small"
+                                    sx={{
+                                      minWidth: 0,
+                                      py: 0,
+                                      fontSize: '0.7rem',
+                                      fontWeight: 'bold',
+                                    }}
+                                    onClick={() => {
+                                      setEditingReplyId(reply.id);
+                                      setEditReplyText(reply.text);
+                                    }}
+                                  >
+                                    {t('common.edit')}
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    color="error"
+                                    sx={{
+                                      minWidth: 0,
+                                      py: 0,
+                                      fontSize: '0.7rem',
+                                      fontWeight: 'bold',
+                                    }}
+                                    onClick={() => handleDeleteReply(reply.id)}
+                                  >
+                                    {t('common.delete')}
+                                  </Button>
+                                </Box>
+                              )}
+                              {isSuperuser && (
+                                <Button
+                                  size="small"
+                                  variant="text"
+                                  color="secondary"
+                                  onClick={() => navigate(`/admin-panel/reply/${reply.id}`)}
+                                  sx={{
+                                    minWidth: 0,
+                                    py: 0,
+                                    fontSize: '0.7rem',
+                                    fontWeight: 'bold',
+                                  }}
+                                >
+                                  {t('admin.manageReply')}
+                                </Button>
+                              )}
+                            </Box>
+                            {editingReplyId === reply.id ? (
+                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+                                <MentionTextField
+                                  multiline
+                                  value={editReplyText}
+                                  onChange={(val) => setEditReplyText(val)}
+                                />
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={() => handleUpdateReply(reply.id)}
+                                  >
+                                    {t('common.save')}
+                                  </Button>
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => setEditingReplyId(null)}
+                                  >
+                                    {t('common.cancel')}
+                                  </Button>
+                                </Box>
+                              </Box>
+                            ) : (
+                              <Typography
+                                variant="body2"
+                                sx={{ lineHeight: 1.5, color: 'text.primary' }}
+                              >
+                                <RichText text={reply.text} />
+                              </Typography>
+                            )}
+                          </Box>
+                        ))}
+
+                        {currentUser && (
+                          <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                            <MentionTextField
+                              placeholder={t('community.writeReply')}
+                              value={replyInputs[rating.id] || ''}
+                              onChange={(val) =>
+                                setReplyInputs({ ...replyInputs, [rating.id]: val })
+                              }
+                              onKeyDown={(e) =>
+                                e.key === 'Enter' && !e.shiftKey && handleReplySubmit(rating.id)
+                              }
+                            />
+                            <Button
+                              variant="contained"
+                              size="small"
+                              disabled={!replyInputs[rating.id]}
+                              onClick={() => handleReplySubmit(rating.id)}
+                              sx={{
+                                px: 2,
+                                fontWeight: 'bold',
+                                height: 40,
+                                alignSelf: 'flex-start',
+                              }}
+                            >
+                              {t('common.reply')}
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    </Collapse>
+                  </CardContent>
+                </GlassCard>
+              ))
+            )}
+          </Stack>
+        </Grid>
       </Grid>
-    </Container>
+    </PageShell>
   );
 };
 

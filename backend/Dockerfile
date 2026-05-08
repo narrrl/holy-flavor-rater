@@ -13,6 +13,13 @@ COPY requirements.txt .
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Non-root user for celery workers/beat. UID matches typical host (1000) so
+# bind-mounted volumes (./backend, ./legacy, media/) stay writable. Override
+# by rebuilding with --build-arg APP_UID=<your uid> if your host differs.
+ARG APP_UID=1000
+ARG APP_GID=1000
+RUN groupadd -g ${APP_GID} app && useradd -u ${APP_UID} -g app -m -s /bin/bash app
+
 # Copy the rest of the backend code
 COPY . .
 

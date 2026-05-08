@@ -32,9 +32,11 @@ The easiest way to get the full stack (Backend + Frontend + DB) running behind a
     ```
 3.  **Start Services:**
     ```bash
-    docker-compose up -d --build
+    docker compose up -d --build
     ```
-    *Note: On first startup, the backend will automatically migrate, sync the flavor catalog, and clean up any duplicates.*
+    *Note: On first startup, the backend runs `migrate` + `collectstatic`, then seeds the flavor catalog, legacy data, and banner configurations **once** (gated by a `/app/.seeded` marker so subsequent restarts don't repeat the work). Re-run individual seeds later from the admin Jobs tab.*
+
+    The stack brings up six containers: `redis` (broker + cache), `backend` (Gunicorn), `worker` (Celery worker), `beat` (Celery beat w/ `django_celery_beat.DatabaseScheduler`), `flower` (Celery monitoring UI on `:5555`), and `frontend` (Nginx).
 
 ### Option 2: Local Manual Setup (Development)
 
@@ -51,11 +53,13 @@ The easiest way to get the full stack (Backend + Frontend + DB) running behind a
     python manage.py migrate
     python manage.py sync_flavors
     python manage.py seed_legacy_flavors
+    python manage.py seed_banners
     ```
 3.  **Run Server:**
     ```bash
     python manage.py runserver
     ```
+    *By default `holy_backend.settings.dev` is active, which sets `CELERY_TASK_ALWAYS_EAGER=true` — tasks run inline with no broker required. To exercise the full async path locally, start a Redis server and run `celery -A holy_backend worker -l info` + `celery -A holy_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler` in separate terminals.*
 
 #### Frontend
 1.  **Navigate and Install:**
@@ -76,9 +80,10 @@ The Holy Flavor Rater uses a modern **decoupled architecture**:
 
 ### Backend (Django REST Framework)
 - **Models:** Custom User model, Flavors (with category constraints), Ratings (with mention parsing), and Dynamic Banners.
-- **Automation:** Management commands for periodic Shopify API syncing and database deduplication.
-- **Security:** Token-based authentication, CSRF protection, and email-verified account activation.
-- **Monitoring:** Integrated `/health/` endpoint for Docker container status.
+- **Async jobs:** Celery workers backed by Redis handle Shopify syncs, duplicate cleanup, legacy seeding, banner seeding, database backups, and transactional email. Scheduling is owned by `django_celery_beat` (`PeriodicTask` + `IntervalSchedule`) and editable from the admin UI Jobs tab.
+- **Caching & rate-limiting:** Django cache uses Redis (`RedisCache` on DB 1). `django_ratelimit` consumes the same cache.
+- **Security:** JWT authentication (SimpleJWT) with refresh-token rotation, CSRF protection, and email-verified account activation.
+- **Monitoring:** `/health/` endpoint for the backend; Flower UI on `:5555` for queue + worker state (basic-auth gated).
 
 ### Frontend (React 19 + TypeScript)
 - **State Management:** React Hooks and local state for high performance.
@@ -101,10 +106,12 @@ bash scripts/install-hooks.sh
 ```
 
 ### Management Commands
+Each is also exposed as a Celery task (`api.<name>`) and triggerable from the admin Jobs tab.
 - `python manage.py sync_flavors`: Syncs the latest products from the official Holy Energy API.
 - `python manage.py cleanup_duplicates`: Merges duplicate entries and maintains rating integrity.
-- `python manage.py seed_banners`: Updates procedurally generated banner configurations from JSON.
-- `python manage.py backup_db`: Creates a consistent SQLite snapshot.
+- `python manage.py seed_legacy_flavors`: Loads retired flavors from `legacy/*.json`.
+- `python manage.py seed_banners`: Updates procedurally generated banner configurations from `backend/banners/*.json`.
+- `python manage.py backup_db` (`--full` for media too): Creates a consistent SQLite snapshot in `backend/backups/`.
 
 ---
 
@@ -139,9 +146,15 @@ Add this to your `crontab -e` to backup every night at 2:00 AM:
 
 Ensure your `.env` contains:
 - `DEBUG=false`
+- `DJANGO_SETTINGS_MODULE=holy_backend.settings.prod`
 - `SECRET_KEY`: A long random string.
 - `ALLOWED_HOSTS`: Your domain (e.g., `holy.narl.io`).
 - `FRONTEND_URL`: For one-click email verification links.
+- `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND`: Default `redis://redis:6379/0` works inside the compose network.
+- `DJANGO_CACHE_URL`: Default `redis://redis:6379/1` (DB 1 to avoid colliding with celery).
+- `FLOWER_BASIC_AUTH`: `user:password` for the Flower UI — **change from the default before exposing**.
+
+Restrict Flower's port `5555` (or reverse-proxy it behind basic-auth + TLS) since it exposes task payloads and worker internals.
 
 ## 📄 License
 MIT
