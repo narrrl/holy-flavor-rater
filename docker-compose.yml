@@ -23,6 +23,7 @@ services:
     build:
       context: ./backend
     container_name: holy-backend
+    user: "app"
     restart: unless-stopped
     networks:
       - holy-net
