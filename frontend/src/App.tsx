@@ -53,6 +53,7 @@ const AdminBanners = lazy(() => import('./pages/admin/AdminBanners'));
 const AdminJobs = lazy(() => import('./pages/admin/AdminJobs'));
 const AdminTickets = lazy(() => import('./pages/admin/AdminTickets'));
 const AdminConfig = lazy(() => import('./pages/admin/AdminConfig'));
+const AdminFlavors = lazy(() => import('./pages/admin/AdminFlavors'));
 const AdminUserDetail = lazy(() => import('./pages/AdminUserDetail'));
 const AdminRatingDetail = lazy(() => import('./pages/AdminRatingDetail'));
 const AdminReplyDetail = lazy(() => import('./pages/AdminReplyDetail'));
@@ -338,6 +339,7 @@ const App: React.FC = () => {
                   <Route path="users" element={<AdminUsers />} />
                   <Route path="users/:id" element={<AdminUserDetail />} />
                   <Route path="user/:id" element={<AdminUserDetail />} />
+                  <Route path="flavors" element={<AdminFlavors />} />
                   <Route path="banners" element={<AdminBanners />} />
                   <Route path="jobs" element={<AdminJobs />} />
                   <Route path="tickets" element={<AdminTickets />} />

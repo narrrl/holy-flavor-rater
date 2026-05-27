@@ -16,6 +16,7 @@ import WallpaperIcon from '@mui/icons-material/Wallpaper';
 import TerminalIcon from '@mui/icons-material/Terminal';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import TuneIcon from '@mui/icons-material/Tune';
+import LocalDrinkIcon from '@mui/icons-material/LocalDrink';
 import { useTranslation } from 'react-i18next';
 import { PageShell } from '../../components/ui';
 import { useTitle } from '../../hooks/useTitle';
@@ -23,6 +24,7 @@ import { useTitle } from '../../hooks/useTitle';
 const SECTIONS = [
   { value: 'overview', icon: <SettingsIcon /> },
   { value: 'users', icon: <PeopleIcon /> },
+  { value: 'flavors', icon: <LocalDrinkIcon /> },
   { value: 'banners', icon: <WallpaperIcon /> },
   { value: 'jobs', icon: <TerminalIcon /> },
   { value: 'tickets', icon: <HelpOutlineIcon /> },

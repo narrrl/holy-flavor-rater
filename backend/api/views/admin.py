@@ -8,7 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from api.models import Job, Rating, Reply, SystemConfig, Ticket, User
+from api.models import Flavor, Job, Rating, Reply, SystemConfig, Ticket, User
+from api.services.flavor import merge_flavors
 from api.serializers import (
     AdminUserDetailSerializer,
     AdminUserListSerializer,
@@ -153,6 +154,32 @@ class AdminViewSet(viewsets.ViewSet):
 
         _sync_periodic_task(job)
         return Response(JobSerializer(job).data)
+
+    @action(detail=False, methods=["post"])
+    def merge_flavors(self, request: Request) -> Response:
+        keep_id = request.data.get("keep_id")
+        remove_id = request.data.get("remove_id")
+
+        if not keep_id or not remove_id:
+            return Response(
+                {"error": "Both keep_id and remove_id are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            keep_flavor = Flavor.objects.get(pk=keep_id)
+            remove_flavor = Flavor.objects.get(pk=remove_id)
+        except Flavor.DoesNotExist:
+            return Response({"error": "One or both flavors not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if keep_flavor.category_id != remove_flavor.category_id:
+            return Response(
+                {"error": "Flavors must belong to the same category"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        merge_flavors(keep_flavor, remove_flavor)
+        return Response({"status": "Flavors merged successfully"})
 
     @action(detail=False, methods=["post"])
     def send_test_email(self, request: Request) -> Response:
