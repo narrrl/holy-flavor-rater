@@ -16,7 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
-import { useSnackbar } from '../../contexts/NotificationContext';
+import { useToast } from '../../hooks/useToast';
 import { useFlavorsList } from '../../api/queries/useFlavorsList';
 import api from '../../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,7 @@ import { queryKeys } from '../../api/keys';
 
 const AdminFlavors: React.FC = () => {
   const { t } = useTranslation();
-  const { notify } = useSnackbar();
+  const { notify } = useToast();
   const queryClient = useQueryClient();
   const { data: flavors = [], isLoading } = useFlavorsList();
 
@@ -80,7 +80,7 @@ const AdminFlavors: React.FC = () => {
           </Typography>
 
           <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={5}>
+            <Grid size={{ xs: 12, md: 5 }}>
               <Autocomplete
                 options={flavors}
                 getOptionLabel={(option) => `${option.name} (${option.category_name})`}
@@ -97,11 +97,11 @@ const AdminFlavors: React.FC = () => {
               />
             </Grid>
             
-            <Grid item xs={12} md={2} sx={{ textAlign: 'center' }}>
+            <Grid size={{ xs: 12, md: 2 }} sx={{ textAlign: 'center' }}>
               <Typography variant="h4">→</Typography>
             </Grid>
 
-            <Grid item xs={12} md={5}>
+            <Grid size={{ xs: 12, md: 5 }}>
               <Autocomplete
                 options={flavors}
                 getOptionLabel={(option) => `${option.name} (${option.category_name})`}
@@ -118,7 +118,7 @@ const AdminFlavors: React.FC = () => {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12 }}>
               <Divider sx={{ my: 1 }} />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
