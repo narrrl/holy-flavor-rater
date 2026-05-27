@@ -1,48 +1,54 @@
 from django.db import transaction
-from api.models import Flavor, Rating, Reply
+
+from api.models import Flavor, Notification, Rating, Reply
+
+
+def _quality(rating: Rating) -> tuple[int, object]:
+    """Rank a rating for conflict resolution: longest comment wins, newer breaks ties."""
+    return (len(rating.comment or ""), rating.created_at)
+
 
 def merge_flavors(keep_flavor: Flavor, remove_flavor: Flavor) -> None:
     """
     Merges remove_flavor into keep_flavor.
-    Re-assigns all ratings and ensures integrity by keeping the most detailed
-    review if a user has rated both.
+
+    Re-assigns all ratings. When a user rated both flavors, the higher-quality
+    review survives (longest comment, newer on ties) and its replies +
+    notifications are re-pointed to the surviving row.
     """
     if keep_flavor.id == remove_flavor.id:
         return
 
     with transaction.atomic():
-        # Re-assign or resolve ratings
-        remove_ratings = Rating.objects.filter(flavor=remove_flavor)
-        
-        for rating in remove_ratings:
-            # Check if user already rated the target flavor
-            existing_rating = Rating.objects.filter(user=rating.user, flavor=keep_flavor).first()
-            
-            if not existing_rating:
-                # Safe to just move it
-                rating.flavor = keep_flavor
-                rating.save()
-            else:
-                # Conflict Resolution: Keep the longest comment
-                keep_comment = existing_rating.comment or ""
-                remove_comment = rating.comment or ""
-                
-                if len(remove_comment) > len(keep_comment):
-                    # Update the one we are keeping to have the better content from the one being removed
-                    existing_rating.score = rating.score
-                    existing_rating.comment = rating.comment
-                    existing_rating.save()
-                
-                # Move ALL replies from the rating being deleted to the one being kept
-                Reply.objects.filter(rating=rating).update(rating=existing_rating)
-                
-                # Delete the redundant rating
-                rating.delete()
+        for incoming in Rating.objects.filter(flavor=remove_flavor):
+            existing = Rating.objects.filter(user=incoming.user, flavor=keep_flavor).first()
 
-        # Transfer external_id if keep_flavor doesn't have one
-        if not keep_flavor.external_id and remove_flavor.external_id:
-            keep_flavor.external_id = remove_flavor.external_id
-            keep_flavor.save(update_fields=["external_id"])
+            if existing is None:
+                # No conflict — move the rating wholesale.
+                incoming.flavor = keep_flavor
+                incoming.save(update_fields=["flavor"])
+                continue
 
-        # Finally, delete the flavor
+            # Conflict: keep one row (unique_together user+flavor). If the
+            # incoming review is better, copy its content + timestamp onto the
+            # surviving row so the comment and its date stay consistent.
+            if _quality(incoming) > _quality(existing):
+                existing.score = incoming.score
+                existing.comment = incoming.comment
+                existing.created_at = incoming.created_at  # auto_now_add ignores updates
+                existing.save(update_fields=["score", "comment", "created_at"])
+
+            # Preserve community feedback attached to the discarded rating.
+            Reply.objects.filter(rating=incoming).update(rating=existing)
+            Notification.objects.filter(rating=incoming).update(rating=existing)
+            incoming.delete()
+
+        # Carry over the Shopify link if the kept flavor lacks one. external_id
+        # is unique, so the donor row must be gone before we assign it.
+        inherited_external_id = remove_flavor.external_id if not keep_flavor.external_id else None
+
         remove_flavor.delete()
+
+        if inherited_external_id is not None:
+            keep_flavor.external_id = inherited_external_id
+            keep_flavor.save(update_fields=["external_id"])
