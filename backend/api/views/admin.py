@@ -170,7 +170,9 @@ class AdminViewSet(viewsets.ViewSet):
             keep_flavor = Flavor.objects.get(pk=keep_id)
             remove_flavor = Flavor.objects.get(pk=remove_id)
         except Flavor.DoesNotExist:
-            return Response({"error": "One or both flavors not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "One or both flavors not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         if keep_flavor.category_id != remove_flavor.category_id:
             return Response(

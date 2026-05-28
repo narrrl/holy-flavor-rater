@@ -43,7 +43,9 @@ class RecategorizeTests(TestCase):
         flavor = Flavor.objects.create(
             name="Reinigungsbürste – Syrup Bottle", category=syrup, external_id=42
         )
-        self._run([_product(42, "Reinigungsbürste – Syrup Bottle", "42 - Syrup Bottle")], apply=True)
+        self._run(
+            [_product(42, "Reinigungsbürste – Syrup Bottle", "42 - Syrup Bottle")], apply=True
+        )
         flavor.refresh_from_db()
         self.assertEqual(flavor.category_id, self.packs.id)
 
