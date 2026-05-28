@@ -43,11 +43,14 @@ const AdminFlavors: React.FC = () => {
         remove_id: removeFlavor.id,
       });
 
-      notify({ message: t('admin.mergeSuccess', { defaultValue: 'Flavors merged successfully' }), severity: 'success' });
-      
+      notify({
+        message: t('admin.mergeSuccess', { defaultValue: 'Flavors merged successfully' }),
+        severity: 'success',
+      });
+
       // Invalidate queries
       queryClient.invalidateQueries({ queryKey: queryKeys.flavors({ scope: 'all' }) });
-      
+
       // Reset selection
       setKeepFlavor(null);
       setRemoveFlavor(null);
@@ -74,8 +77,9 @@ const AdminFlavors: React.FC = () => {
             {t('admin.mergeFlavors', { defaultValue: 'Merge Flavors' })}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            {t('admin.mergeFlavorsDesc', { 
-              defaultValue: 'Combine two flavors into one. Ratings from the source flavor will be moved to the target flavor. If a user rated both, the more detailed review is kept.' 
+            {t('admin.mergeFlavorsDesc', {
+              defaultValue:
+                'Combine two flavors into one. Ratings from the source flavor will be moved to the target flavor. If a user rated both, the more detailed review is kept.',
             })}
           </Typography>
 
@@ -88,15 +92,17 @@ const AdminFlavors: React.FC = () => {
                 onChange={(_, newValue) => setRemoveFlavor(newValue)}
                 loading={isLoading}
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label={t('admin.flavorToRemove', { defaultValue: 'Flavor to Remove (Source)' })} 
-                    helperText={t('admin.flavorToRemoveHint', { defaultValue: 'This flavor will be DELETED' })}
+                  <TextField
+                    {...params}
+                    label={t('admin.flavorToRemove', { defaultValue: 'Flavor to Remove (Source)' })}
+                    helperText={t('admin.flavorToRemoveHint', {
+                      defaultValue: 'This flavor will be DELETED',
+                    })}
                   />
                 )}
               />
             </Grid>
-            
+
             <Grid size={{ xs: 12, md: 2 }} sx={{ textAlign: 'center' }}>
               <Typography variant="h4">→</Typography>
             </Grid>
@@ -109,10 +115,12 @@ const AdminFlavors: React.FC = () => {
                 onChange={(_, newValue) => setKeepFlavor(newValue)}
                 loading={isLoading}
                 renderInput={(params) => (
-                  <TextField 
-                    {...params} 
+                  <TextField
+                    {...params}
                     label={t('admin.flavorToKeep', { defaultValue: 'Flavor to Keep (Target)' })}
-                    helperText={t('admin.flavorToKeepHint', { defaultValue: 'This flavor will PRESERVED' })}
+                    helperText={t('admin.flavorToKeepHint', {
+                      defaultValue: 'This flavor will PRESERVED',
+                    })}
                   />
                 )}
               />
@@ -136,13 +144,16 @@ const AdminFlavors: React.FC = () => {
       </Card>
 
       <Dialog open={confirmOpen} onClose={() => !isMerging && setConfirmOpen(false)}>
-        <DialogTitle>{t('admin.confirmMergeTitle', { defaultValue: 'Confirm Flavor Merge' })}</DialogTitle>
+        <DialogTitle>
+          {t('admin.confirmMergeTitle', { defaultValue: 'Confirm Flavor Merge' })}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
             {t('admin.confirmMergeText', {
-              defaultValue: 'Are you sure you want to merge "{{remove}}" into "{{keep}}"? This action is irreversible. "{{remove}}" will be deleted, and all its ratings will be transferred.',
+              defaultValue:
+                'Are you sure you want to merge "{{remove}}" into "{{keep}}"? This action is irreversible. "{{remove}}" will be deleted, and all its ratings will be transferred.',
               remove: removeFlavor?.name,
-              keep: keepFlavor?.name
+              keep: keepFlavor?.name,
             })}
           </DialogContentText>
         </DialogContent>
@@ -150,14 +161,16 @@ const AdminFlavors: React.FC = () => {
           <Button onClick={() => setConfirmOpen(false)} disabled={isMerging}>
             {t('common.cancel', { defaultValue: 'Cancel' })}
           </Button>
-          <Button 
-            onClick={handleMerge} 
-            color="warning" 
-            variant="contained" 
-            autoFocus 
+          <Button
+            onClick={handleMerge}
+            color="warning"
+            variant="contained"
+            autoFocus
             disabled={isMerging}
           >
-            {isMerging ? t('common.processing', { defaultValue: 'Processing...' }) : t('admin.confirmMerge', { defaultValue: 'Merge Flavors' })}
+            {isMerging
+              ? t('common.processing', { defaultValue: 'Processing...' })
+              : t('admin.confirmMerge', { defaultValue: 'Merge Flavors' })}
           </Button>
         </DialogActions>
       </Dialog>
