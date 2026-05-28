@@ -113,6 +113,20 @@ Each is also exposed as a Celery task (`api.<name>`) and triggerable from the ad
 - `python manage.py seed_banners`: Updates procedurally generated banner configurations from `backend/banners/*.json`.
 - `python manage.py backup_db` (`--full` for media too): Creates a consistent SQLite snapshot in `backend/backups/`.
 
+#### Categories & `recategorize_flavors`
+
+`sync_flavors` derives a flavor's category from the Shopify `product_type` (e.g. `42 - Syrup Bottle` → **Syrup**), stripping the numeric prefix and the form-factor word. Any new drink line Holy ships **auto-creates** its category on the next sync — no code change needed. Packs, shakers, merch, stickers and other non-drink types funnel to **Packs and other**.
+
+One catch: `sync_flavors` only assigns a category when it **creates** a row. Existing flavors keep their original category, so a categorization change won't retro-apply to rows already in the DB. Use the one-off command below to fix mis-shelved rows. It is run manually (not exposed as a Celery task / Jobs-tab entry) and is **dry-run by default** — nothing is written without `--apply`.
+
+```bash
+python manage.py recategorize_flavors                      # dry-run: report what would move
+python manage.py recategorize_flavors --apply              # persist the moves
+python manage.py recategorize_flavors --apply --merge-collisions  # also fold name-clashes
+```
+
+It re-fetches the catalog, matches rows by `external_id`, and re-runs the exact `sync_flavors` categorization logic. Rows not in the catalog (discontinued) are never touched. When a move would collide with an existing flavor of the same name in the target category (`UniqueConstraint(name, category)`), it is skipped and reported unless `--merge-collisions` is passed, which folds the rows via `merge_flavors` (preserving ratings and replies).
+
 ---
 
 ## 💾 Backups & Restoration

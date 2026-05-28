@@ -7,10 +7,92 @@ from urllib.parse import urlparse
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.utils.text import slugify
 
 from api.models import Category, Flavor
 
 _DOWNLOAD_WORKERS = 8
+
+# Shopify product_type looks like "42 - Syrup Bottle" / "01 - Energy Bundle".
+# Strip the numeric prefix, then the trailing form-factor word, to get the
+# drink family ("Syrup", "Energy", "Iced Tea") that becomes a Category.
+_PRODUCT_TYPE_PREFIX = re.compile(r"^\s*\d+\s*[-–—]\s*")
+
+# Form-factor words are Holy's internal SKU taxonomy, NOT a pack signal:
+# "Energy Bundle" is a single can, "Caipirinha Crab" is its title. Pack
+# detection stays title-driven (see _is_pack). These only get stripped to
+# reveal the family.
+_FORM_WORDS = frozenset(
+    {"bundle", "sachet", "sachetbox", "bottle", "box", "pack", "set", "sachets"}
+)
+
+# When the product_type family itself is one of these, it's not a drink line —
+# funnel to "Packs and other" instead of minting a category for it.
+_NON_FLAVOR_TOKENS = frozenset(
+    {
+        "value",
+        "shaker",
+        "merch",
+        "sticker",
+        "packaging",
+        "material",
+        "other",
+        "items",
+        "mixed",
+        "collector",
+        "collector's",
+        "free",
+        "products",
+        "naturalrabatt",
+        "sample",
+        "samplebox",
+    }
+)
+
+_PACKS_SLUG = "packs-and-other"
+_PACKS_NAME = "Packs and other"
+
+_PACK_TITLE_KEYWORDS = (
+    "bundle",
+    "set",
+    "box",
+    "probe",
+    "sample",
+    "taster",
+    "starter",
+    "collection",
+    "probier",
+)
+
+# Fallback only — product_type covers these, but some rows lack one.
+_TAG_FAMILY = (
+    (("holy energy", "energy"), "Energy"),
+    (("holy hydration", "hydration"), "Hydration"),
+    (("holy iced tea", "iced tea"), "Iced Tea"),
+    (("milkshake",), "Milkshake"),
+)
+
+
+def _family_from_product_type(product_type: str) -> str | None:
+    """Return the drink family from a Shopify product_type, or None.
+
+    "42 - Syrup Bottle" -> "Syrup"; "Value Pack" / "Shaker" -> None (non-flavor).
+    """
+    if not product_type:
+        return None
+    stripped = _PRODUCT_TYPE_PREFIX.sub("", product_type).strip()
+    if not stripped:
+        return None
+
+    tokens = stripped.split()
+    if any(tok.lower() in _NON_FLAVOR_TOKENS for tok in tokens):
+        return None
+
+    while tokens and tokens[-1].lower() in _FORM_WORDS:
+        tokens.pop()
+    if not tokens:
+        return None
+    return " ".join(tokens)
 
 
 class Command(BaseCommand):
@@ -80,6 +162,40 @@ class Command(BaseCommand):
                     results[i] = saved
         return [results[i] for i, _, _ in targets if i in results]
 
+    @staticmethod
+    def _category_for_family(family_name: str) -> Category:
+        """get_or_create a Category from a family name. slugify('Iced Tea') == 'iced-tea',
+        which matches the pre-existing slugs, so known families are reused not duplicated."""
+        slug = slugify(family_name)
+        return Category.objects.get_or_create(slug=slug, defaults={"name": family_name})[0]
+
+    @staticmethod
+    def _is_pack(title_lower: str, tags_lower: list[str]) -> bool:
+        if any(k in title_lower for k in _PACK_TITLE_KEYWORDS):
+            return True
+        return "shaker" in title_lower or "merch" in tags_lower
+
+    def resolve_category(self, product, title_lower, tags_lower, packs_category) -> Category | None:
+        """Pick a Category for a Shopify product. None means skip (no usable signal).
+
+        Order: pack detection (title/tags) -> product_type family (dynamic, auto-creates)
+        -> tag-based family fallback -> shaker tag -> skip.
+        """
+        if self._is_pack(title_lower, tags_lower):
+            return packs_category
+
+        family = _family_from_product_type(product.get("product_type", ""))
+        if family:
+            return self._category_for_family(family)
+
+        for keywords, name in _TAG_FAMILY:
+            if any(k in tags_lower for k in keywords):
+                return self._category_for_family(name)
+
+        if "shaker" in tags_lower:
+            return packs_category
+        return None
+
     def handle(self, *args, **options):
         url = "https://weareholy.com/products.json?limit=250"
         self.stdout.write(f"Fetching from {url}...")
@@ -95,21 +211,9 @@ class Command(BaseCommand):
         products = data.get("products", [])
         self.stdout.write(f"Found {len(products)} products.")
 
-        cat_map = {
-            "energy": Category.objects.get_or_create(name="Energy", defaults={"slug": "energy"})[0],
-            "hydration": Category.objects.get_or_create(
-                name="Hydration", defaults={"slug": "hydration"}
-            )[0],
-            "iced-tea": Category.objects.get_or_create(
-                name="Iced Tea", defaults={"slug": "iced-tea"}
-            )[0],
-            "milkshake": Category.objects.get_or_create(
-                name="Milkshake", defaults={"slug": "milkshake"}
-            )[0],
-            "packs": Category.objects.get_or_create(
-                name="Packs and other", defaults={"slug": "packs-and-other"}
-            )[0],
-        }
+        packs_category = Category.objects.get_or_create(
+            slug=_PACKS_SLUG, defaults={"name": _PACKS_NAME}
+        )[0]
 
         created_count = 0
         updated_count = 0
@@ -124,40 +228,9 @@ class Command(BaseCommand):
             tags_lower = [t.lower() for t in tags]
             title_lower = title.lower()
 
-            is_pack = False
-            pack_keywords = [
-                "bundle",
-                "set",
-                "box",
-                "probe",
-                "sample",
-                "taster",
-                "starter",
-                "collection",
-                "probier",
-            ]
-            if any(k in title_lower for k in pack_keywords):
-                is_pack = True
-            if "shaker" in title_lower or "merch" in tags_lower:
-                is_pack = True
-
-            category = None
-            if is_pack:
-                category = cat_map["packs"]
-            elif "holy energy" in tags_lower or "energy" in tags_lower:
-                category = cat_map["energy"]
-            elif "holy hydration" in tags_lower or "hydration" in tags_lower:
-                category = cat_map["hydration"]
-            elif "holy iced tea" in tags_lower or "iced tea" in tags_lower:
-                category = cat_map["iced-tea"]
-            elif "milkshake" in tags_lower:
-                category = cat_map["milkshake"]
-
+            category = self.resolve_category(p, title_lower, tags_lower, packs_category)
             if not category:
-                if "shaker" in tags_lower:
-                    category = cat_map["packs"]
-                else:
-                    continue
+                continue
 
             variants = p.get("variants", [])
             is_available = any(v.get("available") for v in variants)
