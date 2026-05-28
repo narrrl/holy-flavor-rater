@@ -24,17 +24,28 @@ class RecategorizeTests(TestCase):
 
     def test_dry_run_does_not_move(self) -> None:
         # Mis-shelved: a real syrup product currently parked in packs.
-        flavor = Flavor.objects.create(name="Reinigungsbürste", category=self.packs, external_id=42)
-        self._run([_product(42, "Reinigungsbürste", "42 - Syrup Bottle")])
+        flavor = Flavor.objects.create(name="Tropical Punch", category=self.packs, external_id=42)
+        self._run([_product(42, "Tropical Punch", "42 - Syrup Bottle")])
         flavor.refresh_from_db()
         self.assertEqual(flavor.category_id, self.packs.id)
         self.assertFalse(Category.objects.filter(slug="syrup").exists())
 
     def test_apply_moves_and_creates_category(self) -> None:
-        flavor = Flavor.objects.create(name="Reinigungsbürste", category=self.packs, external_id=42)
-        self._run([_product(42, "Reinigungsbürste", "42 - Syrup Bottle")], apply=True)
+        flavor = Flavor.objects.create(name="Tropical Punch", category=self.packs, external_id=42)
+        self._run([_product(42, "Tropical Punch", "42 - Syrup Bottle")], apply=True)
         flavor.refresh_from_db()
         self.assertEqual(flavor.category.slug, "syrup")
+
+    def test_accessory_moves_out_of_drink_category(self) -> None:
+        # The original bug: a cleaning brush synced into Syrup. Recategorize
+        # must shelve it under packs, not leave it as a drink.
+        syrup = Category.objects.create(name="Syrup", slug="syrup")
+        flavor = Flavor.objects.create(
+            name="Reinigungsbürste – Syrup Bottle", category=syrup, external_id=42
+        )
+        self._run([_product(42, "Reinigungsbürste – Syrup Bottle", "42 - Syrup Bottle")], apply=True)
+        flavor.refresh_from_db()
+        self.assertEqual(flavor.category_id, self.packs.id)
 
     def test_unchanged_row_stays(self) -> None:
         flavor = Flavor.objects.create(name="Mojito Macaw", category=self.energy, external_id=1)

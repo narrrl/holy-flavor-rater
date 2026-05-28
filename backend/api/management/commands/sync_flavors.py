@@ -64,6 +64,17 @@ _PACK_TITLE_KEYWORDS = (
     "probier",
 )
 
+# Accessories (cleaning brushes, spare parts) inherit a drink form-factor in
+# their product_type ("Reinigungsbürste – Syrup Bottle" -> "42 - Syrup Bottle"),
+# so family resolution would mis-shelve them as that drink. The title is the
+# only signal. Funnel to "Packs and other" like shakers.
+_ACCESSORY_TITLE_KEYWORDS = (
+    "bürste",
+    "reinigung",
+    "ersatzteil",
+    "zubehör",
+)
+
 # Fallback only — product_type covers these, but some rows lack one.
 _TAG_FAMILY = (
     (("holy energy", "energy"), "Energy"),
@@ -178,10 +189,13 @@ class Command(BaseCommand):
     def resolve_category(self, product, title_lower, tags_lower, packs_category) -> Category | None:
         """Pick a Category for a Shopify product. None means skip (no usable signal).
 
-        Order: pack detection (title/tags) -> product_type family (dynamic, auto-creates)
-        -> tag-based family fallback -> shaker tag -> skip.
+        Order: pack detection (title/tags) -> accessory title -> product_type family
+        (dynamic, auto-creates) -> tag-based family fallback -> shaker tag -> skip.
         """
         if self._is_pack(title_lower, tags_lower):
+            return packs_category
+
+        if any(k in title_lower for k in _ACCESSORY_TITLE_KEYWORDS):
             return packs_category
 
         family = _family_from_product_type(product.get("product_type", ""))
@@ -195,6 +209,118 @@ class Command(BaseCommand):
         if "shaker" in tags_lower:
             return packs_category
         return None
+
+    @staticmethod
+    def _is_syrup_variant_product(product) -> bool:
+        """True for the single 'Syrup' article whose variants ARE the flavors.
+
+        Unlike every other line, syrup has no standalone per-flavor products — it
+        ships as one bundle ('3er Box Syrup') with a 'Flavor' option. Its variants
+        are expanded into individual Flavor rows (see _sync_syrup_variants).
+        """
+        if _family_from_product_type(product.get("product_type", "")) != "Syrup":
+            return False
+        has_flavor_option = any(
+            (o.get("name") or "").lower() == "flavor" for o in product.get("options", [])
+        )
+        return has_flavor_option and len(product.get("variants", [])) > 1
+
+    def _upsert_flavor(
+        self,
+        *,
+        external_id,
+        name,
+        category,
+        description,
+        shop_url,
+        is_available,
+        image_url,
+        image_urls,
+        dir_slug,
+    ) -> bool:
+        """Find-or-create one Flavor row and refresh its fields. Returns True if created.
+
+        Match order: external_id -> exact name in category -> case-insensitive name.
+        """
+        flavor = Flavor.objects.filter(external_id=external_id).first()
+        if not flavor:
+            flavor = Flavor.objects.filter(name=name, category=category).first()
+        if not flavor:
+            flavor = Flavor.objects.filter(name__iexact=name, category=category).first()
+
+        created = flavor is None
+        if flavor is None:
+            flavor = Flavor(external_id=external_id, name=name, category=category, is_legacy=False)
+        else:
+            if not flavor.external_id:
+                flavor.external_id = external_id
+            if flavor.is_legacy:
+                flavor.is_legacy = False
+
+        if (
+            flavor.name != name
+            and not Flavor.objects.filter(name=name, category=category)
+            .exclude(pk=flavor.pk)
+            .exists()
+        ):
+            flavor.name = name
+
+        flavor.description = description
+        flavor.shop_url = shop_url
+        flavor.is_available = is_available
+
+        local_paths = self.download_gallery(image_urls, dir_slug)
+        if local_paths:
+            flavor.local_image_paths = local_paths
+            # Drop main_image_path if it points to a file no longer in the gallery
+            if flavor.main_image_path and flavor.main_image_path not in local_paths:
+                flavor.main_image_path = None
+        elif not flavor.local_image_paths:
+            # No new paths and nothing previously stored — leave both empty
+            flavor.main_image_path = None
+
+        flavor.image_url = image_url
+        flavor.image_urls = image_urls
+        flavor.save()
+        return created
+
+    def _sync_syrup_variants(self, product, synced_external_ids) -> tuple[int, int]:
+        """Expand the syrup bundle's variants into individual Syrup flavors.
+
+        Each variant id becomes a Flavor.external_id (BigInt, unique) under the Syrup
+        category; the variant's featured_image is its per-flavor image. Returns
+        (created, updated) counts.
+        """
+        category = self._category_for_family("Syrup")
+        description = self.clean_html(product.get("body_html", ""))
+        handle = product.get("handle")
+        shop_url = f"https://weareholy.com/products/{handle}" if handle else None
+
+        created = updated = 0
+        for v in product.get("variants", []):
+            name = (v.get("option1") or v.get("title") or "").strip()
+            variant_id = v.get("id")
+            if not name or variant_id is None:
+                continue
+            featured = v.get("featured_image") or {}
+            image_url = featured.get("src")
+            image_urls = [image_url] if image_url else []
+            if self._upsert_flavor(
+                external_id=variant_id,
+                name=name,
+                category=category,
+                description=description,
+                shop_url=shop_url,
+                is_available=bool(v.get("available")),
+                image_url=image_url,
+                image_urls=image_urls,
+                dir_slug=str(variant_id),
+            ):
+                created += 1
+            else:
+                updated += 1
+            synced_external_ids.append(variant_id)
+        return created, updated
 
     def handle(self, *args, **options):
         url = "https://weareholy.com/products.json?limit=250"
@@ -217,7 +343,7 @@ class Command(BaseCommand):
 
         created_count = 0
         updated_count = 0
-        synced_external_ids = []
+        synced_external_ids: list[int] = []
 
         for p in products:
             title = p.get("title", "").strip()
@@ -227,6 +353,13 @@ class Command(BaseCommand):
 
             tags_lower = [t.lower() for t in tags]
             title_lower = title.lower()
+
+            # Syrup ships as one article whose variants are the flavors — expand them.
+            if self._is_syrup_variant_product(p):
+                c, u = self._sync_syrup_variants(p, synced_external_ids)
+                created_count += c
+                updated_count += u
+                continue
 
             category = self.resolve_category(p, title_lower, tags_lower, packs_category)
             if not category:
@@ -241,55 +374,20 @@ class Command(BaseCommand):
             handle = p.get("handle")
             shop_url = f"https://weareholy.com/products/{handle}" if handle else None
 
-            # Find or create - be very specific to avoid duplicates
-            # 1. Try external_id
-            flavor = Flavor.objects.filter(external_id=p["id"]).first()
-
-            if not flavor:
-                # 2. Try exact name match in category
-                flavor = Flavor.objects.filter(name=title, category=category).first()
-
-            if not flavor:
-                # 3. Try case-insensitive name match in category (safety for whitespace/case)
-                flavor = Flavor.objects.filter(name__iexact=title, category=category).first()
-
-            if not flavor:
-                flavor = Flavor(external_id=p["id"], name=title, category=category, is_legacy=False)
+            if self._upsert_flavor(
+                external_id=p["id"],
+                name=title,
+                category=category,
+                description=description,
+                shop_url=shop_url,
+                is_available=is_available,
+                image_url=image_url,
+                image_urls=image_urls_list,
+                dir_slug=str(p["id"]),
+            ):
                 created_count += 1
             else:
                 updated_count += 1
-                if not flavor.external_id:
-                    flavor.external_id = p["id"]
-                if flavor.is_legacy:
-                    flavor.is_legacy = False
-
-            if (
-                flavor.name != title
-                and not Flavor.objects.filter(name=title, category=category)
-                .exclude(pk=flavor.pk)
-                .exists()
-            ):
-                flavor.name = title
-
-            flavor.description = description
-            flavor.shop_url = shop_url
-            flavor.is_available = is_available
-
-            # Download whole gallery into flavors/<external_id>/
-            dir_slug = str(p["id"])
-            local_paths = self.download_gallery(image_urls_list, dir_slug)
-            if local_paths:
-                flavor.local_image_paths = local_paths
-                # Drop main_image_path if it points to a file no longer in the gallery
-                if flavor.main_image_path and flavor.main_image_path not in local_paths:
-                    flavor.main_image_path = None
-            elif not flavor.local_image_paths:
-                # No new paths and nothing previously stored — leave both empty
-                flavor.main_image_path = None
-
-            flavor.image_url = image_url
-            flavor.image_urls = image_urls_list
-            flavor.save()
             synced_external_ids.append(p["id"])
 
         discontinued_count = (
