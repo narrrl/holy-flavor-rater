@@ -133,6 +133,54 @@ services:
       redis:
         condition: service_healthy
 
+  # --- Rust backend (strangler) --------------------------------------------
+  # Runs beside Django, sharing the SAME db.sqlite3, media/, banners/ and
+  # legacy/ via bind mounts and the SAME SECRET_KEY (so SimpleJWT tokens verify
+  # across both). nginx routes endpoint groups here one at a time; see
+  # backend-rs/README.md for the cutover order. ENABLE_SCHEDULER stays false
+  # until Django's beat container is stopped — only one scheduler may own
+  # api_job, or jobs run twice.
+  backend-rs:
+    build:
+      context: ./backend-rs
+    container_name: holy-rust
+    user: "app"
+    restart: unless-stopped
+    networks:
+      - holy-net
+    ports:
+      - 8001
+    env_file:
+      - .env
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - BIND_ADDR=0.0.0.0:8001
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_URL=sqlite:///srv/backend/db.sqlite3?mode=rw
+      - MEDIA_ROOT=/srv/backend/media
+      - MEDIA_URL=media/
+      - BANNERS_DIR=/srv/backend/banners
+      - LEGACY_DIR=/srv/legacy
+      - BACKUP_DIR=/srv/backend/backups
+      - FRONTEND_URL=${FRONTEND_URL:-http://${DOMAIN:-localhost}}
+      - JWT_AUTH_COOKIE_SECURE=${JWT_AUTH_COOKIE_SECURE:-true}
+      # Keep false until Django beat is stopped (Phase 3 of cutover).
+      - ENABLE_SCHEDULER=${RUST_ENABLE_SCHEDULER:-false}
+      - RUST_LOG=${RUST_LOG:-info,holy_backend_rs=info,sea_orm=warn}
+    volumes:
+      - ./backend:/srv/backend
+      - ./legacy:/srv/legacy
+    depends_on:
+      # Wait for Django to apply migrations / create the schema before reading it.
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   frontend:
     build:
       context: ./frontend
@@ -151,8 +199,15 @@ services:
       - holy-net
     env_file:
       - .env
+    volumes:
+      # Serve /media/ straight from the shared mount (read-only), decoupling it
+      # from either backend so Django can be retired without losing media.
+      - ./backend/media:/usr/share/nginx/media:ro
     depends_on:
       backend:
+        condition: service_healthy
+      # nginx resolves the rust upstream at startup, so the container must exist.
+      backend-rs:
         condition: service_healthy
 
 networks:

@@ -1,0 +1,93 @@
+[package]
+name = "holy_backend_rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust port of the Holy Flavor Rater backend (strangler migration from Django)."
+
+[dependencies]
+axum = { version = "0.8", features = ["macros", "multipart"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = [
+    "cors",
+    "trace",
+    "fs",
+    "catch-panic",
+    "set-header",
+    "timeout",
+] }
+
+sea-orm = { version = "1.1", features = [
+    "sqlx-sqlite",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-chrono",
+    "with-json",
+] }
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+
+jsonwebtoken = "9"
+
+# Django-compatible password verification (pbkdf2_sha256$...) + token ids.
+pbkdf2 = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
+subtle = "2"
+uuid = { version = "1", features = ["v4"] }
+
+utoipa = { version = "5", features = ["axum_extras", "chrono"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+
+thiserror = "2"
+anyhow = "1"
+
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+dotenvy = "0.15"
+
+tokio-cron-scheduler = "0.13"
+
+# Dynamic dispatch for the Job trait (registry of `Arc<dyn Job>`).
+async-trait = "0.1"
+
+# sync_flavors: fetch the Shopify catalog + download product images.
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "json",
+] }
+# Bounded-concurrency image downloads in sync_flavors.
+futures = "0.3"
+
+# backup_db: gzip tarball of the sqlite snapshot + media tree.
+tar = "0.4"
+flate2 = "1"
+
+# Django-accurate slugify (NFKD normalize + ASCII fold) for category/image slugs.
+unicode-normalization = "0.1"
+
+# Image filenames are keyed by sha1 of the URL path (parity with Django's
+# hashlib.sha1) so downloads dedupe against the shared media directory.
+sha1 = "0.10"
+
+# SMTP email (parity with Django's send_mail / InsecureEmailBackend).
+lettre = { version = "0.11", default-features = false, features = [
+    "tokio1-rustls-tls",
+    "smtp-transport",
+    "builder",
+] }
+
+# Avatar resize (parity with the PIL thumbnail-to-256-JPEG step in User.save).
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+    "gif",
+    "webp",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
