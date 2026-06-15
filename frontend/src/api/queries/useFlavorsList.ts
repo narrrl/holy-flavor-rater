@@ -41,8 +41,9 @@ const fetchAllFlavors = async (): Promise<FlavorListItem[]> => {
   const all: FlavorListItem[] = [];
   let url: string | null = 'flavors/';
   while (url) {
-    const res: { data: FlavorListItem[] | Paginated<FlavorListItem> } =
-      await api.get<FlavorListItem[] | Paginated<FlavorListItem>>(url);
+    const res: { data: FlavorListItem[] | Paginated<FlavorListItem> } = await api.get<
+      FlavorListItem[] | Paginated<FlavorListItem>
+    >(url);
     all.push(...unwrap(res.data));
     const next = Array.isArray(res.data) ? null : (res.data.next ?? null);
     // `next` is an absolute URL; api baseURL already covers the prefix, so use the relative tail.

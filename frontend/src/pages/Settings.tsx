@@ -29,7 +29,9 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../hooks/useAuth';
 import { useTitle } from '../hooks/useTitle';
 import type { CatppuccinTheme } from '../theme';
 import { PageShell, GlassCard, FormCard } from '../components/ui';
@@ -47,6 +49,8 @@ const readErr = (err: unknown): string | undefined =>
 const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { refetchUser } = useAuth();
   useTitle(t('nav.settings'));
   const { confirm } = useConfirm();
   const { anchor: drawerAnchor, setAnchor: setDrawerAnchor } = useDrawerAnchor();
@@ -182,7 +186,11 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     if (!ok) return;
     try {
       await confirmDeletion.mutateAsync(deletionCode);
-      window.location.href = '/';
+      // Account gone: clear AuthContext + wipe every cached query (stale user
+      // data must not survive), then SPA-navigate home.
+      queryClient.clear();
+      await refetchUser();
+      navigate('/');
     } catch {
       setMessage({ type: 'error', text: 'Invalid code. Deletion failed.' });
     }

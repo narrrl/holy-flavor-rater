@@ -74,6 +74,20 @@ Verify mutations `invalidateQueries`; consider optimistic insert so reviews appe
 ---
 
 ## Implementation status
+- [x] U2 — killed the hard `window.location.href='/'` reloads. `Login.tsx`
+  (post-login) now `await refetchUser()` + `navigate('/')`; `Settings.tsx`
+  (post-account-deletion) `queryClient.clear()` + `await refetchUser()` +
+  `navigate('/')` — deletion wipes the whole react-query cache so no stale user
+  data survives the now-gone account. Both keep the SPA mounted (warm cache, no
+  white flash). `tsc` + ESLint (0 errors) clean.
+- [x] R4 — split `refetchUser` / `refetchFollowing` (`AuthContext.tsx`). The 60s
+  badge poll (`NotificationContext.tsx:34`) now only hits `users/me/`; the
+  following list is fetched once on login (effect keyed on `user?.username`) and
+  cleared on logout. Added `refetchFollowing` to the context value and call it
+  after follow/unfollow in `PublicProfile.tsx` (both the main + mini toggles) so
+  the sidebar list updates immediately instead of waiting for the next poll.
+  Drops one `following_list` GET per minute per logged-in client. `tsc` + ESLint
+  (0 errors) clean.
 - [x] Q2 — `useCategories()` query hook (`api/queries/useCategories.ts`, key
   `queryKeys.categories()`, 30 min `staleTime`). Replaced raw
   `api.get('categories/')` + `useState`/`useEffect` in `App.tsx` with the hook;

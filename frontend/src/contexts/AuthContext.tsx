@@ -24,6 +24,7 @@ export interface AuthContextValue {
   following: FollowingEntry[];
   loadingUser: boolean;
   refetchUser: () => Promise<void>;
+  refetchFollowing: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -35,6 +36,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [following, setFollowing] = useState<FollowingEntry[]>([]);
   const [loadingUser, setLoadingUser] = useState(true);
 
+  // Following list rarely changes: fetched on login and after a follow/unfollow
+  // mutation — NOT on the 60s badge poll (that only needs `users/me/`).
+  const refetchFollowing = useCallback(async () => {
+    try {
+      const followRes = await api.get('users/following_list/');
+      const data = Array.isArray(followRes.data) ? followRes.data : followRes.data.results || [];
+      setFollowing(data);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const refetchUser = useCallback(async () => {
     try {
       const res = await api.get('users/me/', {
@@ -44,15 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(res.data);
         if (res.data.theme) localStorage.setItem('theme', res.data.theme);
         if (res.data.language) i18n.changeLanguage(res.data.language);
-        try {
-          const followRes = await api.get('users/following_list/');
-          const data = Array.isArray(followRes.data)
-            ? followRes.data
-            : followRes.data.results || [];
-          setFollowing(data);
-        } catch {
-          /* ignore */
-        }
       } else {
         setUser(null);
       }
@@ -67,6 +71,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     refetchUser();
   }, [refetchUser]);
 
+  // Sync following list with login state: load once on login, clear on logout.
+  // Keyed on username so it doesn't re-run on every badge-count refresh.
+  useEffect(() => {
+    if (user?.username) {
+      refetchFollowing();
+    } else {
+      setFollowing([]);
+    }
+  }, [user?.username, refetchFollowing]);
+
   const logout = useCallback(async () => {
     try {
       await api.post('auth/logout/');
@@ -80,7 +94,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [i18n]);
 
   return (
-    <AuthContext.Provider value={{ user, setUser, following, loadingUser, refetchUser, logout }}>
+    <AuthContext.Provider
+      value={{ user, setUser, following, loadingUser, refetchUser, refetchFollowing, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

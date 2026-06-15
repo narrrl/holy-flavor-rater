@@ -32,6 +32,7 @@ import {
   type PublicProfileRating,
 } from '../api/queries/usePublicProfile';
 import { useCurrentUserLite } from '../api/queries/useCurrentUserLite';
+import { useAuth } from '../hooks/useAuth';
 import {
   useAddProfileComment,
   useDeleteProfileComment,
@@ -54,6 +55,7 @@ const PublicProfile: React.FC = () => {
   const navigate = useNavigate();
   const { data, isLoading: loading } = usePublicProfile(username);
   const { data: currentUser } = useCurrentUserLite();
+  const { refetchFollowing } = useAuth();
   const followToggle = useFollowToggle();
   const addComment = useAddProfileComment();
   const deleteCommentMutation = useDeleteProfileComment();
@@ -106,6 +108,7 @@ const PublicProfile: React.FC = () => {
         userId: data.id,
         currentlyFollowing: data.is_following,
       });
+      refetchFollowing();
     } catch {
       notify({ message: 'Failed to update follow status. Please login.', severity: 'error' });
     }
@@ -117,6 +120,7 @@ const PublicProfile: React.FC = () => {
         userId: user.id,
         currentlyFollowing: !!user.is_following,
       });
+      refetchFollowing();
     } catch {
       notify({ message: 'Failed', severity: 'error' });
     }

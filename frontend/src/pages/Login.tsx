@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Typography, TextField, Button, Tab, Tabs, Alert, Stack, Box } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
+import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 import { PageShell, GlassCard, FormCard } from '../components/ui';
 
@@ -15,6 +16,8 @@ const readError = (err: unknown): ApiError => err as ApiError;
 
 const Login: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { refetchUser } = useAuth();
   useTitle('Login');
   const [tab, setTab] = useState(0);
   const [username, setUsername] = useState('');
@@ -32,7 +35,10 @@ const Login: React.FC = () => {
     setMessage(null);
     try {
       await api.post('auth/token/', { username, password });
-      window.location.href = '/';
+      // Pull the new session into AuthContext, then SPA-navigate — keeps the
+      // warm react-query cache instead of a full-page reload.
+      await refetchUser();
+      navigate('/');
     } catch (err) {
       const data = readError(err).response?.data;
       const errorMsg = data?.non_field_errors?.[0] || t('auth.loginFailed');

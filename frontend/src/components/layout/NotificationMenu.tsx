@@ -1,13 +1,4 @@
-import {
-  Avatar,
-  Box,
-  Button,
-  Menu,
-  MenuItem,
-  Typography,
-  alpha,
-  useTheme,
-} from '@mui/material';
+import { Avatar, Box, Button, Menu, MenuItem, Typography, alpha, useTheme } from '@mui/material';
 import type { MenuProps, SxProps, Theme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
