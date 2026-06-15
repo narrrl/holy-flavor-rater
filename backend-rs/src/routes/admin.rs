@@ -341,7 +341,7 @@ async fn send_test_email(
         &state.config.email,
         "Holy Flavors Admin Test Email",
         &body,
-        &[me.email.clone()],
+        std::slice::from_ref(&me.email),
     )
     .await
     {

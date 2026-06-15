@@ -733,7 +733,7 @@ async fn signup(
         &state.config.email,
         "Verify your Holy Flavors account",
         &msg,
-        &[email.clone()],
+        std::slice::from_ref(&email),
     )
     .await
     {
