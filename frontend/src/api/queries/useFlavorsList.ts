@@ -30,16 +30,31 @@ export interface CategoryItem {
   slug: string;
 }
 
-const unwrap = <T>(data: T[] | { results?: T[] }): T[] =>
+type Paginated<T> = { results?: T[]; next?: string | null };
+
+const unwrap = <T>(data: T[] | Paginated<T>): T[] =>
   Array.isArray(data) ? data : (data.results ?? []);
+
+// Backend paginates flavors/ (50/page). Follow `next` to collect every flavor,
+// otherwise consumers (e.g. the merge tool) only see the first page.
+const fetchAllFlavors = async (): Promise<FlavorListItem[]> => {
+  const all: FlavorListItem[] = [];
+  let url: string | null = 'flavors/';
+  while (url) {
+    const res: { data: FlavorListItem[] | Paginated<FlavorListItem> } =
+      await api.get<FlavorListItem[] | Paginated<FlavorListItem>>(url);
+    all.push(...unwrap(res.data));
+    const next = Array.isArray(res.data) ? null : (res.data.next ?? null);
+    // `next` is an absolute URL; api baseURL already covers the prefix, so use the relative tail.
+    url = next ? next.replace(/^.*\/api\//, '') : null;
+  }
+  return all;
+};
 
 export const useFlavorsList = () =>
   useQuery({
     queryKey: queryKeys.flavors({ scope: 'all' }),
-    queryFn: async () => {
-      const res = await api.get<FlavorListItem[] | { results: FlavorListItem[] }>('flavors/');
-      return unwrap(res.data);
-    },
+    queryFn: fetchAllFlavors,
   });
 
 export const useCategories = () =>
