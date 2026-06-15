@@ -80,7 +80,8 @@ async fn list(
             let like = format!("%{w}%");
             cond = cond
                 .add(flavor::Column::Name.like(&like))
-                .add(flavor::Column::Description.like(&like));
+                .add(flavor::Column::Description.like(&like))
+                .add(flavor::Column::Aliases.like(&like));
             has = true;
         }
         if has {
@@ -229,7 +230,8 @@ async fn search(
             let like = format!("%{w}%");
             cond = cond
                 .add(flavor::Column::Name.like(&like))
-                .add(flavor::Column::Description.like(&like));
+                .add(flavor::Column::Description.like(&like))
+                .add(flavor::Column::Aliases.like(&like));
         }
         q = q.filter(cond);
     }

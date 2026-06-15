@@ -22,6 +22,13 @@ pub struct Model {
     pub is_available: bool,
     pub is_legacy: bool,
     pub external_id: Option<i64>,
+    /// Alternate names this flavor is known by — populated when another flavor
+    /// (typically a legacy stand-in) is merged into this one. JSON list of
+    /// strings, stored as TEXT. Lets `seed_legacy` avoid re-creating a merged-away
+    /// legacy flavor and lets search match its old name. Added by the guarded
+    /// startup migration in `db.rs`; may be NULL on rows predating it.
+    #[sea_orm(column_type = "Json", nullable)]
+    pub aliases: Option<Json>,
     /// Django stores naive UTC text ("YYYY-MM-DD HH:MM:SS.ffffff"); we treat it
     /// as UTC when formatting to DRF's ISO-8601 `...Z` output.
     pub created_at: ChronoDateTime,
