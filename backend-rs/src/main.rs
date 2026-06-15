@@ -17,6 +17,7 @@ mod openapi;
 mod pagination;
 mod password;
 mod password_policy;
+mod recommend;
 mod routes;
 mod search;
 mod service;

@@ -159,14 +159,77 @@ pub struct PublicProfileOut {
     pub following: Vec<UserOut>,
 }
 
+/// The user's most-rated category.
+#[derive(Serialize, ToSchema)]
+pub struct FavoriteCategory {
+    pub name: String,
+    pub slug: String,
+    pub count: i64,
+}
+
+/// Aggregate stats over the current user's own ratings, surfaced on the dashboard.
+#[derive(Serialize, ToSchema)]
+pub struct DashboardStats {
+    /// Mean of the scores the user has given (`None` when they have no ratings).
+    pub average_score: Option<f64>,
+    /// Count of the user's ratings per score, keyed `"1".."10"` (always all 10 keys).
+    pub score_distribution: std::collections::BTreeMap<String, i64>,
+    /// The category the user has rated most (`None` when they have no ratings).
+    pub favorite_category: Option<FavoriteCategory>,
+    /// Ratings the user created in the current calendar month (UTC).
+    pub ratings_this_month: i64,
+    /// Number of distinct categories the user has rated in.
+    pub category_count: i64,
+}
+
 /// Custom payload of the `users/dashboard` action.
 #[derive(Serialize, ToSchema)]
 pub struct DashboardOut {
     pub user: UserOut,
     pub rated_count: i64,
     pub missing_count: i64,
-    pub missing_flavors: Vec<FlavorOut>,
     pub my_ratings: Vec<RatingOut>,
+    pub stats: DashboardStats,
+}
+
+/// One recommended flavor (card payload + the recommendation metadata). Mirrors the
+/// fields the frontend flavor card reads, plus the prediction + reason.
+#[derive(Serialize, ToSchema)]
+pub struct RecommendationOut {
+    pub id: i32,
+    pub name: String,
+    pub image_url: Option<String>,
+    pub category_name: String,
+    pub category_slug: String,
+    pub average_rating: Option<f64>,
+    pub is_legacy: bool,
+    pub is_available: bool,
+    /// Predicted score for this user (CF) or the flavor's damped community score
+    /// (popularity fallback).
+    pub predicted_score: f64,
+    /// "N tasters like you" count (CF) or the flavor's rating count (popularity).
+    pub contributing_neighbours: i64,
+    /// `"cf"` or `"popular"` — frontend picks the reason copy. Names are never
+    /// surfaced (privacy decision).
+    pub reason: String,
+}
+
+/// Item-based "people who liked this flavor also liked…" card, served on
+/// `GET /api/flavors/{id}/similar/`. Flavor card fields plus the similarity metadata.
+#[derive(Serialize, ToSchema)]
+pub struct SimilarFlavorOut {
+    pub id: i32,
+    pub name: String,
+    pub image_url: Option<String>,
+    pub category_name: String,
+    pub category_slug: String,
+    pub average_rating: Option<f64>,
+    pub is_legacy: bool,
+    pub is_available: bool,
+    /// Adjusted-cosine similarity to the target flavor, in (0, 1].
+    pub similarity: f64,
+    /// Users who rated both this flavor and the target (the confidence count).
+    pub co_raters: i64,
 }
 
 #[derive(Serialize, ToSchema)]

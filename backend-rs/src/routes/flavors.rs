@@ -9,16 +9,20 @@ use sea_orm::{
 use serde::Deserialize;
 
 use crate::auth::{AuthUser, OptionalUser};
-use crate::dto::{FlavorOut, SearchHit};
+use crate::dto::{FlavorOut, SearchHit, SimilarFlavorOut};
 use crate::entities::prelude::*;
 use crate::entities::{category, flavor, rating};
 use crate::error::{ApiError, ApiResult};
 use crate::media::image_field_url;
 use crate::pagination::{parse_page, Paginated, DEFAULT_PAGE_SIZE};
+use crate::recommend::{similar_flavors, RatingInput};
 use crate::search::{extract_category_slug, query_words, score_relevance};
 use crate::service::build_flavors;
 use crate::state::AppState;
 use crate::web::RequestCtx;
+
+/// Max "similar flavors" returned by `/flavors/{id}/similar/`.
+const SIMILAR_LIMIT: usize = 8;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -28,6 +32,7 @@ pub fn router() -> Router<AppState> {
         .route("/flavors/newest/", get(newest))
         .route("/flavors/followed_top/", get(followed_top))
         .route("/flavors/{id}/", get(retrieve))
+        .route("/flavors/{id}/similar/", get(similar))
 }
 
 #[derive(Deserialize)]
@@ -120,6 +125,69 @@ async fn retrieve(
     // Detail view: full nested ratings + their replies.
     let mut dtos = build_flavors(&state, &ctx, vec![model], viewer, &[], true, true).await?;
     dtos.pop().map(Json).ok_or(ApiError::NotFound)
+}
+
+/// GET /api/flavors/{id}/similar/
+///
+/// Item-based collaborative filtering: "people who liked this flavor also liked…".
+/// Adjusted-cosine over the rating matrix (see `crate::recommend::similar_flavors`).
+/// Empty (not 404) when the catalog has too few co-ratings to compare.
+async fn similar(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    OptionalUser(viewer): OptionalUser,
+    Path(id): Path<i32>,
+) -> ApiResult<Json<Vec<SimilarFlavorOut>>> {
+    // Target must exist.
+    Flavor::find_by_id(id)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    // Whole rating matrix (hundreds of rows at current scale) → in-process scoring.
+    let all = Rating::find().all(&state.db).await?;
+    let inputs: Vec<RatingInput> = all
+        .iter()
+        .map(|r| RatingInput {
+            user_id: r.user_id,
+            flavor_id: r.flavor_id,
+            score: r.score as f64,
+        })
+        .collect();
+
+    let sims = similar_flavors(id, &inputs, SIMILAR_LIMIT);
+    if sims.is_empty() {
+        return Ok(Json(Vec::new()));
+    }
+
+    // Resolve ids to card payloads, then re-zip in similarity-ranked order.
+    let sim_ids: Vec<i32> = sims.iter().map(|s| s.flavor_id).collect();
+    let models = Flavor::find()
+        .filter(flavor::Column::Id.is_in(sim_ids))
+        .all(&state.db)
+        .await?;
+    let flavors = build_flavors(&state, &ctx, models, viewer, &[], false, false).await?;
+    let by_id: std::collections::HashMap<i32, _> = flavors.into_iter().map(|f| (f.id, f)).collect();
+
+    let out: Vec<SimilarFlavorOut> = sims
+        .into_iter()
+        .filter_map(|s| {
+            by_id.get(&s.flavor_id).map(|f| SimilarFlavorOut {
+                id: f.id,
+                name: f.name.clone(),
+                image_url: f.image_url.clone(),
+                category_name: f.category_name.clone(),
+                category_slug: f.category_slug.clone(),
+                average_rating: f.average_rating,
+                is_legacy: f.is_legacy,
+                is_available: f.is_available,
+                similarity: s.similarity,
+                co_raters: s.co_raters,
+            })
+        })
+        .collect();
+
+    Ok(Json(out))
 }
 
 #[derive(Deserialize)]

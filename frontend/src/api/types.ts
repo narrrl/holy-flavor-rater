@@ -32,10 +32,57 @@ export interface MissingFlavor {
   is_available?: boolean;
 }
 
+export interface FavoriteCategory {
+  name: string;
+  slug: string;
+  count: number;
+}
+
+export interface DashboardStats {
+  average_score: number | null;
+  /** Count per score, keyed "1".."10". */
+  score_distribution: Record<string, number>;
+  favorite_category: FavoriteCategory | null;
+  ratings_this_month: number;
+  category_count: number;
+}
+
+export interface Recommendation {
+  id: number;
+  name: string;
+  image_url: string | null;
+  category_name: string;
+  category_slug: string;
+  average_rating: number | null;
+  is_legacy: boolean;
+  is_available: boolean;
+  predicted_score: number;
+  /** "N tasters like you" count (cf) or rating count (popular). */
+  contributing_neighbours: number;
+  /** "cf" | "popular" — frontend picks the reason copy. */
+  reason: 'cf' | 'popular';
+}
+
 export interface DashboardData {
   user: { username: string; avatar: string | null };
   rated_count: number;
   missing_count: number;
-  missing_flavors: MissingFlavor[];
   my_ratings: RatedItem[];
+  stats: DashboardStats;
+}
+
+/** Item-based "people who liked this flavor also liked…" card. */
+export interface SimilarFlavor {
+  id: number;
+  name: string;
+  image_url: string | null;
+  category_name: string;
+  category_slug: string;
+  average_rating: number | null;
+  is_legacy: boolean;
+  is_available: boolean;
+  /** Adjusted-cosine similarity to the target flavor, in (0, 1]. */
+  similarity: number;
+  /** Users who rated both this flavor and the target. */
+  co_raters: number;
 }

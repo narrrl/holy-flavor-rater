@@ -74,6 +74,35 @@ Verify mutations `invalidateQueries`; consider optimistic insert so reviews appe
 ---
 
 ## Implementation status
+- [x] P2 — investigated, **no code change** (no measurable win post-P1).
+  `avg_score_expr()` is used only in `ORDER BY` (`flavors.rs:97/145/199`), never
+  selected as a column — it's *required* for sorting+paginating by rating and
+  can't be dropped. The Rust avg is computed inside the single rating loop that
+  also builds distribution/followed-avg/viewer-score (`service.rs:341-400`),
+  which runs regardless; the avg is `sum/n` accumulated in that same loop, so
+  removing it saves one division per flavor (≤50/page) — negligible. The real
+  cost (loading all ratings for `list`) is intentional: `FlavorList.tsx:144-171`
+  reads `flavor.ratings` for the comment count + previews, so `list` keeps
+  `include_ratings=true`. Slimming that is a P1-class payload change needing a
+  frontend refactor, out of P2 scope. Closed as wontfix.
+- [x] Q4 follow-up — `useCurrentUserLite.ts` had the same `...({ skipAuthRedirect:
+  true } as object)` cast as the (now-fixed) `AuthContext`; switched it to
+  `{ skipAuthRedirect: true } as RetriableConfig` using the type exported in Q4.
+  `tsc` + ESLint (0 errors) clean.
+- [x] U1 — optimistic UI on rating + reply submit. `useCreateRating` /
+  `useCreateReply` (`useRatingMutations.ts`) now run `onMutate`/`onError`/`onSettled`
+  against the `flavorDetail` cache: insert a temp row (negative id, replaced on
+  refetch), roll back on error from the snapshot, and invalidate on settle. Author
+  info is passed through the input — `RatingForm` supplies `optimistic` from
+  `useAuth().user`; `FlavorDetail.handleReplySubmit` supplies `flavorId` +
+  `optimisticUser`. Both optimistic paths are opt-in (skip if author info absent),
+  so other callers are unaffected. New review/reply appears instantly, reconciles
+  on the round-trip. `tsc`, ESLint (0 errors), 27 tests clean.
+- [x] Q3 — fixed stale CLAUDE.md frontend Auth paragraph. It described the
+  retired localStorage `access`/`refresh` JWT scheme; rewritten to match
+  `lib/api.ts`: httpOnly `access_token`/`refresh_token` cookies, `withCredentials`,
+  401 auto-refresh via `auth/token/refresh/`, `skipAuthRedirect`/`RetriableConfig`
+  escape hatch, and `clearLegacyToken()` purging all three retired localStorage keys.
 - [x] Q4 — dropped the `as object` cast. Exported `RetriableConfig` from
   `lib/api.ts`; `AuthContext.refetchUser` now passes `{ skipAuthRedirect: true }
   as RetriableConfig` (the field is part of that type) instead of the

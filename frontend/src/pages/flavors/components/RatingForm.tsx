@@ -6,6 +6,7 @@ import ScoreInput from '../../../components/ui/ScoreInput';
 import MentionTextField from '../../../components/MentionTextField';
 import { useCreateRating } from '../../../api/mutations/useRatingMutations';
 import { useToast } from '../../../hooks/useToast';
+import { useAuth } from '../../../hooks/useAuth';
 
 export interface RatingFormProps {
   flavorId: number;
@@ -14,6 +15,7 @@ export interface RatingFormProps {
 const RatingForm: React.FC<RatingFormProps> = ({ flavorId }) => {
   const { t } = useTranslation();
   const { notify } = useToast();
+  const { user } = useAuth();
   const createRating = useCreateRating();
   const [score, setScore] = useState<number | null>(null);
   const [comment, setComment] = useState('');
@@ -25,7 +27,12 @@ const RatingForm: React.FC<RatingFormProps> = ({ flavorId }) => {
       return;
     }
     try {
-      await createRating.mutateAsync({ flavor: flavorId, score, comment });
+      await createRating.mutateAsync({
+        flavor: flavorId,
+        score,
+        comment,
+        optimistic: user ? { user: user.username, user_avatar: user.avatar } : undefined,
+      });
       setScore(null);
       setComment('');
     } catch (err) {

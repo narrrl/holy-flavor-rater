@@ -53,6 +53,7 @@ import {
   RatingDistribution,
 } from '../../components/ui';
 import RatingForm from './components/RatingForm';
+import SimilarFlavorsSection from './components/SimilarFlavorsSection';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 
@@ -143,7 +144,12 @@ const FlavorDetail: React.FC = () => {
     const text = replyInputs[ratingId];
     if (!text) return;
     try {
-      await createReply.mutateAsync({ ratingId, text });
+      await createReply.mutateAsync({
+        ratingId,
+        text,
+        flavorId: flavor?.id,
+        optimisticUser: currentUser ?? undefined,
+      });
       setReplyInputs({ ...replyInputs, [ratingId]: '' });
       setExpandedReplies((prev) => ({ ...prev, [ratingId]: true }));
     } catch {
@@ -772,6 +778,8 @@ const FlavorDetail: React.FC = () => {
           </Stack>
         </Grid>
       </Grid>
+
+      <SimilarFlavorsSection flavorId={flavor.id} />
     </PageShell>
   );
 };

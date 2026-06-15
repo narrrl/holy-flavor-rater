@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import api from '../../lib/api';
+import api, { type RetriableConfig } from '../../lib/api';
 import { useAuth } from '../../hooks/useAuth';
 
 export interface CurrentUserLite {
@@ -19,8 +19,8 @@ export const useCurrentUserLite = () => {
       const res = await api.get<CurrentUserLite>('users/me/', {
         // Stale access tokens are common; never bounce a public page reader
         // to /login because of a background "am I logged in?" check.
-        ...({ skipAuthRedirect: true } as object),
-      });
+        skipAuthRedirect: true,
+      } as RetriableConfig);
       return res.data;
     },
     enabled: !!user,

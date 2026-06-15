@@ -16,6 +16,7 @@ use axum::extract::{ConnectInfo, Multipart, Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, patch, post};
 use axum::{Json, Router};
+use chrono::Datelike;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, PaginatorTrait,
@@ -26,11 +27,15 @@ use serde_json::{json, Value};
 use subtle::ConstantTimeEq;
 
 use crate::auth::{AuthUser, OptionalUser};
-use crate::dto::{DashboardOut, ProfileCommentOut, PublicProfileOut, UserOut};
+use crate::dto::{
+    DashboardOut, DashboardStats, FavoriteCategory, ProfileCommentOut, PublicProfileOut,
+    RecommendationOut, UserOut,
+};
 use crate::entities::prelude::*;
 use crate::entities::{flavor, notification, profile_comment, rating, user, user_ip};
 use crate::error::{ApiError, ApiResult};
 use crate::pagination::{parse_page, Paginated, DEFAULT_PAGE_SIZE};
+use crate::recommend::{recommend, RatingInput};
 use crate::service::{
     build_flavors, build_profile_comments, build_ratings, build_user, build_users,
 };
@@ -91,6 +96,7 @@ pub fn router() -> Router<AppState> {
             post(confirm_account_deletion),
         )
         .route("/users/dashboard/", get(dashboard))
+        .route("/users/recommendations/", get(recommendations))
         .route("/users/{id}/", get(retrieve))
         .route("/users/{id}/follow/", post(follow))
         .route("/users/{id}/unfollow/", post(unfollow))
@@ -1315,7 +1321,6 @@ async fn dashboard(
     AuthUser(uid): AuthUser,
 ) -> ApiResult<Json<DashboardOut>> {
     let me = load_user(&state, uid).await?;
-    let followed = following_ids(&state, uid).await?;
 
     let my_ratings_models = Rating::find()
         .filter(rating::Column::UserId.eq(uid))
@@ -1325,10 +1330,24 @@ async fn dashboard(
     let rated_count = my_ratings_models.len() as i64;
     let rated_flavor_ids: std::collections::HashSet<i32> =
         my_ratings_models.iter().map(|r| r.flavor_id).collect();
-    let my_ratings = build_ratings(&state, &ctx, my_ratings_models).await?;
 
-    // Missing flavors: not rated by me, excluding the "Packs and other" category,
-    // ordered by category name then flavor name.
+    // Ratings created in the current UTC month — computed from the models while we
+    // still have proper datetimes (RatingOut.created_at is a formatted string).
+    let now = chrono::Utc::now().naive_utc();
+    let (this_year, this_month) = (now.year(), now.month());
+    let ratings_this_month = my_ratings_models
+        .iter()
+        .filter(|r| r.created_at.year() == this_year && r.created_at.month() == this_month)
+        .count() as i64;
+
+    let my_ratings = build_ratings(&state, &ctx, my_ratings_models).await?;
+    let stats = dashboard_stats(&my_ratings, ratings_this_month);
+
+    // "To try" count: flavors the user hasn't rated, excluding the "Packs and other"
+    // category. We no longer ship the full unrated flavor list — the dashboard's old
+    // "explore" grid is gone (browsing lives on the main flavor list, discovery on the
+    // recommendations endpoint), which drops a large per-request payload + the
+    // per-flavor aggregate pass. Only the count is needed now, so load ids alone.
     let packs = crate::entities::category::Entity::find()
         .filter(crate::entities::category::Column::Name.eq("Packs and other"))
         .one(&state.db)
@@ -1337,52 +1356,195 @@ async fn dashboard(
     if let Some(p) = packs {
         q = q.filter(flavor::Column::CategoryId.ne(p.id));
     }
-    let mut all_flavors = q.all(&state.db).await?;
-    all_flavors.retain(|f| !rated_flavor_ids.contains(&f.id));
+    let missing_count = q
+        .all(&state.db)
+        .await?
+        .iter()
+        .filter(|f| !rated_flavor_ids.contains(&f.id))
+        .count() as i64;
 
-    // Order by category name then flavor name (resolve category names first).
-    let cat_ids: Vec<i32> = all_flavors.iter().map(|f| f.category_id).collect();
-    let cat_names: std::collections::HashMap<i32, String> =
-        crate::entities::category::Entity::find()
-            .filter(crate::entities::category::Column::Id.is_in(cat_ids))
-            .all(&state.db)
-            .await?
-            .into_iter()
-            .map(|c| (c.id, c.name))
-            .collect();
-    all_flavors.sort_by(|a, b| {
-        let ca = cat_names
-            .get(&a.category_id)
-            .map(String::as_str)
-            .unwrap_or("");
-        let cb = cat_names
-            .get(&b.category_id)
-            .map(String::as_str)
-            .unwrap_or("");
-        ca.cmp(cb).then_with(|| a.name.cmp(&b.name))
-    });
-
-    let missing_count = all_flavors.len() as i64;
-    // The dashboard "explore" grid sorts these by community / followed average
-    // but never reads the nested ratings, and this query loads *every* unrated
-    // flavor — so skip building a RatingOut per rating (large payload win).
-    let missing_flavors = build_flavors(
-        &state,
-        &ctx,
-        all_flavors,
-        Some(uid),
-        &followed,
-        false,
-        false,
-    )
-    .await?;
     let user = build_user(&state, &ctx, me, Some(uid)).await?;
 
     Ok(Json(DashboardOut {
         user,
         rated_count,
         missing_count,
-        missing_flavors,
         my_ratings,
+        stats,
     }))
+}
+
+/// Max recommendations returned by `/users/recommendations/`.
+const RECOMMENDATION_LIMIT: usize = 12;
+
+/// GET /api/users/recommendations/
+///
+/// "Tasters like you also liked…" — user-based collaborative filtering with a
+/// Bayesian-popularity cold-start fallback (see `crate::recommend`).
+async fn recommendations(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    AuthUser(uid): AuthUser,
+) -> ApiResult<Json<Vec<RecommendationOut>>> {
+    // Whole rating matrix (hundreds of rows at current scale) → in-process scoring.
+    let all = Rating::find().all(&state.db).await?;
+    let inputs: Vec<RatingInput> = all
+        .iter()
+        .map(|r| RatingInput {
+            user_id: r.user_id,
+            flavor_id: r.flavor_id,
+            score: r.score as f64,
+        })
+        .collect();
+
+    let recs = recommend(uid, &inputs, RECOMMENDATION_LIMIT);
+    if recs.is_empty() {
+        return Ok(Json(Vec::new()));
+    }
+
+    // Resolve the recommended flavor ids to card payloads, then re-zip with the
+    // recommendation metadata in the engine's ranked order.
+    let rec_ids: Vec<i32> = recs.iter().map(|r| r.flavor_id).collect();
+    let models = Flavor::find()
+        .filter(flavor::Column::Id.is_in(rec_ids.clone()))
+        .all(&state.db)
+        .await?;
+    let followed = following_ids(&state, uid).await?;
+    let flavors = build_flavors(&state, &ctx, models, Some(uid), &followed, false, false).await?;
+    let by_id: std::collections::HashMap<i32, _> = flavors.into_iter().map(|f| (f.id, f)).collect();
+
+    let out: Vec<RecommendationOut> = recs
+        .into_iter()
+        .filter_map(|rec| {
+            by_id.get(&rec.flavor_id).map(|f| RecommendationOut {
+                id: f.id,
+                name: f.name.clone(),
+                image_url: f.image_url.clone(),
+                category_name: f.category_name.clone(),
+                category_slug: f.category_slug.clone(),
+                average_rating: f.average_rating,
+                is_legacy: f.is_legacy,
+                is_available: f.is_available,
+                predicted_score: rec.predicted_score,
+                contributing_neighbours: rec.contributing_neighbours,
+                reason: rec.source.as_str().to_string(),
+            })
+        })
+        .collect();
+
+    Ok(Json(out))
+}
+
+/// Aggregate the dashboard stats block from the user's own ratings. `this_month` is
+/// passed in because it's computed from the rating models (which carry real
+/// datetimes) before they're turned into the string-timestamped `RatingOut`s.
+fn dashboard_stats(my_ratings: &[crate::dto::RatingOut], this_month: i64) -> DashboardStats {
+    let mut score_distribution: std::collections::BTreeMap<String, i64> =
+        (1..=10).map(|s| (s.to_string(), 0)).collect();
+    let mut sum: i64 = 0;
+    // category slug -> (display name, count)
+    let mut cat_counts: std::collections::HashMap<String, (String, i64)> =
+        std::collections::HashMap::new();
+
+    for r in my_ratings {
+        if (1..=10).contains(&r.score) {
+            *score_distribution.get_mut(&r.score.to_string()).unwrap() += 1;
+        }
+        sum += r.score as i64;
+        let entry = cat_counts
+            .entry(r.category_slug.clone())
+            .or_insert((r.category_name.clone(), 0));
+        entry.1 += 1;
+    }
+
+    let n = my_ratings.len() as i64;
+    let average_score = (n > 0).then(|| sum as f64 / n as f64);
+    // Highest count wins; ties broken by slug so the result is deterministic
+    // (HashMap iteration order isn't).
+    let favorite_category = cat_counts
+        .into_iter()
+        .max_by(|(slug_a, (_, count_a)), (slug_b, (_, count_b))| {
+            count_a.cmp(count_b).then_with(|| slug_b.cmp(slug_a))
+        })
+        .map(|(slug, (name, count))| FavoriteCategory { name, slug, count });
+
+    let category_count = my_ratings
+        .iter()
+        .map(|r| r.category_slug.as_str())
+        .collect::<std::collections::HashSet<_>>()
+        .len() as i64;
+
+    DashboardStats {
+        average_score,
+        score_distribution,
+        favorite_category,
+        ratings_this_month: this_month,
+        category_count,
+    }
+}
+
+#[cfg(test)]
+mod dashboard_stats_tests {
+    use super::*;
+    use crate::dto::RatingOut;
+
+    fn rating(score: i32, cat_slug: &str, cat_name: &str) -> RatingOut {
+        RatingOut {
+            id: 0,
+            user: String::new(),
+            user_id: 0,
+            user_avatar: None,
+            flavor: 0,
+            flavor_name: String::new(),
+            flavor_image: None,
+            category_name: cat_name.into(),
+            category_slug: cat_slug.into(),
+            is_available: true,
+            is_legacy: false,
+            score,
+            comment: None,
+            created_at: String::new(),
+            replies: vec![],
+        }
+    }
+
+    #[test]
+    fn empty_ratings_yield_zeroed_stats() {
+        let s = dashboard_stats(&[], 0);
+        assert_eq!(s.average_score, None);
+        assert!(s.favorite_category.is_none());
+        assert_eq!(s.category_count, 0);
+        assert_eq!(s.ratings_this_month, 0);
+        // Distribution still carries all 10 keys, all zero.
+        assert_eq!(s.score_distribution.len(), 10);
+        assert!(s.score_distribution.values().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn aggregates_average_distribution_and_favorite() {
+        let ratings = vec![
+            rating(10, "fruity", "Fruity"),
+            rating(8, "fruity", "Fruity"),
+            rating(6, "minty", "Minty"),
+        ];
+        let s = dashboard_stats(&ratings, 2);
+        assert_eq!(s.average_score, Some(8.0));
+        assert_eq!(s.score_distribution["10"], 1);
+        assert_eq!(s.score_distribution["8"], 1);
+        assert_eq!(s.score_distribution["6"], 1);
+        assert_eq!(s.score_distribution["1"], 0);
+        assert_eq!(s.category_count, 2);
+        assert_eq!(s.ratings_this_month, 2);
+        let fav = s.favorite_category.unwrap();
+        assert_eq!(fav.slug, "fruity");
+        assert_eq!(fav.count, 2);
+    }
+
+    #[test]
+    fn favorite_category_tie_breaks_by_slug_deterministically() {
+        // Equal counts (1 each) → smaller slug ("apple") wins, stable across runs.
+        let ratings = vec![rating(5, "banana", "Banana"), rating(5, "apple", "Apple")];
+        let fav = dashboard_stats(&ratings, 0).favorite_category.unwrap();
+        assert_eq!(fav.slug, "apple");
+    }
 }
