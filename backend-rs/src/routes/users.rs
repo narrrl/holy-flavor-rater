@@ -1363,7 +1363,8 @@ async fn dashboard(
     });
 
     let missing_count = all_flavors.len() as i64;
-    let missing_flavors = build_flavors(&state, &ctx, all_flavors, Some(uid), &followed).await?;
+    let missing_flavors =
+        build_flavors(&state, &ctx, all_flavors, Some(uid), &followed, false).await?;
     let user = build_user(&state, &ctx, me, Some(uid)).await?;
 
     Ok(Json(DashboardOut {
