@@ -51,39 +51,35 @@ jobs:
       image: catthehacker/ubuntu:act-latest
     env:
       SECRET_KEY: "ci-test-key"
-      DEBUG: "false"
-      ALLOWED_HOSTS: "localhost"
-      DJANGO_SETTINGS_MODULE: holy_backend.settings.dev
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          python-version: '3.14.3'
-          cache: 'pip'
-          cache-dependency-path: backend/requirements-dev.txt
+          components: rustfmt, clippy
 
-      - name: Install Dependencies
-        run: pip install -r requirements-dev.txt
-        working-directory: backend
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend-rs/target
+          key: cargo-${{ hashFiles('backend-rs/Cargo.lock') }}
 
-      - name: Ruff Lint
-        run: ruff check .
-        working-directory: backend
+      - name: Format Check
+        run: cargo fmt --check
+        working-directory: backend-rs
 
-      - name: Ruff Format Check
-        run: ruff format --check .
-        working-directory: backend
+      - name: Clippy
+        run: cargo clippy --all-targets
+        working-directory: backend-rs
 
-      - name: Django System Check
-        run: python manage.py check
-        working-directory: backend
-
-      - name: Check Migrations
-        run: python manage.py makemigrations --check --dry-run
-        working-directory: backend
+      - name: Build
+        run: cargo build --locked
+        working-directory: backend-rs
 
       - name: Run Tests
-        run: pytest
-        working-directory: backend
+        run: cargo test --locked
+        working-directory: backend-rs

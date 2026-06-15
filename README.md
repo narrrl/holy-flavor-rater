@@ -18,7 +18,7 @@ A high-density, community-driven platform for "Holy Energy" enthusiasts. Browse 
 ## 🛠️ Setup & Installation
 
 ### Option 1: Docker (Recommended)
-The easiest way to get the full stack (Backend + Frontend + DB) running behind a production-ready proxy.
+The easiest way to get the full stack (Rust backend + Frontend) running behind a production-ready proxy.
 
 1.  **Clone the repository:**
     ```bash
@@ -28,62 +28,48 @@ The easiest way to get the full stack (Backend + Frontend + DB) running behind a
 2.  **Environment Configuration:**
     ```bash
     cp .env.example .env
-    # Edit .env with your SMTP settings and Domain
+    # Edit .env: set SECRET_KEY, DOMAIN, and SMTP settings
     ```
 3.  **Start Services:**
     ```bash
     docker compose up -d --build
     ```
-    *Note: On first startup, the backend runs `migrate` + `collectstatic`, then seeds the flavor catalog, legacy data, and banner configurations **once** (gated by a `/app/.seeded` marker so subsequent restarts don't repeat the work). Re-run individual seeds later from the admin Jobs tab.*
+    The stack brings up two containers: `backend-rs` (`holy-rust:8001`, the Rust API) and `frontend` (Nginx — serves the SPA, proxies `/api` to the backend, serves `/media` from the shared mount). `docker-compose.override.yml` adds the Traefik production overlay.
 
-    The stack brings up six containers: `redis` (broker + cache), `backend` (Gunicorn), `worker` (Celery worker), `beat` (Celery beat w/ `django_celery_beat.DatabaseScheduler`), `flower` (Celery monitoring UI on `:5555`), and `frontend` (Nginx).
+    The Rust backend reads the existing `backend/db.sqlite3` directly (no migration step). Seeding (flavor catalog, legacy data, banners) runs as background jobs — trigger them from the admin Jobs tab or let the scheduler run them.
 
 ### Option 2: Local Manual Setup (Development)
 
 #### Backend
-1.  **Navigate and Install:**
-    ```bash
-    cd backend
-    python -m venv venv
-    source venv/bin/activate  # Linux/Mac
-    pip install -r requirements.txt
-    ```
-2.  **Initialize DB:**
-    ```bash
-    python manage.py migrate
-    python manage.py sync_flavors
-    python manage.py seed_legacy_flavors
-    python manage.py seed_banners
-    ```
-3.  **Run Server:**
-    ```bash
-    python manage.py runserver
-    ```
-    *By default `holy_backend.settings.dev` is active, which sets `CELERY_TASK_ALWAYS_EAGER=true` — tasks run inline with no broker required. To exercise the full async path locally, start a Redis server and run `celery -A holy_backend worker -l info` + `celery -A holy_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler` in separate terminals.*
+```bash
+cd backend-rs
+cp .env.example .env       # set SECRET_KEY; point DATABASE_URL at ../backend/db.sqlite3
+cargo run                  # listens on 0.0.0.0:8001
+```
 
 #### Frontend
-1.  **Navigate and Install:**
-    ```bash
-    cd frontend
-    npm install
-    ```
-2.  **Run Dev Server:**
-    ```bash
-    npm run dev
-    ```
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+> The Rust backend uses the existing SQLite database under `backend/db.sqlite3`. The `backend/` directory is retained as the data store (db, `media/`, `banners/`) and historical reference for the retired Django implementation — it is no longer run.
 
 ---
 
 ## 🏗️ Architecture
 
-The Holy Flavor Rater uses a modern **decoupled architecture**:
+The Holy Flavor Rater uses a **decoupled architecture**:
 
-### Backend (Django REST Framework)
-- **Models:** Custom User model, Flavors (with category constraints), Ratings (with mention parsing), and Dynamic Banners.
-- **Async jobs:** Celery workers backed by Redis handle Shopify syncs, duplicate cleanup, legacy seeding, banner seeding, database backups, and transactional email. Scheduling is owned by `django_celery_beat` (`PeriodicTask` + `IntervalSchedule`) and editable from the admin UI Jobs tab.
-- **Caching & rate-limiting:** Django cache uses Redis (`RedisCache` on DB 1). `django_ratelimit` consumes the same cache.
-- **Security:** JWT authentication (SimpleJWT) with refresh-token rotation, CSRF protection, and email-verified account activation.
-- **Monitoring:** `/health/` endpoint for the backend; Flower UI on `:5555` for queue + worker state (basic-auth gated).
+### Backend (Rust — Axum + SeaORM)
+- **Web/DB:** Axum 0.8 over SeaORM (SQLite), utoipa for OpenAPI + Swagger UI. Lives in `backend-rs/`.
+- **Models:** Custom User, Flavors (with `UniqueConstraint(name, category)`), Ratings (with `@mention` parsing), Tickets, Notifications, and Dynamic Banners.
+- **Background jobs:** An in-process tokio scheduler runs Shopify syncs, duplicate cleanup, legacy seeding, banner seeding, and database backups (`src/jobs/`). Status is logged to the `api_job` table; intervals are editable from the admin UI Jobs tab. Replaces the old Celery + beat + Redis stack.
+- **Security:** SimpleJWT-compatible HS256 auth with refresh-token rotation + blacklist, email-verified activation, an in-process rate limiter, constant-time code comparison, and Django-parity password validators.
+- **Monitoring:** `GET /health/` (runs `SELECT 1`) for the docker healthcheck.
+
+See **`backend-rs/README.md`** for the full endpoint matrix, parity notes, and security details.
 
 ### Frontend (React 19 + TypeScript)
 - **State Management:** React Hooks and local state for high performance.
@@ -98,77 +84,62 @@ The Holy Flavor Rater uses a modern **decoupled architecture**:
 ### Integrity Protection
 This project includes a **Pre-Push Git Hook** to ensure code quality. It automatically:
 1.  Attempts a full Frontend build (`tsc` + `vite build`).
-2.  Runs Backend system checks and validates missing migrations.
+2.  Runs Rust backend checks (`cargo fmt --check` + `cargo check`).
 
 **To install the hooks:**
 ```bash
 bash scripts/install-hooks.sh
 ```
 
-### Management Commands
-Each is also exposed as a Celery task (`api.<name>`) and triggerable from the admin Jobs tab.
-- `python manage.py sync_flavors`: Syncs the latest products from the official Holy Energy API.
-- `python manage.py cleanup_duplicates`: Merges duplicate entries and maintains rating integrity.
-- `python manage.py seed_legacy_flavors`: Loads retired flavors from `legacy/*.json`.
-- `python manage.py seed_banners`: Updates procedurally generated banner configurations from `backend/banners/*.json`.
-- `python manage.py backup_db` (`--full` for media too): Creates a consistent SQLite snapshot in `backend/backups/`.
+### Background Jobs
+Run by the scheduler on their interval, or triggered from the admin Jobs tab (`POST /api/admin-custom/{pk}/trigger_job/`):
+- `sync_flavors`: Syncs the latest products from the official Holy Energy (Shopify) catalog.
+- `cleanup_duplicates`: Merges duplicate entries and maintains rating integrity.
+- `seed_legacy`: Loads retired flavors from `legacy/*.json`.
+- `seed_banners`: Updates procedurally generated banner configurations from `backend/banners/*.json`.
+- `backup_db`: Creates a consistent SQLite + media snapshot in `backend/backups/`.
 
-#### Categories & `recategorize_flavors`
+#### Categories
+`sync_flavors` derives a flavor's category from the Shopify `product_type` (e.g. `42 - Syrup Bottle` → **Syrup**), stripping the numeric prefix and form-factor word. Any new drink line Holy ships **auto-creates** its category on the next sync. Packs, shakers, merch, stickers and other non-drink types funnel to **Packs and other**.
 
-`sync_flavors` derives a flavor's category from the Shopify `product_type` (e.g. `42 - Syrup Bottle` → **Syrup**), stripping the numeric prefix and the form-factor word. Any new drink line Holy ships **auto-creates** its category on the next sync — no code change needed. Packs, shakers, merch, stickers and other non-drink types funnel to **Packs and other**.
-
-One catch: `sync_flavors` only assigns a category when it **creates** a row. Existing flavors keep their original category, so a categorization change won't retro-apply to rows already in the DB. Use the one-off command below to fix mis-shelved rows. It is run manually (not exposed as a Celery task / Jobs-tab entry) and is **dry-run by default** — nothing is written without `--apply`.
-
-```bash
-python manage.py recategorize_flavors                      # dry-run: report what would move
-python manage.py recategorize_flavors --apply              # persist the moves
-python manage.py recategorize_flavors --apply --merge-collisions  # also fold name-clashes
-```
-
-It re-fetches the catalog, matches rows by `external_id`, and re-runs the exact `sync_flavors` categorization logic. Rows not in the catalog (discontinued) are never touched. When a move would collide with an existing flavor of the same name in the target category (`UniqueConstraint(name, category)`), it is skipped and reported unless `--merge-collisions` is passed, which folds the rows via `merge_flavors` (preserving ratings and replies).
+`sync_flavors` only assigns a category when it **creates** a row — existing flavors keep their original category. To re-shelve already-stored rows, the retired Django app's `recategorize_flavors` management command remains available under `backend/` for occasional manual use (it is not part of the Rust job registry).
 
 ---
 
 ## 💾 Backups & Restoration
 
 ### Create a Backup
-To create a full snapshot of your database and user-uploaded media:
 ```bash
 bash scripts/backup.sh
 ```
-This will create a `.tar.gz` file in `backend/backups/`.
+Creates a `.tar.gz` (DB + media) in `backend/backups/`. WAL-safe: uses `sqlite3 .backup` when available, otherwise copies the DB plus its `-wal`/`-shm` sidecars. The backend also runs `backup_db` on its own schedule.
 
-**Automating with Cron:**
-Add this to your `crontab -e` to backup every night at 2:00 AM:
+**Automating with Cron** — nightly at 2:00 AM:
 ```bash
 0 2 * * * /path/to/Holy-Flavor-Rater/scripts/backup.sh
 ```
 
 ### Restore from Backup
 1. Extract the archive: `tar -xzf backup_filename.tar.gz`
-2. Stop the containers: `docker-compose down`
+2. Stop the containers: `docker compose down`
 3. Replace the current files:
    ```bash
    cp extracted_folder/db.sqlite3 backend/db.sqlite3
    cp -r extracted_folder/media/* backend/media/
    ```
-4. Restart: `docker-compose up -d`
+4. Restart: `docker compose up -d`
 
 ---
 
 ## 🌍 Production Configuration
 
-Ensure your `.env` contains:
-- `DEBUG=false`
-- `DJANGO_SETTINGS_MODULE=holy_backend.settings.prod`
-- `SECRET_KEY`: A long random string.
-- `ALLOWED_HOSTS`: Your domain (e.g., `holy.narl.io`).
-- `FRONTEND_URL`: For one-click email verification links.
-- `CELERY_BROKER_URL` / `CELERY_RESULT_BACKEND`: Default `redis://redis:6379/0` works inside the compose network.
-- `DJANGO_CACHE_URL`: Default `redis://redis:6379/1` (DB 1 to avoid colliding with celery).
-- `FLOWER_BASIC_AUTH`: `user:password` for the Flower UI — **change from the default before exposing**.
-
-Restrict Flower's port `5555` (or reverse-proxy it behind basic-auth + TLS) since it exposes task payloads and worker internals.
+Set these in `.env` (see also `backend-rs/.env.example`):
+- `SECRET_KEY`: long random string that signs JWTs — **keep it constant** or all tokens invalidate.
+- `DOMAIN`: your domain (e.g. `holy.narl.io`); derives `FRONTEND_URL` / CORS defaults.
+- `FRONTEND_URL`: base URL for one-click email verification links.
+- `JWT_AUTH_COOKIE_SECURE=true`: set `Secure` on auth cookies.
+- `RUST_ENABLE_SCHEDULER=true`: lets the backend own `api_job` scheduling. **Exactly one** running instance may have this enabled.
+- `EMAIL_*`: SMTP settings for transactional email (unset `EMAIL_HOST` logs to console).
 
 ## 📄 License
 MIT

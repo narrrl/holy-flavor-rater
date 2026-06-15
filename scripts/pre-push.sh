@@ -3,11 +3,6 @@
 # Get the root directory of the project
 ROOT_DIR=$(git rev-parse --show-toplevel)
 
-# Set environment variables for non-interactive backend checks
-export SECRET_KEY="pre-push-check-key"
-export DEBUG="false"
-export ALLOWED_HOSTS="localhost"
-
 echo "========================================"
 echo "   Running Pre-Push Integrity Checks    "
 echo "========================================"
@@ -23,32 +18,20 @@ if ! npm run build; then
     exit 1
 fi
 
-# 2. Backend Check
+# 2. Rust backend checks
 echo ""
-echo "Step 2: Checking Backend Integrity..."
-cd "$ROOT_DIR/backend"
+echo "Step 2: Checking Rust backend..."
+cd "$ROOT_DIR/backend-rs"
 
-# Detect python executable (prefer venv if exists)
-if [ -f "venv/bin/python" ]; then
-    PYTHON_EXEC="venv/bin/python"
-elif command -v python3 &>/dev/null; then
-    PYTHON_EXEC="python3"
-else
-    PYTHON_EXEC="python"
-fi
-
-# Check for missing migrations
-if ! $PYTHON_EXEC manage.py makemigrations --check --dry-run &>/dev/null; then
+if ! cargo fmt --check; then
     echo ""
-    echo "❌ ERROR: Missing migrations detected."
-    echo "   Please run 'python manage.py makemigrations' locally."
+    echo "❌ ERROR: Rust formatting issues. Run 'cargo fmt' in backend-rs/."
     exit 1
 fi
 
-# Run Django system checks
-if ! $PYTHON_EXEC manage.py check; then
+if ! cargo check --locked; then
     echo ""
-    echo "❌ ERROR: Django system check failed."
+    echo "❌ ERROR: Rust backend does not compile."
     exit 1
 fi
 
