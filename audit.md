@@ -74,6 +74,11 @@ Verify mutations `invalidateQueries`; consider optimistic insert so reviews appe
 ---
 
 ## Implementation status
+- [x] Q2 — `useCategories()` query hook (`api/queries/useCategories.ts`, key
+  `queryKeys.categories()`, 30 min `staleTime`). Replaced raw
+  `api.get('categories/')` + `useState`/`useEffect` in `App.tsx` with the hook;
+  dropped the now-unused `api` import. Cached + shared across mounts. `tsc` +
+  ESLint (0 errors) clean.
 - [x] R1 + R2 + Q1 — notif menu dedup + i18n + SPA nav. Extracted shared
   `<NotificationMenu>` (`components/layout/NotificationMenu.tsx`) + `useNotificationClick()`
   hook (`hooks/useNotificationClick.ts`); `App.tsx` and `NavSidebar.tsx` now both render

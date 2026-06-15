@@ -4,6 +4,7 @@
  * params (URL-stable, not the full args object).
  */
 export const queryKeys = {
+  categories: () => ['categories'] as const,
   dashboard: () => ['dashboard'] as const,
   publicProfile: (username: string) => ['publicProfile', username] as const,
   publicProfileAll: () => ['publicProfile'] as const,

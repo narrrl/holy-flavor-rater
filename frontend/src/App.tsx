@@ -16,7 +16,6 @@ import { GlassAppBar } from './components/ui';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { useTranslation } from 'react-i18next';
-import api from './lib/api';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
 import { GlobalSearch } from './app/GlobalSearch';
@@ -24,6 +23,7 @@ import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { useDrawerAnchor } from './hooks/useDrawerAnchor';
 import { NavSidebar, NAV_SIDEBAR_WIDTH } from './components/layout/NavSidebar';
+import { useCategories } from './api/queries/useCategories';
 import { NotificationMenu } from './components/layout/NotificationMenu';
 import { RequireSuperuser } from './components/auth/RequireSuperuser';
 import type { CatppuccinTheme } from './theme';
@@ -61,19 +61,9 @@ const App: React.FC = () => {
   const { anchor: mobileAnchor } = useDrawerAnchor();
 
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
-  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+  const { data: categories = [] } = useCategories();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    api
-      .get('categories/')
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : res.data.results || [];
-        setCategories(data);
-      })
-      .catch(() => setCategories([]));
-  }, []);
 
   useEffect(() => {
     document.body.style.backgroundColor = muiTheme.palette.background.default;
