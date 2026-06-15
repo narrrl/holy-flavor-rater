@@ -84,7 +84,7 @@ See **`backend-rs/README.md`** for the full endpoint matrix, parity notes, and s
 ### Integrity Protection
 This project includes a **Pre-Push Git Hook** to ensure code quality. It automatically:
 1.  Attempts a full Frontend build (`tsc` + `vite build`).
-2.  Runs Rust backend checks (`cargo check`).
+2.  Runs Rust backend checks (`cargo fmt --check` + `cargo check`).
 
 **To install the hooks:**
 ```bash
