@@ -1,6 +1,8 @@
 import { createContext, useCallback, useEffect, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../hooks/useToast';
 import { queryKeys } from '../api/keys';
 import { useNotificationsQuery, type Notification } from '../api/queries/useNotifications';
 import {
@@ -22,6 +24,8 @@ export const NotificationContext = createContext<NotificationContextValue | null
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user, setUser, refetchUser } = useAuth();
   const qc = useQueryClient();
+  const { notify } = useToast();
+  const { t } = useTranslation();
 
   const { data: notifications = [], refetch } = useNotificationsQuery(!!user);
   const markAllMutation = useMarkAllNotificationsRead();
@@ -46,9 +50,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       await markAllMutation.mutateAsync();
       if (user) setUser({ ...user, unread_notifications_count: 0 });
     } catch {
-      /* ignore */
+      // Surface the failure — otherwise the badge silently stays and the user
+      // thinks the click did nothing.
+      notify({ message: t('community.markAllReadFailed'), severity: 'error' });
     }
-  }, [markAllMutation, setUser, user]);
+  }, [markAllMutation, setUser, user, notify, t]);
 
   const markRead = useCallback(
     async (id: number) => {

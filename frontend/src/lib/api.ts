@@ -18,7 +18,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-type RetriableConfig = AxiosRequestConfig & {
+export type RetriableConfig = AxiosRequestConfig & {
   _retry?: boolean;
   /** When true, a 401 that survives refresh will silently reject instead of
    *  navigating to /login. Use for background probes (e.g. /users/me/) so

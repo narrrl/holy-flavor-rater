@@ -12,13 +12,13 @@ import '../i18n';
 export const AppProviders = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <AuthProvider>
-        <NotificationProvider>
-          <ToastProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <NotificationProvider>
             <ConfirmProvider>{children}</ConfirmProvider>
-          </ToastProvider>
-        </NotificationProvider>
-      </AuthProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
     {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
   </QueryClientProvider>

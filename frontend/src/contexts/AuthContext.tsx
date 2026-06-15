@@ -1,6 +1,6 @@
 import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import api from '../lib/api';
+import api, { type RetriableConfig } from '../lib/api';
 
 export interface AuthUser {
   username: string;
@@ -51,8 +51,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refetchUser = useCallback(async () => {
     try {
       const res = await api.get('users/me/', {
-        ...({ skipAuthRedirect: true } as object),
-      });
+        skipAuthRedirect: true,
+      } as RetriableConfig);
       if (res.data?.username) {
         setUser(res.data);
         if (res.data.theme) localStorage.setItem('theme', res.data.theme);

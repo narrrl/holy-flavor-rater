@@ -74,6 +74,17 @@ Verify mutations `invalidateQueries`; consider optimistic insert so reviews appe
 ---
 
 ## Implementation status
+- [x] Q4 — dropped the `as object` cast. Exported `RetriableConfig` from
+  `lib/api.ts`; `AuthContext.refetchUser` now passes `{ skipAuthRedirect: true }
+  as RetriableConfig` (the field is part of that type) instead of the
+  `...({ ... } as object)` spread hack. `tsc` + ESLint (0 errors) clean.
+- [x] U3 — mark-all-read no longer fails silently. `NotificationContext.markAllRead`
+  catch block now fires an error toast (`community.markAllReadFailed`, EN+DE) via
+  `useToast().notify` instead of swallowing. Root cause was also a provider-order
+  bug: `ToastProvider` sat *inside* `NotificationProvider`, so the context couldn't
+  reach `useToast` — hoisted `ToastProvider` above `AuthProvider`/`NotificationProvider`
+  in `app/providers.tsx` (it only needs the MUI theme, which stays outermost).
+  `tsc` + ESLint (0 errors) clean.
 - [x] U2 — killed the hard `window.location.href='/'` reloads. `Login.tsx`
   (post-login) now `await refetchUser()` + `navigate('/')`; `Settings.tsx`
   (post-account-deletion) `queryClient.clear()` + `await refetchUser()` +
