@@ -89,3 +89,10 @@ impl IntoResponse for ApiError {
 }
 
 pub type ApiResult<T> = Result<T, ApiError>;
+
+/// True if a `DbErr` is a SQLite UNIQUE-constraint violation. SeaORM surfaces the
+/// underlying sqlx message verbatim; matching on it lets handlers turn a racing
+/// duplicate insert into a clean 400 instead of a generic 500.
+pub fn is_unique_violation(e: &sea_orm::DbErr) -> bool {
+    e.to_string().contains("UNIQUE constraint failed")
+}

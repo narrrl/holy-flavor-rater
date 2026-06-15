@@ -80,7 +80,8 @@ async fn list(
             let like = format!("%{w}%");
             cond = cond
                 .add(flavor::Column::Name.like(&like))
-                .add(flavor::Column::Description.like(&like));
+                .add(flavor::Column::Description.like(&like))
+                .add(flavor::Column::Aliases.like(&like));
             has = true;
         }
         if has {
@@ -99,7 +100,7 @@ async fn list(
         .all(&state.db)
         .await?;
 
-    let results = build_flavors(&state, &ctx, models, viewer, &[]).await?;
+    let results = build_flavors(&state, &ctx, models, viewer, &[], false).await?;
     Ok(Json(Paginated::build(&ctx, results, count, page, size)))
 }
 
@@ -114,7 +115,7 @@ async fn retrieve(
         .one(&state.db)
         .await?
         .ok_or(ApiError::NotFound)?;
-    let mut dtos = build_flavors(&state, &ctx, vec![model], viewer, &[]).await?;
+    let mut dtos = build_flavors(&state, &ctx, vec![model], viewer, &[], true).await?;
     dtos.pop().map(Json).ok_or(ApiError::NotFound)
 }
 
@@ -143,7 +144,7 @@ async fn top(
         .all(&state.db)
         .await?;
     Ok(Json(
-        build_flavors(&state, &ctx, models, viewer, &[]).await?,
+        build_flavors(&state, &ctx, models, viewer, &[], false).await?,
     ))
 }
 
@@ -159,7 +160,7 @@ async fn newest(
         .all(&state.db)
         .await?;
     Ok(Json(
-        build_flavors(&state, &ctx, models, viewer, &[]).await?,
+        build_flavors(&state, &ctx, models, viewer, &[], false).await?,
     ))
 }
 
@@ -194,7 +195,7 @@ async fn followed_top(
         .all(&state.db)
         .await?;
     Ok(Json(
-        build_flavors(&state, &ctx, models, Some(uid), &[]).await?,
+        build_flavors(&state, &ctx, models, Some(uid), &[], false).await?,
     ))
 }
 
@@ -229,7 +230,8 @@ async fn search(
             let like = format!("%{w}%");
             cond = cond
                 .add(flavor::Column::Name.like(&like))
-                .add(flavor::Column::Description.like(&like));
+                .add(flavor::Column::Description.like(&like))
+                .add(flavor::Column::Aliases.like(&like));
         }
         q = q.filter(cond);
     }

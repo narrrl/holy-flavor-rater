@@ -38,7 +38,7 @@ const AdminFlavors: React.FC = () => {
 
     setIsMerging(true);
     try {
-      await api.post('admin/merge_flavors/', {
+      await api.post('admin-custom/merge_flavors/', {
         keep_id: keepFlavor.id,
         remove_id: removeFlavor.id,
       });

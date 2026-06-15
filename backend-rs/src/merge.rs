@@ -87,14 +87,46 @@ pub async fn merge_flavors(
         None
     };
 
+    // Record the removed flavor's name (and any aliases it already carried) onto
+    // the survivor, so `seed_legacy` won't recreate the merged-away row and search
+    // still resolves the old name. Deduped case-insensitively; never alias the
+    // kept flavor's own name.
+    let original = json_str_list(&keep.aliases);
+    let mut aliases = original.clone();
+    let mut seen: std::collections::HashSet<String> =
+        aliases.iter().map(|a| a.to_lowercase()).collect();
+    seen.insert(keep.name.to_lowercase());
+    for cand in std::iter::once(remove.name.clone()).chain(json_str_list(&remove.aliases)) {
+        if seen.insert(cand.to_lowercase()) {
+            aliases.push(cand);
+        }
+    }
+    let aliases_changed = aliases.len() != original.len();
+
     Flavor::delete_by_id(remove.id).exec(&txn).await?;
 
-    if let Some(eid) = inherited {
+    if inherited.is_some() || aliases_changed {
         let mut am: flavor::ActiveModel = keep.clone().into();
-        am.external_id = Set(Some(eid));
+        if let Some(eid) = inherited {
+            am.external_id = Set(Some(eid));
+        }
+        if aliases_changed {
+            am.aliases = Set(Some(serde_json::json!(aliases)));
+        }
         am.update(&txn).await?;
     }
 
     txn.commit().await?;
     Ok(())
+}
+
+/// Django JSONField (list) stored as TEXT → Vec<String>, tolerating null/non-array.
+fn json_str_list(v: &Option<serde_json::Value>) -> Vec<String> {
+    match v {
+        Some(serde_json::Value::Array(arr)) => arr
+            .iter()
+            .filter_map(|x| x.as_str().map(String::from))
+            .collect(),
+        _ => Vec::new(),
+    }
 }

@@ -131,6 +131,18 @@ impl BackgroundJob for SeedLegacy {
                     }
                 }
 
+                // Don't recreate a legacy flavor that has since been merged into a
+                // (Shopify) flavor — the survivor carries this name as an alias.
+                if existing.is_none() {
+                    if let Some(owner) = alias_owner(db, name, cat.id).await? {
+                        log.push(format!(
+                            "Skipping '{name}' (superseded by '{}')",
+                            owner.name
+                        ));
+                        continue;
+                    }
+                }
+
                 // Resolve image first (so we can set local paths on insert).
                 let mut local_paths: Option<Vec<String>> = None;
                 if let Some(url) = image_url.filter(|s| !s.is_empty()) {
@@ -205,6 +217,37 @@ fn pystr(v: Option<&Value>) -> String {
     match v.and_then(|x| x.as_str()) {
         Some(s) => s.to_string(),
         None => "None".to_string(),
+    }
+}
+
+/// A flavor in `category_id` that lists `name` (case-insensitive) among its
+/// merge aliases, if any. Used to suppress recreating a merged-away legacy row.
+async fn alias_owner(
+    db: &DatabaseConnection,
+    name: &str,
+    category_id: i32,
+) -> anyhow::Result<Option<flavor::Model>> {
+    let nl = name.to_lowercase();
+    let candidates = Flavor::find()
+        .filter(flavor::Column::CategoryId.eq(category_id))
+        .filter(flavor::Column::Aliases.is_not_null())
+        .all(db)
+        .await?;
+    Ok(candidates.into_iter().find(|f| {
+        json_str_list(&f.aliases)
+            .iter()
+            .any(|a| a.to_lowercase() == nl)
+    }))
+}
+
+/// Django JSONField (list) stored as TEXT → Vec<String>.
+fn json_str_list(v: &Option<Value>) -> Vec<String> {
+    match v {
+        Some(Value::Array(arr)) => arr
+            .iter()
+            .filter_map(|x| x.as_str().map(String::from))
+            .collect(),
+        _ => Vec::new(),
     }
 }
 

@@ -189,12 +189,51 @@ pub async fn build_ratings(
     Ok(out)
 }
 
+/// Per-flavor rating rollup accumulated in a single pass over the loaded ratings,
+/// replacing the previous O(flavors × ratings) re-scan.
+struct RatingAgg {
+    sum: i64,
+    n: i64,
+    followed_sum: i64,
+    followed_n: i64,
+    dist: BTreeMap<String, i64>,
+    /// The viewer's own score for this flavor, if they rated it.
+    viewer_score: Option<i32>,
+}
+
+impl Default for RatingAgg {
+    fn default() -> Self {
+        RatingAgg {
+            sum: 0,
+            n: 0,
+            followed_sum: 0,
+            followed_n: 0,
+            dist: empty_distribution(),
+            viewer_score: None,
+        }
+    }
+}
+
+impl RatingAgg {
+    fn average(&self) -> Option<f64> {
+        (self.n > 0).then(|| self.sum as f64 / self.n as f64)
+    }
+    fn followed_average(&self) -> Option<f64> {
+        (self.followed_n > 0).then(|| self.followed_sum as f64 / self.followed_n as f64)
+    }
+}
+
+/// Build `FlavorOut`s. `include_replies` controls whether each nested rating
+/// carries its replies: the flavor *detail* view needs them, but card/list
+/// callers (list/top/newest/followed_top) don't — skipping the reply query +
+/// reply-author lookups avoids shipping data the list UI never reads.
 pub async fn build_flavors(
     state: &AppState,
     ctx: &RequestCtx,
     flavors: Vec<flavor::Model>,
     viewer_id: Option<i32>,
     followed_ids: &[i32],
+    include_replies: bool,
 ) -> ApiResult<Vec<FlavorOut>> {
     let media = &state.config.media_url;
     if flavors.is_empty() {
@@ -218,17 +257,21 @@ pub async fn build_flavors(
         .order_by_desc(rating::Column::CreatedAt)
         .all(&state.db)
         .await?;
-    let rating_ids: Vec<i32> = ratings.iter().map(|r| r.id).collect();
 
-    // Replies (order: created_at asc)
-    let replies = if rating_ids.is_empty() {
-        Vec::new()
+    // Replies (order: created_at asc) — only loaded for the detail view.
+    let replies = if include_replies {
+        let rating_ids: Vec<i32> = ratings.iter().map(|r| r.id).collect();
+        if rating_ids.is_empty() {
+            Vec::new()
+        } else {
+            Reply::find()
+                .filter(reply::Column::RatingId.is_in(rating_ids))
+                .order_by_asc(reply::Column::CreatedAt)
+                .all(&state.db)
+                .await?
+        }
     } else {
-        Reply::find()
-            .filter(reply::Column::RatingId.is_in(rating_ids))
-            .order_by_asc(reply::Column::CreatedAt)
-            .all(&state.db)
-            .await?
+        Vec::new()
     };
 
     // Users referenced by ratings + replies
@@ -267,9 +310,13 @@ pub async fn build_flavors(
 
     // Flavor lookup for per-rating flavor fields
     let flavor_map: HashMap<i32, &flavor::Model> = flavors.iter().map(|f| (f.id, f)).collect();
+    let followed_set: std::collections::HashSet<i32> = followed_ids.iter().copied().collect();
 
-    // Ratings grouped by flavor id
+    // Single pass over ratings: build the nested RatingOut grouped by flavor AND
+    // accumulate average / followed-average / distribution / the viewer's own
+    // score per flavor.
     let mut ratings_by_flavor: HashMap<i32, Vec<RatingOut>> = HashMap::new();
+    let mut agg_by_flavor: HashMap<i32, RatingAgg> = HashMap::new();
     for r in &ratings {
         let user = user_map.get(&r.user_id);
         let username = user.map(|u| u.username.clone()).unwrap_or_default();
@@ -311,47 +358,20 @@ pub async fn build_flavors(
                 created_at: crate::datetime::drf_iso(&r.created_at),
                 replies: replies_by_rating.remove(&r.id).unwrap_or_default(),
             });
-    }
 
-    // Average + distribution per flavor, from loaded ratings
-    let followed_set: std::collections::HashSet<i32> = followed_ids.iter().copied().collect();
-    let mut avg_by_flavor: HashMap<i32, Option<f64>> = HashMap::new();
-    let mut followed_avg_by_flavor: HashMap<i32, Option<f64>> = HashMap::new();
-    let mut dist_by_flavor: HashMap<i32, BTreeMap<String, i64>> = HashMap::new();
-    for fid in &flavor_ids {
-        let mut dist = empty_distribution();
-        let mut sum = 0i64;
-        let mut n = 0i64;
-        let mut fsum = 0i64;
-        let mut fn_ = 0i64;
-        for r in ratings.iter().filter(|r| r.flavor_id == *fid) {
-            if (1..=10).contains(&r.score) {
-                *dist.get_mut(&r.score.to_string()).unwrap() += 1;
-            }
-            sum += r.score as i64;
-            n += 1;
-            if followed_set.contains(&r.user_id) {
-                fsum += r.score as i64;
-                fn_ += 1;
-            }
+        let a = agg_by_flavor.entry(r.flavor_id).or_default();
+        if (1..=10).contains(&r.score) {
+            *a.dist.get_mut(&r.score.to_string()).unwrap() += 1;
         }
-        avg_by_flavor.insert(
-            *fid,
-            if n == 0 {
-                None
-            } else {
-                Some(sum as f64 / n as f64)
-            },
-        );
-        followed_avg_by_flavor.insert(
-            *fid,
-            if fn_ == 0 {
-                None
-            } else {
-                Some(fsum as f64 / fn_ as f64)
-            },
-        );
-        dist_by_flavor.insert(*fid, dist);
+        a.sum += r.score as i64;
+        a.n += 1;
+        if followed_set.contains(&r.user_id) {
+            a.followed_sum += r.score as i64;
+            a.followed_n += 1;
+        }
+        if Some(r.user_id) == viewer_id {
+            a.viewer_score = Some(r.score);
+        }
     }
 
     let mut out = Vec::with_capacity(flavors.len());
@@ -359,12 +379,8 @@ pub async fn build_flavors(
         let (cat_name, cat_slug) = cat_map.get(&f.category_id).cloned().unwrap_or_default();
         let local_paths = json_string_list(&f.local_image_paths);
         let image_urls = json_string_list(&f.image_urls);
-        let user_rating = viewer_id.and_then(|vid| {
-            ratings
-                .iter()
-                .find(|r| r.flavor_id == f.id && r.user_id == vid)
-                .map(|r| r.score)
-        });
+        let agg = agg_by_flavor.remove(&f.id);
+        let user_rating = viewer_id.and(agg.as_ref().and_then(|a| a.viewer_score));
         out.push(FlavorOut {
             id: f.id,
             name: f.name.clone(),
@@ -372,8 +388,8 @@ pub async fn build_flavors(
             category_name: cat_name,
             category_slug: cat_slug,
             description: f.description.clone(),
-            average_rating: avg_by_flavor.get(&f.id).copied().flatten(),
-            followed_average_rating: followed_avg_by_flavor.get(&f.id).copied().flatten(),
+            average_rating: agg.as_ref().and_then(RatingAgg::average),
+            followed_average_rating: agg.as_ref().and_then(RatingAgg::followed_average),
             user_rating,
             ratings: ratings_by_flavor.remove(&f.id).unwrap_or_default(),
             image_url: flavor_primary_image(
@@ -394,9 +410,7 @@ pub async fn build_flavors(
             is_available: f.is_available,
             is_legacy: f.is_legacy,
             shop_url: f.shop_url.clone(),
-            rating_distribution: dist_by_flavor
-                .remove(&f.id)
-                .unwrap_or_else(empty_distribution),
+            rating_distribution: agg.map(|a| a.dist).unwrap_or_else(empty_distribution),
         });
     }
     Ok(out)

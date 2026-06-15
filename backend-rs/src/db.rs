@@ -36,5 +36,48 @@ pub async fn connect(database_url: &str) -> anyhow::Result<DatabaseConnection> {
         }
     }
 
+    ensure_schema(&conn).await?;
+
     Ok(conn)
+}
+
+/// Idempotent, additive schema patches the Rust backend owns now that Django is
+/// retired. SQLite has no `ADD COLUMN IF NOT EXISTS`, so we probe `PRAGMA
+/// table_info` first and only ALTER when the column is missing.
+async fn ensure_schema(conn: &DatabaseConnection) -> anyhow::Result<()> {
+    add_column_if_missing(
+        conn,
+        "api_flavor",
+        "aliases",
+        "ALTER TABLE api_flavor ADD COLUMN aliases TEXT",
+    )
+    .await?;
+    Ok(())
+}
+
+async fn add_column_if_missing(
+    conn: &DatabaseConnection,
+    table: &str,
+    column: &str,
+    alter_sql: &str,
+) -> anyhow::Result<()> {
+    let rows = conn
+        .query_all(Statement::from_string(
+            DatabaseBackend::Sqlite,
+            format!("PRAGMA table_info({table})"),
+        ))
+        .await?;
+    let exists = rows
+        .iter()
+        .any(|r| r.try_get::<String>("", "name").as_deref() == Ok(column));
+    if exists {
+        return Ok(());
+    }
+    conn.execute(Statement::from_string(
+        DatabaseBackend::Sqlite,
+        alter_sql.to_owned(),
+    ))
+    .await?;
+    tracing::info!("schema: added {table}.{column}");
+    Ok(())
 }
