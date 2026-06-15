@@ -223,16 +223,28 @@ impl RatingAgg {
     }
 }
 
-/// Build `FlavorOut`s. `include_replies` controls whether each nested rating
-/// carries its replies: the flavor *detail* view needs them, but card/list
-/// callers (list/top/newest/followed_top) don't — skipping the reply query +
-/// reply-author lookups avoids shipping data the list UI never reads.
+/// Build `FlavorOut`s.
+///
+/// `include_ratings` controls whether each flavor carries its full nested
+/// `ratings` array. The aggregate rollup (average / followed-average /
+/// distribution / the viewer's own score) is always computed cheaply in one
+/// pass over the loaded rows, so callers that only render those fields
+/// (`newest`, `followed_top`, the dashboard's "missing flavors" — which loads
+/// *every* unrated flavor) pass `false` and skip allocating a `RatingOut` per
+/// rating plus the rating-author user lookup. `list`/`top`/detail pass `true`
+/// because their UI reads the nested reviews (counts, comment previews, the
+/// featured review).
+///
+/// `include_replies` further controls whether each nested rating carries its
+/// replies: only the flavor *detail* view needs them, so it alone pays for the
+/// reply query + reply-author lookups. It implies `include_ratings`.
 pub async fn build_flavors(
     state: &AppState,
     ctx: &RequestCtx,
     flavors: Vec<flavor::Model>,
     viewer_id: Option<i32>,
     followed_ids: &[i32],
+    include_ratings: bool,
     include_replies: bool,
 ) -> ApiResult<Vec<FlavorOut>> {
     let media = &state.config.media_url;
@@ -259,6 +271,7 @@ pub async fn build_flavors(
         .await?;
 
     // Replies (order: created_at asc) — only loaded for the detail view.
+    let include_replies = include_replies && include_ratings;
     let replies = if include_replies {
         let rating_ids: Vec<i32> = ratings.iter().map(|r| r.id).collect();
         if rating_ids.is_empty() {
@@ -274,20 +287,28 @@ pub async fn build_flavors(
         Vec::new()
     };
 
-    // Users referenced by ratings + replies
-    let mut user_ids: Vec<i32> = ratings.iter().map(|r| r.user_id).collect();
-    user_ids.extend(replies.iter().map(|r| r.user_id));
-    user_ids.sort_unstable();
-    user_ids.dedup();
-    let users = if user_ids.is_empty() {
-        Vec::new()
+    // Users referenced by ratings + replies — only needed to fill the nested
+    // rating/reply author fields, so skip the lookup entirely when the caller
+    // doesn't want the nested ratings.
+    let user_map: HashMap<i32, user::Model> = if include_ratings {
+        let mut user_ids: Vec<i32> = ratings.iter().map(|r| r.user_id).collect();
+        user_ids.extend(replies.iter().map(|r| r.user_id));
+        user_ids.sort_unstable();
+        user_ids.dedup();
+        if user_ids.is_empty() {
+            HashMap::new()
+        } else {
+            User::find()
+                .filter(user::Column::Id.is_in(user_ids))
+                .all(&state.db)
+                .await?
+                .into_iter()
+                .map(|u| (u.id, u))
+                .collect()
+        }
     } else {
-        User::find()
-            .filter(user::Column::Id.is_in(user_ids))
-            .all(&state.db)
-            .await?
+        HashMap::new()
     };
-    let user_map: HashMap<i32, user::Model> = users.into_iter().map(|u| (u.id, u)).collect();
 
     // Replies grouped by rating id
     let mut replies_by_rating: HashMap<i32, Vec<ReplyOut>> = HashMap::new();
@@ -318,46 +339,50 @@ pub async fn build_flavors(
     let mut ratings_by_flavor: HashMap<i32, Vec<RatingOut>> = HashMap::new();
     let mut agg_by_flavor: HashMap<i32, RatingAgg> = HashMap::new();
     for r in &ratings {
-        let user = user_map.get(&r.user_id);
-        let username = user.map(|u| u.username.clone()).unwrap_or_default();
-        let user_avatar = user
-            .and_then(|u| u.avatar.as_deref())
-            .filter(|s| !s.is_empty())
-            .map(|a| image_field_url(ctx, media, a));
+        // Nested RatingOut: only built when the caller will ship it. The
+        // aggregate accumulation below always runs (it's the cheap part).
+        if include_ratings {
+            let user = user_map.get(&r.user_id);
+            let username = user.map(|u| u.username.clone()).unwrap_or_default();
+            let user_avatar = user
+                .and_then(|u| u.avatar.as_deref())
+                .filter(|s| !s.is_empty())
+                .map(|a| image_field_url(ctx, media, a));
 
-        let fl = flavor_map.get(&r.flavor_id);
-        let (cat_name, cat_slug) = fl
-            .and_then(|f| cat_map.get(&f.category_id))
-            .cloned()
-            .unwrap_or_default();
-        let flavor_image = fl.and_then(|f| {
-            if let Some(img) = f.image.as_deref().filter(|s| !s.is_empty()) {
-                Some(image_field_url(ctx, media, img))
-            } else {
-                f.image_url.clone()
-            }
-        });
-
-        ratings_by_flavor
-            .entry(r.flavor_id)
-            .or_default()
-            .push(RatingOut {
-                id: r.id,
-                user: username,
-                user_id: r.user_id,
-                user_avatar,
-                flavor: r.flavor_id,
-                flavor_name: fl.map(|f| f.name.clone()).unwrap_or_default(),
-                flavor_image,
-                category_name: cat_name,
-                category_slug: cat_slug,
-                is_available: fl.map(|f| f.is_available).unwrap_or(false),
-                is_legacy: fl.map(|f| f.is_legacy).unwrap_or(false),
-                score: r.score,
-                comment: r.comment.clone(),
-                created_at: crate::datetime::drf_iso(&r.created_at),
-                replies: replies_by_rating.remove(&r.id).unwrap_or_default(),
+            let fl = flavor_map.get(&r.flavor_id);
+            let (cat_name, cat_slug) = fl
+                .and_then(|f| cat_map.get(&f.category_id))
+                .cloned()
+                .unwrap_or_default();
+            let flavor_image = fl.and_then(|f| {
+                if let Some(img) = f.image.as_deref().filter(|s| !s.is_empty()) {
+                    Some(image_field_url(ctx, media, img))
+                } else {
+                    f.image_url.clone()
+                }
             });
+
+            ratings_by_flavor
+                .entry(r.flavor_id)
+                .or_default()
+                .push(RatingOut {
+                    id: r.id,
+                    user: username,
+                    user_id: r.user_id,
+                    user_avatar,
+                    flavor: r.flavor_id,
+                    flavor_name: fl.map(|f| f.name.clone()).unwrap_or_default(),
+                    flavor_image,
+                    category_name: cat_name,
+                    category_slug: cat_slug,
+                    is_available: fl.map(|f| f.is_available).unwrap_or(false),
+                    is_legacy: fl.map(|f| f.is_legacy).unwrap_or(false),
+                    score: r.score,
+                    comment: r.comment.clone(),
+                    created_at: crate::datetime::drf_iso(&r.created_at),
+                    replies: replies_by_rating.remove(&r.id).unwrap_or_default(),
+                });
+        }
 
         let a = agg_by_flavor.entry(r.flavor_id).or_default();
         if (1..=10).contains(&r.score) {

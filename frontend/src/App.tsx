@@ -1,13 +1,10 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import {
   Typography,
   Button,
   Box,
   IconButton,
-  Avatar,
-  Menu,
-  MenuItem,
   SwipeableDrawer,
   CircularProgress,
   Badge,
@@ -22,15 +19,13 @@ import { useTranslation } from 'react-i18next';
 import api from './lib/api';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
-import { formatDate } from './utils/date';
 import { GlobalSearch } from './app/GlobalSearch';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
-import { useNotifications } from './hooks/useNotifications';
 import { useDrawerAnchor } from './hooks/useDrawerAnchor';
 import { NavSidebar, NAV_SIDEBAR_WIDTH } from './components/layout/NavSidebar';
+import { NotificationMenu } from './components/layout/NotificationMenu';
 import { RequireSuperuser } from './components/auth/RequireSuperuser';
-import type { Notification } from './contexts/NotificationContext';
 import type { CatppuccinTheme } from './theme';
 
 const MainPage = lazy(() => import('./pages/MainPage'));
@@ -60,11 +55,9 @@ const AdminReplyDetail = lazy(() => import('./pages/AdminReplyDetail'));
 
 const App: React.FC = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const muiTheme = useMuiTheme();
   const { user, loadingUser } = useAuth();
   const { themeName, handleThemeChange } = useTheme();
-  const { notifications, markAllRead, markRead } = useNotifications();
   const { anchor: mobileAnchor } = useDrawerAnchor();
 
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
@@ -91,20 +84,6 @@ const App: React.FC = () => {
     await handleThemeChange(name, !!user);
   };
 
-  const handleNotificationClick = async (notif: Notification) => {
-    if (!notif.is_read) await markRead(notif.id);
-    setNotifAnchorEl(null);
-    if (notif.notification_type.startsWith('ticket')) {
-      navigate(user?.is_superuser ? '/admin-panel/tickets' : '/support');
-    } else if (notif.notification_type === 'profile_comment') {
-      navigate(`/profile/${user?.username}`);
-    } else if (notif.notification_type === 'follow') {
-      navigate(`/profile/${notif.actor_username}`);
-    } else if (notif.flavor_id) {
-      window.location.href = `/flavor/${notif.flavor_id}`;
-    }
-  };
-
   const hamburger = (
     <IconButton
       color="inherit"
@@ -123,84 +102,12 @@ const App: React.FC = () => {
           <NotificationsIcon />
         </Badge>
       </IconButton>
-      <Menu
+      <NotificationMenu
         anchorEl={notifAnchorEl}
         open={Boolean(notifAnchorEl)}
         onClose={() => setNotifAnchorEl(null)}
-        elevation={3}
-        sx={{ mt: 1 }}
-        PaperProps={{ sx: { width: 320, maxHeight: 400, borderRadius: 1 } }}
-      >
-        <Box
-          sx={{
-            p: 1.5,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            Notifications
-          </Typography>
-          {(user?.unread_notifications_count || 0) > 0 && (
-            <Button size="small" onClick={markAllRead}>
-              Mark all read
-            </Button>
-          )}
-        </Box>
-        {notifications.length === 0 ? (
-          <Box sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              No notifications yet
-            </Typography>
-          </Box>
-        ) : (
-          notifications.map((n) => (
-            <MenuItem
-              key={n.id}
-              onClick={() => handleNotificationClick(n)}
-              sx={{
-                py: 1.5,
-                px: 2,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                bgcolor: n.is_read ? 'transparent' : alpha(muiTheme.palette.primary.main, 0.05),
-                whiteSpace: 'normal',
-                display: 'flex',
-                gap: 2,
-                alignItems: 'flex-start',
-              }}
-            >
-              <Avatar src={n.actor_avatar || undefined} sx={{ width: 32, height: 32 }}>
-                {n.actor_username.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" sx={{ lineHeight: 1.4 }}>
-                  <strong>{n.actor_username}</strong>{' '}
-                  {n.notification_type === 'reply'
-                    ? `replied to your review on ${n.flavor_name}`
-                    : n.notification_type === 'mention'
-                      ? `mentioned you on ${n.flavor_name}`
-                      : n.notification_type === 'follow'
-                        ? t('community.notifFollow')
-                        : n.notification_type === 'profile_comment'
-                          ? `left a message on your guestbook`
-                          : n.notification_type === 'ticket_new'
-                            ? t('community.notifTicketNew')
-                            : user?.is_superuser
-                              ? t('community.notifTicketReplyAdmin')
-                              : t('community.notifTicketReply')}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatDate(n.created_at)}
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))
-        )}
-      </Menu>
+        menuSx={{ mt: 1 }}
+      />
     </>
   );
 

@@ -100,7 +100,9 @@ async fn list(
         .all(&state.db)
         .await?;
 
-    let results = build_flavors(&state, &ctx, models, viewer, &[], false).await?;
+    // List cards show review counts + comment previews, so they need the nested
+    // ratings (but not replies).
+    let results = build_flavors(&state, &ctx, models, viewer, &[], true, false).await?;
     Ok(Json(Paginated::build(&ctx, results, count, page, size)))
 }
 
@@ -115,7 +117,8 @@ async fn retrieve(
         .one(&state.db)
         .await?
         .ok_or(ApiError::NotFound)?;
-    let mut dtos = build_flavors(&state, &ctx, vec![model], viewer, &[], true).await?;
+    // Detail view: full nested ratings + their replies.
+    let mut dtos = build_flavors(&state, &ctx, vec![model], viewer, &[], true, true).await?;
     dtos.pop().map(Json).ok_or(ApiError::NotFound)
 }
 
@@ -143,8 +146,10 @@ async fn top(
         .limit(10)
         .all(&state.db)
         .await?;
+    // The home "Hall of Fame" reads each top flavor's review count + featured
+    // review, so it needs the nested ratings.
     Ok(Json(
-        build_flavors(&state, &ctx, models, viewer, &[], false).await?,
+        build_flavors(&state, &ctx, models, viewer, &[], true, false).await?,
     ))
 }
 
@@ -159,8 +164,9 @@ async fn newest(
         .limit(10)
         .all(&state.db)
         .await?;
+    // Rendered as compact cards (no nested ratings read).
     Ok(Json(
-        build_flavors(&state, &ctx, models, viewer, &[], false).await?,
+        build_flavors(&state, &ctx, models, viewer, &[], false, false).await?,
     ))
 }
 
@@ -194,8 +200,9 @@ async fn followed_top(
         .limit(10)
         .all(&state.db)
         .await?;
+    // Compact cards (id/name/image/average only) — skip the nested ratings.
     Ok(Json(
-        build_flavors(&state, &ctx, models, Some(uid), &[], false).await?,
+        build_flavors(&state, &ctx, models, Some(uid), &[], false, false).await?,
     ))
 }
 

@@ -1363,8 +1363,19 @@ async fn dashboard(
     });
 
     let missing_count = all_flavors.len() as i64;
-    let missing_flavors =
-        build_flavors(&state, &ctx, all_flavors, Some(uid), &followed, false).await?;
+    // The dashboard "explore" grid sorts these by community / followed average
+    // but never reads the nested ratings, and this query loads *every* unrated
+    // flavor — so skip building a RatingOut per rating (large payload win).
+    let missing_flavors = build_flavors(
+        &state,
+        &ctx,
+        all_flavors,
+        Some(uid),
+        &followed,
+        false,
+        false,
+    )
+    .await?;
     let user = build_user(&state, &ctx, me, Some(uid)).await?;
 
     Ok(Json(DashboardOut {
