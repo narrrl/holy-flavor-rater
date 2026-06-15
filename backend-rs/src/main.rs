@@ -11,8 +11,8 @@ mod entities;
 mod error;
 mod jobs;
 mod media;
-mod merge;
 mod mentions;
+mod merge;
 mod openapi;
 mod pagination;
 mod password;
@@ -63,21 +63,21 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState {
         db,
         config,
-        running_jobs: std::sync::Arc::new(tokio::sync::Mutex::new(std::collections::HashSet::new())),
+        running_jobs: std::sync::Arc::new(
+            tokio::sync::Mutex::new(std::collections::HashSet::new()),
+        ),
         security: std::sync::Arc::new(crate::throttle::Security::new()),
     };
 
     // Background scheduler: runs jobs whose `interval_hours` has elapsed,
     // replacing Celery beat. Restart-safe (last_run persists in the DB).
-    // Gated so it never double-schedules against a still-running Django beat
-    // during the strangler cutover — exactly one scheduler may own `api_job`.
+    // Gated by ENABLE_SCHEDULER — exactly one process may own `api_job`, so
+    // enable the scheduler on at most one running instance.
     if state.config.enable_scheduler {
         tracing::info!("job scheduler ENABLED (this process owns api_job scheduling)");
         jobs::spawn_scheduler(state.clone());
     } else {
-        tracing::warn!(
-            "job scheduler DISABLED (ENABLE_SCHEDULER!=true) — Django beat assumed to own jobs"
-        );
+        tracing::warn!("job scheduler DISABLED (ENABLE_SCHEDULER!=true)");
     }
 
     // Periodically sweep aged-out rate-limit / code buckets so the in-memory

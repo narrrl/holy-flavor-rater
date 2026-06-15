@@ -49,7 +49,11 @@ impl BackgroundJob for SeedBanners {
             if path.extension().and_then(|e| e.to_str()) != Some("json") {
                 continue;
             }
-            let filename = path.file_name().and_then(|f| f.to_str()).unwrap_or("").to_string();
+            let filename = path
+                .file_name()
+                .and_then(|f| f.to_str())
+                .unwrap_or("")
+                .to_string();
             if let Err(e) = sync_one(db, &path, &mut log).await {
                 log.push(format!("Failed to sync banner from {filename}: {e}"));
             }
@@ -63,7 +67,11 @@ async fn sync_one(
     path: &std::path::Path,
     log: &mut Vec<String>,
 ) -> anyhow::Result<()> {
-    let filename = path.file_name().and_then(|f| f.to_str()).unwrap_or("").to_string();
+    let filename = path
+        .file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or("")
+        .to_string();
     let content = fs::read_to_string(path)?;
     let data: Value = serde_json::from_str(&content)?;
 
@@ -78,9 +86,16 @@ async fn sync_one(
 
     match existing {
         None => {
-            let name = data.get("name").and_then(|v| v.as_str()).unwrap_or(slug).to_string();
-            let description =
-                data.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let name = data
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or(slug)
+                .to_string();
+            let description = data
+                .get("description")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             let settings = data.get("settings").cloned().unwrap_or_else(|| json!({}));
             // Mirror Banner.save(): become active when no other banner is active.
             let no_active = active_count(db, None).await? == 0;
@@ -130,7 +145,10 @@ async fn sync_one(
                 // Banner.save() invariant on every save.
                 if was_active {
                     Banner::update_many()
-                        .col_expr(banner::Column::IsActive, sea_orm::sea_query::Expr::value(false))
+                        .col_expr(
+                            banner::Column::IsActive,
+                            sea_orm::sea_query::Expr::value(false),
+                        )
                         .filter(banner::Column::IsActive.eq(true))
                         .filter(banner::Column::Id.ne(pk))
                         .exec(db)
@@ -139,7 +157,9 @@ async fn sync_one(
                     am.is_active = Set(true);
                 }
                 am.update(db).await?;
-                log.push(format!("Synced new settings for banner '{slug}' from {filename}"));
+                log.push(format!(
+                    "Synced new settings for banner '{slug}' from {filename}"
+                ));
             }
         }
     }

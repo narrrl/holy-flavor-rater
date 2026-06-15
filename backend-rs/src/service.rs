@@ -10,11 +10,13 @@ use sea_orm::{
 use serde_json::Value;
 
 use crate::dto::{
-    FlavorOut, NotificationOut, ProfileCommentOut, RatingOut, ReplyOut, TicketMessageOut, TicketOut,
-    UserOut,
+    FlavorOut, NotificationOut, ProfileCommentOut, RatingOut, ReplyOut, TicketMessageOut,
+    TicketOut, UserOut,
 };
 use crate::entities::prelude::*;
-use crate::entities::{category, flavor, notification, profile_comment, rating, reply, ticket, ticket_message, user};
+use crate::entities::{
+    category, flavor, notification, profile_comment, rating, reply, ticket, ticket_message, user,
+};
 use crate::error::ApiResult;
 use crate::media::{flavor_image_list, flavor_primary_image, image_field_url};
 use crate::state::AppState;
@@ -22,7 +24,10 @@ use crate::web::RequestCtx;
 
 /// Comma-join i32 ids for an inlined SQL `IN (...)` list. Safe: ints only.
 fn id_list(ids: &[i32]) -> String {
-    ids.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",")
+    ids.iter()
+        .map(|i| i.to_string())
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 /// Optional avatar → absolute media URL (empty path treated as absent).
@@ -204,10 +209,8 @@ pub async fn build_flavors(
         .filter(crate::entities::category::Column::Id.is_in(category_ids))
         .all(&state.db)
         .await?;
-    let cat_map: HashMap<i32, (String, String)> = cats
-        .into_iter()
-        .map(|c| (c.id, (c.name, c.slug)))
-        .collect();
+    let cat_map: HashMap<i32, (String, String)> =
+        cats.into_iter().map(|c| (c.id, (c.name, c.slug))).collect();
 
     // Ratings for these flavors (RatingSerializer order: -created_at)
     let ratings = Rating::find()
@@ -241,8 +244,7 @@ pub async fn build_flavors(
             .all(&state.db)
             .await?
     };
-    let user_map: HashMap<i32, user::Model> =
-        users.into_iter().map(|u| (u.id, u)).collect();
+    let user_map: HashMap<i32, user::Model> = users.into_iter().map(|u| (u.id, u)).collect();
 
     // Replies grouped by rating id
     let mut replies_by_rating: HashMap<i32, Vec<ReplyOut>> = HashMap::new();
@@ -264,8 +266,7 @@ pub async fn build_flavors(
     }
 
     // Flavor lookup for per-rating flavor fields
-    let flavor_map: HashMap<i32, &flavor::Model> =
-        flavors.iter().map(|f| (f.id, f)).collect();
+    let flavor_map: HashMap<i32, &flavor::Model> = flavors.iter().map(|f| (f.id, f)).collect();
 
     // Ratings grouped by flavor id
     let mut ratings_by_flavor: HashMap<i32, Vec<RatingOut>> = HashMap::new();
@@ -334,9 +335,22 @@ pub async fn build_flavors(
                 fn_ += 1;
             }
         }
-        avg_by_flavor.insert(*fid, if n == 0 { None } else { Some(sum as f64 / n as f64) });
-        followed_avg_by_flavor
-            .insert(*fid, if fn_ == 0 { None } else { Some(fsum as f64 / fn_ as f64) });
+        avg_by_flavor.insert(
+            *fid,
+            if n == 0 {
+                None
+            } else {
+                Some(sum as f64 / n as f64)
+            },
+        );
+        followed_avg_by_flavor.insert(
+            *fid,
+            if fn_ == 0 {
+                None
+            } else {
+                Some(fsum as f64 / fn_ as f64)
+            },
+        );
         dist_by_flavor.insert(*fid, dist);
     }
 
@@ -370,11 +384,19 @@ pub async fn build_flavors(
                 f.image.as_deref(),
                 f.image_url.as_deref(),
             ),
-            image_urls: flavor_image_list(ctx, media, &local_paths, f.image.as_deref(), &image_urls),
+            image_urls: flavor_image_list(
+                ctx,
+                media,
+                &local_paths,
+                f.image.as_deref(),
+                &image_urls,
+            ),
             is_available: f.is_available,
             is_legacy: f.is_legacy,
             shop_url: f.shop_url.clone(),
-            rating_distribution: dist_by_flavor.remove(&f.id).unwrap_or_else(empty_distribution),
+            rating_distribution: dist_by_flavor
+                .remove(&f.id)
+                .unwrap_or_else(empty_distribution),
         });
     }
     Ok(out)
@@ -432,7 +454,9 @@ async fn social_counts(
 
 /// Set of user ids that `viewer` follows, restricted to `ids`.
 async fn following_of(state: &AppState, viewer: Option<i32>, ids: &[i32]) -> ApiResult<Vec<i32>> {
-    let Some(v) = viewer else { return Ok(Vec::new()) };
+    let Some(v) = viewer else {
+        return Ok(Vec::new());
+    };
     if ids.is_empty() {
         return Ok(Vec::new());
     }
@@ -447,7 +471,9 @@ async fn following_of(state: &AppState, viewer: Option<i32>, ids: &[i32]) -> Api
             ),
         ))
         .await?;
-    rows.into_iter().map(|r| r.try_get("", "uid").map_err(Into::into)).collect()
+    rows.into_iter()
+        .map(|r| r.try_get("", "uid").map_err(Into::into))
+        .collect()
 }
 
 /// Build `UserOut`s (mirrors `UserSerializer`), batching social counts and the
@@ -464,8 +490,10 @@ pub async fn build_users(
     }
     let ids: Vec<i32> = users.iter().map(|u| u.id).collect();
     let (following, followers, unread) = social_counts(state, &ids).await?;
-    let followed: std::collections::HashSet<i32> =
-        following_of(state, viewer, &ids).await?.into_iter().collect();
+    let followed: std::collections::HashSet<i32> = following_of(state, viewer, &ids)
+        .await?
+        .into_iter()
+        .collect();
 
     let banner_ids: Vec<i32> = users.iter().filter_map(|u| u.selected_banner_id).collect();
     let banner_slugs: HashMap<i32, String> = if banner_ids.is_empty() {
@@ -636,7 +664,9 @@ pub async fn build_notifications(
         }
         if let Some(rep_id) = n.reply_id {
             let rep = replies.get(&rep_id)?;
-            return ratings.get(&rep.rating_id).and_then(|r| flavors.get(&r.flavor_id));
+            return ratings
+                .get(&rep.rating_id)
+                .and_then(|r| flavors.get(&r.flavor_id));
         }
         None
     };
@@ -713,13 +743,16 @@ pub async fn build_tickets(
     let mut msgs_by_ticket: HashMap<i32, Vec<TicketMessageOut>> = HashMap::new();
     for m in messages {
         let u = users.get(&m.user_id);
-        msgs_by_ticket.entry(m.ticket_id).or_default().push(TicketMessageOut {
-            id: m.id,
-            username: u.map(|x| x.username.clone()).unwrap_or_default(),
-            text: m.text,
-            created_at: crate::datetime::drf_iso(&m.created_at),
-            is_admin: u.map(|x| x.is_superuser).unwrap_or(false),
-        });
+        msgs_by_ticket
+            .entry(m.ticket_id)
+            .or_default()
+            .push(TicketMessageOut {
+                id: m.id,
+                username: u.map(|x| x.username.clone()).unwrap_or_default(),
+                text: m.text,
+                created_at: crate::datetime::drf_iso(&m.created_at),
+                is_admin: u.map(|x| x.is_superuser).unwrap_or(false),
+            });
     }
 
     Ok(tickets

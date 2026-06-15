@@ -26,8 +26,8 @@ use sea_orm::ActiveValue::Set;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 use unicode_normalization::UnicodeNormalization;
 
-use crate::entities::prelude::Job as JobEntity;
 use crate::entities::job;
+use crate::entities::prelude::Job as JobEntity;
 use crate::state::AppState;
 
 pub use scheduler::spawn_scheduler;
@@ -136,7 +136,11 @@ async fn run_inner(state: &AppState, job: &dyn BackgroundJob) -> anyhow::Result<
 /// media image paths (and category slugs) identical to Django's so files and
 /// rows are reused, not duplicated.
 pub fn slugify(value: &str) -> String {
-    let ascii: String = value.nfkd().filter(|c| c.is_ascii()).collect::<String>().to_lowercase();
+    let ascii: String = value
+        .nfkd()
+        .filter(|c| c.is_ascii())
+        .collect::<String>()
+        .to_lowercase();
     // Keep word chars, hyphen and whitespace; drop the rest.
     let kept: String = ascii
         .chars()

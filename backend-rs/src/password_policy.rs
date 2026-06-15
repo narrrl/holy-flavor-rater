@@ -121,7 +121,9 @@ fn too_similar(password: &str, attrs: &UserAttrs) -> Result<(), String> {
                 continue;
             }
             if quick_ratio(&password, part) >= MAX_SIMILARITY {
-                return Err(format!("The password is too similar to the {verbose_name}."));
+                return Err(format!(
+                    "The password is too similar to the {verbose_name}."
+                ));
             }
         }
     }

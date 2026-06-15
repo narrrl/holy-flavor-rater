@@ -185,94 +185,35 @@ due `sync_flavors` job which fetched `weareholy.com` and reported
 ## Run
 
 ```bash
-cp .env.example .env      # set SECRET_KEY to match Django; point DATABASE_URL at the shared db
+cp .env.example .env      # set SECRET_KEY; point DATABASE_URL at the shared db
 cargo run                 # listens on BIND_ADDR (default 0.0.0.0:8001)
 ```
 
-`SECRET_KEY` **must** equal Django's, or JWTs minted by Django won't verify here.
+`SECRET_KEY` signs the SimpleJWT-compatible tokens — **keep it constant** across
+deploys/restarts, or every issued access/refresh token is invalidated. (It must
+match the value the retired Django app used, so tokens already in the wild stay
+valid.)
 
-## Strangler proxy (nginx)
+## Deployment
 
-The live routing is in **`frontend/nginx.conf`** (copied into the `holy-frontend`
-image; shared proxy headers live in `frontend/proxy_params.conf`). Two upstreams
-are declared — `django_backend` (`holy-backend:8000`) and `rust_backend`
-(`holy-rust:8001`) — and each `/api/<group>/` location has its own `proxy_pass`.
-Cutting a group over is a one-line edit (`django_backend` → `rust_backend`)
-followed by a reload; rollback is the reverse edit. Because both backends share
-one SQLite DB, one media dir, and the same `SECRET_KEY`, either can serve any
-request and tokens stay valid across a flip.
+The Rust backend is the production API; Django/Celery/Redis were retired after
+the strangler migration completed. `docker compose` (`docker-compose.yml` +
+`docker-compose.override.yml`) runs two services: `backend-rs` (`holy-rust:8001`)
+and `frontend` (nginx). nginx serves the SPA, proxies `/api` to the Rust backend,
+and serves `/media` from the shared `./backend/media` bind mount; see
+`frontend/nginx.conf`.
 
 `X-Forwarded-Proto`/`Host` are required: absolute URLs (image links, pagination
 `next`/`previous`) are rebuilt from them, matching DRF's `build_absolute_uri`.
 `X-Forwarded-For` lets `/api/users/me/` log the real client IP (it falls back to
-the peer address otherwise, matching Django's `REMOTE_ADDR`).
+the peer address otherwise).
 
-## Production cutover runbook (seamless, reversible)
+**Scheduler invariant:** exactly **one** process may own the `api_job` table.
+Run a single `backend-rs` instance with `ENABLE_SCHEDULER=true`
+(`RUST_ENABLE_SCHEDULER` in `.env`); any additional instances must leave it off.
 
-Goal: migrate a running Django deployment to Rust with **no downtime** and a
-per-step rollback. Everything hinges on the shared substrate already in place —
-same `db.sqlite3` (WAL on), same media dir, same `SECRET_KEY` — so a request can
-be served by either backend interchangeably.
-
-**Invariant (do not violate):** exactly **one** scheduler may own the `api_job`
-table at any time. Django's `beat` owns it until Phase 3; Rust's in-process
-scheduler (`ENABLE_SCHEDULER`) is **off** until then. Never both.
-
-### Phase 0 — Deploy Rust in shadow (no traffic)
-1. Set `SECRET_KEY` in `.env` to the **exact** value Django already uses (else
-   existing JWTs break on cutover). Optionally set `FLOWER_BASIC_AUTH`.
-2. `docker compose up -d --build backend-rs` — brings up `holy-rust` beside
-   Django. `ENABLE_SCHEDULER` defaults to false; it only reads the DB.
-3. Smoke-test directly: `docker exec holy-frontend wget -qO- http://holy-rust:8001/health/`
-   and spot-check a few endpoints against it. nginx still sends all prod traffic
-   to Django. **Rollback:** `docker compose stop backend-rs`.
-
-### Phase 1 — Reads
-4. In `frontend/nginx.conf`, flip `categories`, `flavors`, `banners` to
-   `rust_backend`. Rebuild/reload the frontend (`docker compose up -d --build
-   frontend`, or `docker exec holy-frontend nginx -s reload` if you bind-mount the
-   conf). Watch `docker logs holy-rust` + error rates. **Rollback:** flip back, reload.
-
-### Phase 2 — Auth + writes
-5. Flip `auth`, `token` (legacy alias), `ratings`, `replies`, `users`,
-   `notifications`, `tickets`. JWTs and cookies are cross-valid, so in-flight
-   sessions survive. Reload. **Rollback:** flip back, reload.
-
-### Phase 3 — Admin + jobs (the careful one)
-6. Flip `admin-custom` to `rust_backend`, reload.
-7. **Stop Django's scheduler/workers:** `docker compose stop beat worker flower`.
-   Now nobody schedules jobs.
-8. Hand scheduling to Rust: set `RUST_ENABLE_SCHEDULER=true` in `.env`, then
-   `docker compose up -d backend-rs`. Confirm the log line
-   `job scheduler ENABLED`. Single owner throughout → no double-run.
-   **Rollback:** set `RUST_ENABLE_SCHEDULER=false` + recreate `backend-rs`, then
-   `docker compose start beat worker`.
-
-### Phase 4 — Retire Django
-9. Point the catch-all `location /api/` at `rust_backend` (covers `/api/schema`
-   too — Rust serves OpenAPI + Swagger). Reload. Django now receives only
-   `/admin/` + `/static/` (its admin site). `/media/` is already served straight
-   from nginx (the `:ro` mount), independent of either backend.
-10. Decide the Django admin site's fate. The app's own admin UI uses
-    `/api/admin-custom/`, so the Django `/admin/` site is usually unneeded:
-    - Keeping it: leave the `backend` container up for `/admin/` + `/static/`.
-    - Dropping it: `docker compose stop backend`, delete the `/admin/` + `/static/`
-      locations from nginx.
-11. Once Django is fully off, `redis` (only a Celery broker + Django cache — Rust
-    uses neither) can be stopped too: `docker compose stop redis`. Eventually
-    remove `backend`, `worker`, `beat`, `flower`, `redis` from compose.
-
-### Notes / caveats
-- **Rate-limit counters reset at cutover** — Django's `django_ratelimit` lives in
-  Redis; Rust's throttle is in-process. Acceptable (windows are minutes/hours).
-- **Token blacklist is shared** (both use `token_blacklist_*` tables), so logout
-  / refresh-rotation stays consistent across a flip.
-- Reloads: the frontend image bakes the conf, so a conf change needs
-  `docker compose up -d --build frontend`. For instant reloads during cutover,
-  bind-mount `./frontend/nginx.conf:/etc/nginx/conf.d/default.conf` temporarily and
-  use `nginx -s reload`.
-- Keep `backend/db.sqlite3` + `backend/media/` (host bind mounts) as the canonical
-  data across all of this — neither is recreated by rebuilds.
+The canonical data lives in host bind mounts — `backend/db.sqlite3` (WAL on) and
+`backend/media/` — and survives image rebuilds. Keep them.
 
 ## Caveats / parity TODO
 
@@ -291,9 +232,7 @@ scheduler (`ENABLE_SCHEDULER`) is **off** until then. Never both.
   never used them.
 - Admin endpoints + background jobs are ported (see the Admin + jobs slice).
   The job-trigger and admin write endpoints are **not** rate-limited (those are
-  staff-only; `django_ratelimit` only covered the public flows below). When Rust
-  owns jobs in prod, disable the Celery `beat`/`worker` containers to avoid
-  double-execution.
+  staff-only; `django_ratelimit` only covered the public flows below).
 
 ## Security & hardening
 
@@ -338,9 +277,8 @@ in-flight requests drain. `/health/` now runs `SELECT 1` so the Docker
 healthcheck fails when SQLite is unreachable.
 
 SQLite runs in **WAL** journal mode (enabled once at startup, persistent in the
-file header, so it covers the Django side too) so readers don't block behind the
-writer under the shared-DB strangler; `busy_timeout` is sqlx's default 5 s,
-matching Django's SQLite timeout. The default `DATABASE_URL` uses `mode=rw` (not
+file header) so readers don't block behind the writer; `busy_timeout` is sqlx's
+default 5 s, matching Django's SQLite timeout. The default `DATABASE_URL` uses `mode=rw` (not
 `rwc`) so a wrong path fails loudly instead of silently creating an empty DB.
 
 Confirmation codes are compared in **constant time** (`subtle::ConstantTimeEq`)

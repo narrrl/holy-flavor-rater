@@ -97,7 +97,12 @@ async fn retrieve(
     dtos.pop().map(Json).ok_or(ApiError::NotFound)
 }
 
-fn require_str(data: &Value, field: &str, partial: bool, max: Option<usize>) -> ApiResult<Option<String>> {
+fn require_str(
+    data: &Value,
+    field: &str,
+    partial: bool,
+    max: Option<usize>,
+) -> ApiResult<Option<String>> {
     match data.get(field) {
         Some(Value::String(s)) if !s.is_empty() => {
             if let Some(m) = max {
@@ -112,9 +117,9 @@ fn require_str(data: &Value, field: &str, partial: bool, max: Option<usize>) -> 
         Some(Value::String(_)) => Err(ApiError::Validation(
             json!({ field: ["This field may not be blank."] }),
         )),
-        Some(v) if !v.is_null() => {
-            Err(ApiError::Validation(json!({ field: ["Not a valid string."] })))
-        }
+        Some(v) if !v.is_null() => Err(ApiError::Validation(
+            json!({ field: ["Not a valid string."] }),
+        )),
         _ if partial => Ok(None),
         _ => Err(ApiError::Validation(
             json!({ field: ["This field is required."] }),
@@ -168,7 +173,10 @@ async fn create(
     }
 
     let mut dtos = build_tickets(&state, &ctx, vec![t]).await?;
-    Ok((StatusCode::CREATED, Json(dtos.pop().ok_or(ApiError::Internal)?)))
+    Ok((
+        StatusCode::CREATED,
+        Json(dtos.pop().ok_or(ApiError::Internal)?),
+    ))
 }
 
 /// PUT/PATCH /api/tickets/{id}/ — subject/description only (status, user read-only).
@@ -211,7 +219,9 @@ async fn destroy(
 ) -> ApiResult<StatusCode> {
     let me = load_user(&state, uid).await?;
     if !me.is_superuser {
-        return Err(ApiError::Forbidden("Only admins can delete tickets.".into()));
+        return Err(ApiError::Forbidden(
+            "Only admins can delete tickets.".into(),
+        ));
     }
     // get_object is scoped; superusers see all, so a missing ticket is 404.
     Ticket::find_by_id(id)

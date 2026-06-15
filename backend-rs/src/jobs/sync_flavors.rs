@@ -28,14 +28,44 @@ const DOWNLOAD_WORKERS: usize = 8;
 const PACKS_SLUG: &str = "packs-and-other";
 const PACKS_NAME: &str = "Packs and other";
 
-const FORM_WORDS: &[&str] =
-    &["bundle", "sachet", "sachetbox", "bottle", "box", "pack", "set", "sachets"];
+const FORM_WORDS: &[&str] = &[
+    "bundle",
+    "sachet",
+    "sachetbox",
+    "bottle",
+    "box",
+    "pack",
+    "set",
+    "sachets",
+];
 const NON_FLAVOR_TOKENS: &[&str] = &[
-    "value", "shaker", "merch", "sticker", "packaging", "material", "other", "items", "mixed",
-    "collector", "collector's", "free", "products", "naturalrabatt", "sample", "samplebox",
+    "value",
+    "shaker",
+    "merch",
+    "sticker",
+    "packaging",
+    "material",
+    "other",
+    "items",
+    "mixed",
+    "collector",
+    "collector's",
+    "free",
+    "products",
+    "naturalrabatt",
+    "sample",
+    "samplebox",
 ];
 const PACK_TITLE_KEYWORDS: &[&str] = &[
-    "bundle", "set", "box", "probe", "sample", "taster", "starter", "collection", "probier",
+    "bundle",
+    "set",
+    "box",
+    "probe",
+    "sample",
+    "taster",
+    "starter",
+    "collection",
+    "probier",
 ];
 const ACCESSORY_TITLE_KEYWORDS: &[&str] = &["bürste", "reinigung", "ersatzteil", "zubehör"];
 const TAG_FAMILY: &[(&[&str], &str)] = &[
@@ -85,7 +115,11 @@ impl BackgroundJob for SyncFlavors {
             }
         };
 
-        let products = data.get("products").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+        let products = data
+            .get("products")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
         log.push(format!("Found {} products.", products.len()));
 
         let packs = goc_category_by_slug_named(db, PACKS_SLUG, PACKS_NAME).await?;
@@ -95,31 +129,54 @@ impl BackgroundJob for SyncFlavors {
         let mut synced_ids: Vec<i64> = Vec::new();
 
         for p in &products {
-            let title = p.get("title").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+            let title = p
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
             let tags = parse_tags(p);
             let tags_lower: Vec<String> = tags.iter().map(|t| t.to_lowercase()).collect();
             let title_lower = title.to_lowercase();
 
             // Syrup ships as one article whose variants are the flavors.
             if is_syrup_variant_product(p) {
-                let (c, u) = sync_syrup_variants(db, &client, media_root, p, &mut synced_ids).await?;
+                let (c, u) =
+                    sync_syrup_variants(db, &client, media_root, p, &mut synced_ids).await?;
                 created += c;
                 updated += u;
                 continue;
             }
 
-            let Some(cat) =
-                resolve_category(db, p, &title_lower, &tags_lower, &packs).await?
+            let Some(cat) = resolve_category(db, p, &title_lower, &tags_lower, &packs).await?
             else {
                 continue;
             };
 
-            let variants = p.get("variants").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-            let is_available = variants.iter().any(|v| v.get("available").and_then(|a| a.as_bool()).unwrap_or(false));
-            let images = p.get("images").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-            let image_url = images.first().and_then(|i| i.get("src")).and_then(|s| s.as_str()).map(String::from);
-            let image_urls: Vec<String> =
-                images.iter().filter_map(|i| i.get("src").and_then(|s| s.as_str()).map(String::from)).collect();
+            let variants = p
+                .get("variants")
+                .and_then(|v| v.as_array())
+                .cloned()
+                .unwrap_or_default();
+            let is_available = variants.iter().any(|v| {
+                v.get("available")
+                    .and_then(|a| a.as_bool())
+                    .unwrap_or(false)
+            });
+            let images = p
+                .get("images")
+                .and_then(|v| v.as_array())
+                .cloned()
+                .unwrap_or_default();
+            let image_url = images
+                .first()
+                .and_then(|i| i.get("src"))
+                .and_then(|s| s.as_str())
+                .map(String::from);
+            let image_urls: Vec<String> = images
+                .iter()
+                .filter_map(|i| i.get("src").and_then(|s| s.as_str()).map(String::from))
+                .collect();
             let description = clean_html(p.get("body_html").and_then(|v| v.as_str()).unwrap_or(""));
             let shop_url = p.get("handle").and_then(|v| v.as_str()).map(shop_url_for);
             let Some(pid) = p.get("id").and_then(|v| v.as_i64()) else {
@@ -176,7 +233,10 @@ fn shop_url_for(handle: &str) -> String {
 /// Tags as a lowercase-able list; Shopify returns either an array or a CSV string.
 fn parse_tags(p: &Value) -> Vec<String> {
     match p.get("tags") {
-        Some(Value::Array(a)) => a.iter().filter_map(|t| t.as_str().map(String::from)).collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(|t| t.as_str().map(String::from))
+            .collect(),
         Some(Value::String(s)) => s.split(',').map(|t| t.trim().to_string()).collect(),
         _ => Vec::new(),
     }
@@ -209,10 +269,16 @@ fn family_from_product_type(product_type: &str) -> Option<String> {
         return None;
     }
     let mut tokens: Vec<&str> = stripped.split_whitespace().collect();
-    if tokens.iter().any(|t| NON_FLAVOR_TOKENS.contains(&t.to_lowercase().as_str())) {
+    if tokens
+        .iter()
+        .any(|t| NON_FLAVOR_TOKENS.contains(&t.to_lowercase().as_str()))
+    {
         return None;
     }
-    while tokens.last().is_some_and(|t| FORM_WORDS.contains(&t.to_lowercase().as_str())) {
+    while tokens
+        .last()
+        .is_some_and(|t| FORM_WORDS.contains(&t.to_lowercase().as_str()))
+    {
         tokens.pop();
     }
     if tokens.is_empty() {
@@ -254,11 +320,20 @@ fn is_syrup_variant_product(p: &Value) -> bool {
         .get("options")
         .and_then(|v| v.as_array())
         .map(|opts| {
-            opts.iter()
-                .any(|o| o.get("name").and_then(|n| n.as_str()).unwrap_or("").to_lowercase() == "flavor")
+            opts.iter().any(|o| {
+                o.get("name")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("")
+                    .to_lowercase()
+                    == "flavor"
+            })
         })
         .unwrap_or(false);
-    let variant_count = p.get("variants").and_then(|v| v.as_array()).map(|v| v.len()).unwrap_or(0);
+    let variant_count = p
+        .get("variants")
+        .and_then(|v| v.as_array())
+        .map(|v| v.len())
+        .unwrap_or(0);
     has_flavor_option && variant_count > 1
 }
 
@@ -273,7 +348,10 @@ async fn resolve_category(
     if is_pack(title_lower, tags_lower) {
         return Ok(Some(packs.clone()));
     }
-    if ACCESSORY_TITLE_KEYWORDS.iter().any(|k| title_lower.contains(k)) {
+    if ACCESSORY_TITLE_KEYWORDS
+        .iter()
+        .any(|k| title_lower.contains(k))
+    {
         return Ok(Some(packs.clone()));
     }
     if let Some(family) =
@@ -293,7 +371,10 @@ async fn resolve_category(
 }
 
 /// get_or_create a category from a family name, keyed by `slugify(name)`.
-async fn category_for_family(db: &DatabaseConnection, name: &str) -> anyhow::Result<category::Model> {
+async fn category_for_family(
+    db: &DatabaseConnection,
+    name: &str,
+) -> anyhow::Result<category::Model> {
     goc_category_by_slug_named(db, &slugify(name), name).await
 }
 
@@ -333,7 +414,11 @@ async fn sync_syrup_variants(
 
     let mut created = 0usize;
     let mut updated = 0usize;
-    let variants = p.get("variants").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+    let variants = p
+        .get("variants")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
     for v in &variants {
         let name = v
             .get("option1")
@@ -354,7 +439,10 @@ async fn sync_syrup_variants(
             .and_then(|s| s.as_str())
             .map(String::from);
         let image_urls: Vec<String> = image_url.clone().into_iter().collect();
-        let available = v.get("available").and_then(|a| a.as_bool()).unwrap_or(false);
+        let available = v
+            .get("available")
+            .and_then(|a| a.as_bool())
+            .unwrap_or(false);
 
         let was_created = upsert_flavor(
             db,
@@ -412,7 +500,9 @@ async fn upsert_flavor(
     }
     if existing.is_none() {
         existing = Flavor::find()
-            .filter(Expr::expr(Func::lower(Expr::col(flavor::Column::Name))).eq(name.to_lowercase()))
+            .filter(
+                Expr::expr(Func::lower(Expr::col(flavor::Column::Name))).eq(name.to_lowercase()),
+            )
             .filter(flavor::Column::CategoryId.eq(category_id))
             .one(db)
             .await?;
@@ -510,8 +600,8 @@ async fn download_gallery(
         return Vec::new();
     }
 
-    let succeeded: HashMap<usize, String> = futures::stream::iter(targets.clone().into_iter().map(
-        |(i, u, rel)| {
+    let succeeded: HashMap<usize, String> =
+        futures::stream::iter(targets.clone().into_iter().map(|(i, u, rel)| {
             let client = client.clone();
             let media_root = media_root.to_string();
             async move {
@@ -519,22 +609,31 @@ async fn download_gallery(
                 let ok = download_image(&client, &u, &abs).await;
                 (i, ok, rel)
             }
-        },
-    ))
-    .buffer_unordered(DOWNLOAD_WORKERS)
-    .filter_map(|(i, ok, rel)| async move { if ok { Some((i, rel)) } else { None } })
-    .collect()
-    .await;
+        }))
+        .buffer_unordered(DOWNLOAD_WORKERS)
+        .filter_map(|(i, ok, rel)| async move {
+            if ok {
+                Some((i, rel))
+            } else {
+                None
+            }
+        })
+        .collect()
+        .await;
 
-    targets.iter().filter_map(|(i, _, _)| succeeded.get(i).cloned()).collect()
+    targets
+        .iter()
+        .filter_map(|(i, _, _)| succeeded.get(i).cloned())
+        .collect()
 }
 
 /// Django JSONField (list) stored as TEXT → Vec<String>.
 fn json_str_list(v: &Option<Value>) -> Vec<String> {
     match v {
-        Some(Value::Array(arr)) => {
-            arr.iter().filter_map(|x| x.as_str().map(String::from)).collect()
-        }
+        Some(Value::Array(arr)) => arr
+            .iter()
+            .filter_map(|x| x.as_str().map(String::from))
+            .collect(),
         _ => Vec::new(),
     }
 }

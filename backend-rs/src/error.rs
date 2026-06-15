@@ -56,7 +56,8 @@ impl IntoResponse for ApiError {
             )
                 .into_response();
             if let Ok(hv) = axum::http::HeaderValue::from_str(&retry_after.to_string()) {
-                resp.headers_mut().insert(axum::http::header::RETRY_AFTER, hv);
+                resp.headers_mut()
+                    .insert(axum::http::header::RETRY_AFTER, hv);
             }
             return resp;
         }
@@ -73,11 +74,15 @@ impl IntoResponse for ApiError {
             ApiError::BadRequest(m) => (StatusCode::BAD_REQUEST, m.clone()),
             ApiError::Db(e) => {
                 tracing::error!(error = %e, "database error");
-                (StatusCode::INTERNAL_SERVER_ERROR, "Server error.".to_string())
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Server error.".to_string(),
+                )
             }
-            ApiError::Internal => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Server error.".to_string())
-            }
+            ApiError::Internal => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Server error.".to_string(),
+            ),
         };
         (status, Json(json!({ "detail": detail }))).into_response()
     }

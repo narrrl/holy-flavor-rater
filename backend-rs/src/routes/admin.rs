@@ -41,10 +41,15 @@ pub fn router() -> Router<AppState> {
         .route("/admin-custom/send_test_email/", post(send_test_email))
         .route("/admin-custom/users/", get(users_list))
         .route("/admin-custom/{pk}/trigger_job/", post(trigger_job))
-        .route("/admin-custom/{pk}/update_job_schedule/", patch(update_job_schedule))
+        .route(
+            "/admin-custom/{pk}/update_job_schedule/",
+            patch(update_job_schedule),
+        )
         .route(
             "/admin-custom/{pk}/user_detail/",
-            get(user_detail_get).patch(user_detail_patch).delete(user_detail_delete),
+            get(user_detail_get)
+                .patch(user_detail_patch)
+                .delete(user_detail_delete),
         )
 }
 
@@ -135,7 +140,9 @@ fn opt_bool(data: &Value, field: &str) -> ApiResult<Option<bool>> {
     match data.get(field) {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Bool(b)) => Ok(Some(*b)),
-        _ => Err(ApiError::Validation(json!({ field: ["Must be a valid boolean."] }))),
+        _ => Err(ApiError::Validation(
+            json!({ field: ["Must be a valid boolean."] }),
+        )),
     }
 }
 
@@ -157,7 +164,9 @@ async fn config_patch(
             })))
         }
         Some(_) => {
-            return Err(ApiError::Validation(json!({ "site_name": ["Not a valid string."] })))
+            return Err(ApiError::Validation(
+                json!({ "site_name": ["Not a valid string."] }),
+            ))
         }
     }
     if let Some(b) = opt_bool(&data, "maintenance_mode")? {
@@ -218,11 +227,14 @@ async fn trigger_job(
     _admin: AdminUser,
     Path(pk): Path<i32>,
 ) -> ApiResult<Json<Value>> {
-    let row = Job::find_by_id(pk).one(&state.db).await?.ok_or(ApiError::NotFound)?;
+    let row = Job::find_by_id(pk)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
     let Some(job_impl) = jobs::lookup(&row.name) else {
         return Err(ApiError::JsonStatus(
             StatusCode::BAD_REQUEST,
-            json!({ "error": format!("No celery task registered for {}", row.name) }),
+            json!({ "error": format!("No job registered for {}", row.name) }),
         ));
     };
 
@@ -245,7 +257,10 @@ async fn update_job_schedule(
     Path(pk): Path<i32>,
     body: Bytes,
 ) -> ApiResult<Json<Value>> {
-    let row = Job::find_by_id(pk).one(&state.db).await?.ok_or(ApiError::NotFound)?;
+    let row = Job::find_by_id(pk)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
     let data = parse_body(&body);
 
     let interval = match data.get("interval_hours") {
@@ -381,8 +396,10 @@ async fn users_list(State(state): State<AppState>, _admin: AdminUser) -> ApiResu
     let out: Vec<Value> = users
         .iter()
         .map(|u| {
-            let ips: Vec<String> =
-                ip_map.get(&u.id).map(|v| v.iter().take(3).cloned().collect()).unwrap_or_default();
+            let ips: Vec<String> = ip_map
+                .get(&u.id)
+                .map(|v| v.iter().take(3).cloned().collect())
+                .unwrap_or_default();
             admin_user_json(u, &ips)
         })
         .collect();
@@ -395,7 +412,10 @@ async fn build_user_detail(
     ctx: &RequestCtx,
     u: &user::Model,
 ) -> ApiResult<Value> {
-    let ips = ips_by_user(state, &[u.id]).await?.remove(&u.id).unwrap_or_default();
+    let ips = ips_by_user(state, &[u.id])
+        .await?
+        .remove(&u.id)
+        .unwrap_or_default();
     let ratings = Rating::find()
         .filter(rating::Column::UserId.eq(u.id))
         .order_by_desc(rating::Column::CreatedAt)
@@ -413,7 +433,10 @@ async fn user_detail_get(
     _admin: AdminUser,
     Path(pk): Path<i32>,
 ) -> ApiResult<Json<Value>> {
-    let u = User::find_by_id(pk).one(&state.db).await?.ok_or(ApiError::NotFound)?;
+    let u = User::find_by_id(pk)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
     Ok(Json(build_user_detail(&state, &ctx, &u).await?))
 }
 
@@ -424,7 +447,10 @@ async fn user_detail_patch(
     Path(pk): Path<i32>,
     body: Bytes,
 ) -> ApiResult<Json<Value>> {
-    let u = User::find_by_id(pk).one(&state.db).await?.ok_or(ApiError::NotFound)?;
+    let u = User::find_by_id(pk)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
     let data = parse_body(&body);
     let u = match data.get("is_active") {
         Some(Value::Bool(b)) => {
@@ -442,7 +468,10 @@ async fn user_detail_delete(
     _admin: AdminUser,
     Path(pk): Path<i32>,
 ) -> ApiResult<StatusCode> {
-    User::find_by_id(pk).one(&state.db).await?.ok_or(ApiError::NotFound)?;
+    User::find_by_id(pk)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
     crate::routes::users::delete_user_cascade(&state, pk).await?;
     Ok(StatusCode::NO_CONTENT)
 }

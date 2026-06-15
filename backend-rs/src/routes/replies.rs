@@ -28,12 +28,10 @@ use crate::state::AppState;
 use crate::web::RequestCtx;
 
 pub fn router() -> Router<AppState> {
-    Router::new()
-        .route("/replies/", get(list))
-        .route(
-            "/replies/{id}/",
-            get(retrieve).put(update).patch(update).delete(destroy),
-        )
+    Router::new().route("/replies/", get(list)).route(
+        "/replies/{id}/",
+        get(retrieve).put(update).patch(update).delete(destroy),
+    )
 }
 
 #[derive(Deserialize)]
@@ -124,7 +122,14 @@ async fn update(
     }
 
     let model = active.update(&state.db).await?;
-    parse_mentions(&state.db, &model.text, uid, Some(model.rating_id), Some(model.id)).await?;
+    parse_mentions(
+        &state.db,
+        &model.text,
+        uid,
+        Some(model.rating_id),
+        Some(model.id),
+    )
+    .await?;
 
     let mut dtos = build_replies(&state, vec![model]).await?;
     dtos.pop().map(Json).ok_or(ApiError::Internal)

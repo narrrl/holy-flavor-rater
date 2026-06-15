@@ -39,9 +39,23 @@ use crate::throttle;
 use crate::web::RequestCtx;
 
 const THEMES: &[&str] = &[
-    "holy_light", "holy_dark", "latte", "frappe", "macchiato", "mocha", "pink_pastel",
-    "mint_pastel", "lavender_pastel", "dracula", "nord", "gruvbox", "oceanic", "t0p_sai",
-    "t0p_trench", "t0p_blurryface", "t0p_clancy",
+    "holy_light",
+    "holy_dark",
+    "latte",
+    "frappe",
+    "macchiato",
+    "mocha",
+    "pink_pastel",
+    "mint_pastel",
+    "lavender_pastel",
+    "dracula",
+    "nord",
+    "gruvbox",
+    "oceanic",
+    "t0p_sai",
+    "t0p_trench",
+    "t0p_blurryface",
+    "t0p_clancy",
 ];
 const LANGUAGES: &[&str] = &["en", "de"];
 const DRAWER_ANCHORS: &[&str] = &["left", "right"];
@@ -60,10 +74,22 @@ pub fn router() -> Router<AppState> {
         .route("/users/change_password/", post(change_password))
         .route("/users/update_profile/", patch(update_profile))
         .route("/users/confirm_email/", post(confirm_email))
-        .route("/users/request_password_reset/", post(request_password_reset))
-        .route("/users/complete_password_reset/", post(complete_password_reset))
-        .route("/users/request_account_deletion/", post(request_account_deletion))
-        .route("/users/confirm_account_deletion/", post(confirm_account_deletion))
+        .route(
+            "/users/request_password_reset/",
+            post(request_password_reset),
+        )
+        .route(
+            "/users/complete_password_reset/",
+            post(complete_password_reset),
+        )
+        .route(
+            "/users/request_account_deletion/",
+            post(request_account_deletion),
+        )
+        .route(
+            "/users/confirm_account_deletion/",
+            post(confirm_account_deletion),
+        )
         .route("/users/dashboard/", get(dashboard))
         .route("/users/{id}/", get(retrieve))
         .route("/users/{id}/follow/", post(follow))
@@ -207,7 +233,9 @@ async fn following_ids(state: &AppState, from: i32) -> ApiResult<Vec<i32>> {
             [from.into()],
         ))
         .await?;
-    rows.into_iter().map(|r| r.try_get("", "uid").map_err(Into::into)).collect()
+    rows.into_iter()
+        .map(|r| r.try_get("", "uid").map_err(Into::into))
+        .collect()
 }
 
 /// User ids that follow `to` (the `followers` set).
@@ -220,7 +248,9 @@ async fn follower_ids(state: &AppState, to: i32) -> ApiResult<Vec<i32>> {
             [to.into()],
         ))
         .await?;
-    rows.into_iter().map(|r| r.try_get("", "uid").map_err(Into::into)).collect()
+    rows.into_iter()
+        .map(|r| r.try_get("", "uid").map_err(Into::into))
+        .collect()
 }
 
 async fn users_by_ids(state: &AppState, ids: &[i32]) -> ApiResult<Vec<user::Model>> {
@@ -368,9 +398,10 @@ async fn update_preferences(
             updated = true;
         }
         Some(v) => {
-            let banner_id = v.as_i64().map(|n| n as i32).or_else(|| {
-                v.as_str().and_then(|s| s.parse::<i32>().ok())
-            });
+            let banner_id = v
+                .as_i64()
+                .map(|n| n as i32)
+                .or_else(|| v.as_str().and_then(|s| s.parse::<i32>().ok()));
             match banner_id {
                 Some(bid) => {
                     let banner = Banner::find_by_id(bid)
@@ -472,8 +503,14 @@ async fn change_password(
 ) -> ApiResult<Json<Value>> {
     let u = load_user(&state, uid).await?;
     let data = parse_body(&body);
-    let old = data.get("old_password").and_then(|v| v.as_str()).unwrap_or("");
-    let new = data.get("new_password").and_then(|v| v.as_str()).unwrap_or("");
+    let old = data
+        .get("old_password")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let new = data
+        .get("new_password")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
 
     if !crate::password::verify_password(old, &u.password) {
         return Err(err_json(
@@ -594,7 +631,9 @@ async fn confirm_email(
     active.email_confirmation_code = Set(None);
     active.update(&state.db).await?;
     state.security.clear_code(&code_key);
-    Ok(Json(json!({ "status": "Email confirmed", "email": pending })))
+    Ok(Json(
+        json!({ "status": "Email confirmed", "email": pending }),
+    ))
 }
 
 // ---- signup / verification ----------------------------------------------
@@ -607,7 +646,9 @@ async fn signup(
     body: Bytes,
 ) -> ApiResult<(StatusCode, Json<Value>)> {
     let ip = crate::web::client_ip(&headers, peer);
-    state.security.check_rate(&format!("signup:ip:{ip}"), throttle::SIGNUP)?;
+    state
+        .security
+        .check_rate(&format!("signup:ip:{ip}"), throttle::SIGNUP)?;
     let data = parse_body(&body);
     let (Some(username), Some(email), Some(password)) = (
         field_str(&data, "username"),
@@ -835,9 +876,10 @@ async fn request_password_reset(
     body: Bytes,
 ) -> ApiResult<Json<Value>> {
     let ip = crate::web::client_ip(&headers, peer);
-    state
-        .security
-        .check_rate(&format!("pwreset_req:ip:{ip}"), throttle::PASSWORD_RESET_REQUEST)?;
+    state.security.check_rate(
+        &format!("pwreset_req:ip:{ip}"),
+        throttle::PASSWORD_RESET_REQUEST,
+    )?;
     let generic = json!({
         "status": "If an account exists with this email, a reset code has been sent."
     });
@@ -878,12 +920,16 @@ async fn complete_password_reset(
     body: Bytes,
 ) -> ApiResult<Json<Value>> {
     let ip = crate::web::client_ip(&headers, peer);
-    state
-        .security
-        .check_rate(&format!("pwreset_done:ip:{ip}"), throttle::PASSWORD_RESET_COMPLETE)?;
+    state.security.check_rate(
+        &format!("pwreset_done:ip:{ip}"),
+        throttle::PASSWORD_RESET_COMPLETE,
+    )?;
     let data = parse_body(&body);
     let email = field_str(&data, "email").unwrap_or_default();
-    let code = data.get("code").and_then(|v| v.as_str()).unwrap_or_default();
+    let code = data
+        .get("code")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
     let new_password = data.get("password").and_then(|v| v.as_str()).unwrap_or("");
 
     let code_key = pwreset_code_key(&email);
@@ -935,9 +981,10 @@ async fn request_account_deletion(
     AuthUser(uid): AuthUser,
     _body: Bytes,
 ) -> ApiResult<Json<Value>> {
-    state
-        .security
-        .check_rate(&format!("deletion_req:user:{uid}"), throttle::ACCOUNT_DELETION_REQUEST)?;
+    state.security.check_rate(
+        &format!("deletion_req:user:{uid}"),
+        throttle::ACCOUNT_DELETION_REQUEST,
+    )?;
     let user = load_user(&state, uid).await?;
     let code = gen_code();
     let uname = user.username.clone();
@@ -994,9 +1041,8 @@ async fn confirm_account_deletion(
 /// in dependency order, inside one transaction.
 pub(crate) async fn delete_user_cascade(state: &AppState, uid: i32) -> ApiResult<()> {
     let txn = state.db.begin().await?;
-    let exec = |sql: &'static str| {
-        Statement::from_sql_and_values(DbBackend::Sqlite, sql, [uid.into()])
-    };
+    let exec =
+        |sql: &'static str| Statement::from_sql_and_values(DbBackend::Sqlite, sql, [uid.into()]);
 
     // Notifications referencing the user directly (recipient/actor) or via the
     // user's ratings/replies/tickets/profile-comments.
@@ -1015,18 +1061,21 @@ pub(crate) async fn delete_user_cascade(state: &AppState, uid: i32) -> ApiResult
          OR rating_id IN (SELECT id FROM api_rating WHERE user_id = ?1)",
     ))
     .await?;
-    txn.execute(exec("DELETE FROM api_rating WHERE user_id = ?")).await?;
+    txn.execute(exec("DELETE FROM api_rating WHERE user_id = ?"))
+        .await?;
     txn.execute(exec(
         "DELETE FROM api_ticketmessage WHERE user_id = ?1 \
          OR ticket_id IN (SELECT id FROM api_ticket WHERE user_id = ?1)",
     ))
     .await?;
-    txn.execute(exec("DELETE FROM api_ticket WHERE user_id = ?")).await?;
+    txn.execute(exec("DELETE FROM api_ticket WHERE user_id = ?"))
+        .await?;
     txn.execute(exec(
         "DELETE FROM api_profilecomment WHERE author_id = ?1 OR profile_owner_id = ?1",
     ))
     .await?;
-    txn.execute(exec("DELETE FROM api_userip WHERE user_id = ?")).await?;
+    txn.execute(exec("DELETE FROM api_userip WHERE user_id = ?"))
+        .await?;
     txn.execute(exec(
         "DELETE FROM api_user_following WHERE from_user_id = ?1 OR to_user_id = ?1",
     ))
@@ -1041,7 +1090,8 @@ pub(crate) async fn delete_user_cascade(state: &AppState, uid: i32) -> ApiResult
         "DELETE FROM token_blacklist_outstandingtoken WHERE user_id = ?",
     ))
     .await?;
-    txn.execute(exec("DELETE FROM api_user WHERE id = ?")).await?;
+    txn.execute(exec("DELETE FROM api_user WHERE id = ?"))
+        .await?;
     txn.commit().await?;
     Ok(())
 }
@@ -1144,7 +1194,10 @@ async fn add_comment(
     }
 
     let mut dtos = build_profile_comments(&state, &ctx, vec![comment]).await?;
-    Ok((StatusCode::CREATED, Json(dtos.pop().ok_or(ApiError::Internal)?)))
+    Ok((
+        StatusCode::CREATED,
+        Json(dtos.pop().ok_or(ApiError::Internal)?),
+    ))
 }
 
 /// DELETE /api/users/{id}/delete_comment/{comment_id}/
@@ -1298,8 +1351,14 @@ async fn dashboard(
             .map(|c| (c.id, c.name))
             .collect();
     all_flavors.sort_by(|a, b| {
-        let ca = cat_names.get(&a.category_id).map(String::as_str).unwrap_or("");
-        let cb = cat_names.get(&b.category_id).map(String::as_str).unwrap_or("");
+        let ca = cat_names
+            .get(&a.category_id)
+            .map(String::as_str)
+            .unwrap_or("");
+        let cb = cat_names
+            .get(&b.category_id)
+            .map(String::as_str)
+            .unwrap_or("");
         ca.cmp(cb).then_with(|| a.name.cmp(&b.name))
     });
 

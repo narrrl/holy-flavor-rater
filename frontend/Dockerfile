@@ -31,8 +31,8 @@ COPY --from=build-stage /app/dist /usr/share/nginx/html
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Nginx config: SPA + strangler API routing (Django/Rust per-group). See
-# nginx.conf for the cutover layout. proxy_params.conf holds shared headers.
+# Nginx config: serves the SPA and proxies /api to the Rust backend.
+# proxy_params.conf holds shared proxy headers.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY proxy_params.conf /etc/nginx/proxy_params.conf
 

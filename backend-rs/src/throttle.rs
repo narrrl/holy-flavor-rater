@@ -30,10 +30,16 @@ pub struct Rate {
 
 impl Rate {
     pub const fn per_minute(limit: usize) -> Self {
-        Rate { limit, window: Duration::from_secs(60) }
+        Rate {
+            limit,
+            window: Duration::from_secs(60),
+        }
     }
     pub const fn per_hour(limit: usize) -> Self {
-        Rate { limit, window: Duration::from_secs(3600) }
+        Rate {
+            limit,
+            window: Duration::from_secs(3600),
+        }
     }
 }
 
@@ -106,7 +112,10 @@ impl Security {
 
     /// Note that a confirmation code was just minted for `key`.
     pub fn record_code(&self, key: &str) {
-        self.codes.lock().unwrap().insert(key.to_string(), Instant::now());
+        self.codes
+            .lock()
+            .unwrap()
+            .insert(key.to_string(), Instant::now());
     }
 
     /// True only when we hold a mint time for `key` that is older than `CODE_TTL`.

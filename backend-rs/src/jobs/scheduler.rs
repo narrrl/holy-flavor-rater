@@ -11,8 +11,8 @@ use std::time::Duration;
 
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
-use crate::entities::prelude::Job as JobEntity;
 use crate::entities::job;
+use crate::entities::prelude::Job as JobEntity;
 use crate::state::AppState;
 
 const TICK: Duration = Duration::from_secs(60);
@@ -57,7 +57,11 @@ async fn tick_once(state: &AppState) -> anyhow::Result<()> {
         if state.running_jobs.lock().await.contains(job.name()) {
             continue;
         }
-        tracing::info!(job = job.name(), interval_hours = row.interval_hours, "scheduling due job");
+        tracing::info!(
+            job = job.name(),
+            interval_hours = row.interval_hours,
+            "scheduling due job"
+        );
         let st = state.clone();
         tokio::spawn(async move { super::run_job(&st, job).await });
     }

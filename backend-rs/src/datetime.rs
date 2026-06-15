@@ -5,7 +5,8 @@ use chrono::{NaiveDateTime, Timelike, Utc};
 /// so truncate before inserting to keep the on-disk format identical.
 pub fn now_micros() -> NaiveDateTime {
     let now = Utc::now().naive_utc();
-    now.with_nanosecond(now.nanosecond() / 1000 * 1000).unwrap_or(now)
+    now.with_nanosecond(now.nanosecond() / 1000 * 1000)
+        .unwrap_or(now)
 }
 
 /// Format a naive-UTC datetime exactly as DRF serializes an aware UTC

@@ -47,13 +47,7 @@ fn with_page(ctx: &RequestCtx, page: u64) -> String {
 }
 
 impl<T: Serialize> Paginated<T> {
-    pub fn build(
-        ctx: &RequestCtx,
-        results: Vec<T>,
-        count: u64,
-        page: u64,
-        page_size: u64,
-    ) -> Self {
+    pub fn build(ctx: &RequestCtx, results: Vec<T>, count: u64, page: u64, page_size: u64) -> Self {
         let total_pages = count.div_ceil(page_size.max(1));
         let next = if page < total_pages {
             Some(with_page(ctx, page + 1))

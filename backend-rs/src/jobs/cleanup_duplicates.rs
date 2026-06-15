@@ -15,12 +15,7 @@ use super::BackgroundJob;
 /// Trailing form-factor phrases stripped during name normalization. Each is a
 /// sequence of whitespace-separated tokens; the match requires a preceding
 /// token (Django's leading `\s+`), so a name that is *only* the phrase is kept.
-const SUFFIXES: &[&[&str]] = &[
-    &["energy"],
-    &["hydration"],
-    &["iced", "tea"],
-    &["(legacy)"],
-];
+const SUFFIXES: &[&[&str]] = &[&["energy"], &["hydration"], &["iced", "tea"], &["(legacy)"]];
 
 /// Lowercase, trim, and strip the known trailing suffixes (Django's
 /// `normalize_name`). The result is a grouping key, not a display value.

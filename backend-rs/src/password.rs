@@ -10,8 +10,8 @@
 //! (argon2/bcrypt) would need their own branch — login would fall through to a
 //! rejection for those, so keep issuance on Django if the hasher ever changes.
 
-use base64::Engine;
 use base64::engine::general_purpose::STANDARD as B64;
+use base64::Engine;
 use sha2::Sha256;
 use subtle::ConstantTimeEq;
 
@@ -45,7 +45,12 @@ pub fn verify_password(password: &str, encoded: &str) -> bool {
     if iterations == 0 {
         return false;
     }
-    pbkdf2::pbkdf2_hmac::<Sha256>(password.as_bytes(), salt.as_bytes(), iterations, &mut derived);
+    pbkdf2::pbkdf2_hmac::<Sha256>(
+        password.as_bytes(),
+        salt.as_bytes(),
+        iterations,
+        &mut derived,
+    );
 
     // Constant-time compare, length-checked first.
     if expected.len() != derived.len() {
@@ -60,7 +65,12 @@ pub fn verify_password(password: &str, encoded: &str) -> bool {
 pub fn hash_password(password: &str) -> String {
     let salt = uuid::Uuid::new_v4().simple().to_string();
     let mut derived = [0u8; DK_LEN];
-    pbkdf2::pbkdf2_hmac::<Sha256>(password.as_bytes(), salt.as_bytes(), ITERATIONS, &mut derived);
+    pbkdf2::pbkdf2_hmac::<Sha256>(
+        password.as_bytes(),
+        salt.as_bytes(),
+        ITERATIONS,
+        &mut derived,
+    );
     let b64 = B64.encode(derived);
     format!("{ALGORITHM}${ITERATIONS}${salt}${b64}")
 }

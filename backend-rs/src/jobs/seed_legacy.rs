@@ -9,9 +9,7 @@ use std::path::Path;
 use async_trait::async_trait;
 use sea_orm::sea_query::{Expr, Func};
 use sea_orm::ActiveValue::Set;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use serde_json::{json, Value};
 
 use crate::entities::prelude::{Category, Flavor};
@@ -21,8 +19,9 @@ use crate::state::AppState;
 use super::download::{download_image, ext_for, hash_for, http_client};
 use super::{slugify, BackgroundJob};
 
-const PACK_KEYWORDS: &[&str] =
-    &["bundle", "set", "box", "probe", "sample", "taster", "shaker", "starter"];
+const PACK_KEYWORDS: &[&str] = &[
+    "bundle", "set", "box", "probe", "sample", "taster", "shaker", "starter",
+];
 
 pub struct SeedLegacy;
 
@@ -61,7 +60,11 @@ impl BackgroundJob for SeedLegacy {
             if path.extension().and_then(|e| e.to_str()) != Some("json") {
                 continue;
             }
-            let fname = path.file_name().and_then(|f| f.to_str()).unwrap_or("").to_lowercase();
+            let fname = path
+                .file_name()
+                .and_then(|f| f.to_str())
+                .unwrap_or("")
+                .to_lowercase();
 
             // Category from filename.
             let file_cat: Option<&category::Model> = if fname.contains("energy") {
@@ -78,7 +81,9 @@ impl BackgroundJob for SeedLegacy {
 
             let content = fs::read_to_string(&path)?;
             let items: Value = serde_json::from_str(&content)?;
-            let Some(arr) = items.as_array() else { continue };
+            let Some(arr) = items.as_array() else {
+                continue;
+            };
 
             for data in arr {
                 let Some(name) = data.get("Name").and_then(|v| v.as_str()) else {

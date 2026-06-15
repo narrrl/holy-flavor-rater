@@ -104,11 +104,16 @@ impl Config {
             },
             email: EmailConfig {
                 host: env::var("EMAIL_HOST").ok().filter(|s| !s.is_empty()),
-                port: env::var("EMAIL_PORT").ok().and_then(|s| s.parse().ok()).unwrap_or(587),
+                port: env::var("EMAIL_PORT")
+                    .ok()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(587),
                 use_tls: env_bool("EMAIL_USE_TLS", false),
                 use_ssl: env_bool("EMAIL_USE_SSL", false),
                 host_user: env::var("EMAIL_HOST_USER").ok().filter(|s| !s.is_empty()),
-                host_password: env::var("EMAIL_HOST_PASSWORD").ok().filter(|s| !s.is_empty()),
+                host_password: env::var("EMAIL_HOST_PASSWORD")
+                    .ok()
+                    .filter(|s| !s.is_empty()),
                 skip_cert_verification: env_bool("EMAIL_SKIP_CERT_VERIFICATION", false),
                 default_from: env::var("DEFAULT_FROM_EMAIL")
                     .ok()
@@ -120,9 +125,9 @@ impl Config {
                 .unwrap_or_else(|_| "../backend/banners".to_string()),
             legacy_dir: env::var("LEGACY_DIR").unwrap_or_else(|_| "../legacy".to_string()),
             backup_dir: env::var("BACKUP_DIR").unwrap_or_else(|_| "../backend/backups".to_string()),
-            // Default OFF: a fresh deploy runs beside Django, which still owns the
-            // scheduler. Operator flips ENABLE_SCHEDULER=true only after stopping
-            // Django beat (see README cutover steps).
+            // Default OFF so ad-hoc `cargo run` instances don't run jobs.
+            // Production (docker compose) sets ENABLE_SCHEDULER=true on the one
+            // instance that should own `api_job` scheduling.
             enable_scheduler: env_bool("ENABLE_SCHEDULER", false),
         })
     }

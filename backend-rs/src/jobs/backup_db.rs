@@ -67,7 +67,9 @@ impl BackgroundJob for BackupDb {
         })
         .await??;
         log.push("Full archive created successfully.".to_string());
-        log.push(format!("Cleaning up backups older than {RETENTION_DAYS} days..."));
+        log.push(format!(
+            "Cleaning up backups older than {RETENTION_DAYS} days..."
+        ));
         log.extend(archive_log);
 
         Ok(log.join("\n"))
@@ -99,7 +101,11 @@ fn prune_old(backup_dir: &str) -> anyhow::Result<Vec<String>> {
         let modified = entry.metadata().and_then(|m| m.modified()).ok();
         if let Some(mtime) = modified {
             if mtime < cutoff {
-                let name = path.file_name().and_then(|f| f.to_str()).unwrap_or("").to_string();
+                let name = path
+                    .file_name()
+                    .and_then(|f| f.to_str())
+                    .unwrap_or("")
+                    .to_string();
                 match fs::remove_file(&path) {
                     Ok(_) => log.push(format!("  -> Deleted old backup: {name}")),
                     Err(e) => log.push(format!("  -> Failed to delete {name}: {e}")),

@@ -1,11 +1,9 @@
 services:
-  # --- Rust backend (strangler) --------------------------------------------
-  # Runs beside Django, sharing the SAME db.sqlite3, media/, banners/ and
-  # legacy/ via bind mounts and the SAME SECRET_KEY (so SimpleJWT tokens verify
-  # across both). nginx routes endpoint groups here one at a time; see
-  # backend-rs/README.md for the cutover order. ENABLE_SCHEDULER stays false
-  # until Django's beat container is stopped — only one scheduler may own
-  # api_job, or jobs run twice.
+  # --- Rust backend --------------------------------------------------------
+  # The API. Owns db.sqlite3, media/, banners/ and legacy/ via bind mounts.
+  # An in-process scheduler runs the jobs that Celery beat used to (gated by
+  # ENABLE_SCHEDULER — exactly one process must own api_job). SECRET_KEY signs
+  # the SimpleJWT-compatible tokens.
   backend-rs:
     build:
       context: ./backend-rs
@@ -30,8 +28,8 @@ services:
       - BACKUP_DIR=/srv/backend/backups
       - FRONTEND_URL=${FRONTEND_URL:-http://${DOMAIN:-localhost}}
       - JWT_AUTH_COOKIE_SECURE=${JWT_AUTH_COOKIE_SECURE:-true}
-      # Keep false until Django beat is stopped (Phase 3 of cutover).
-      - ENABLE_SCHEDULER=${RUST_ENABLE_SCHEDULER:-false}
+      # Rust owns api_job scheduling (Celery beat retired).
+      - ENABLE_SCHEDULER=${RUST_ENABLE_SCHEDULER:-true}
       - RUST_LOG=${RUST_LOG:-info,holy_backend_rs=info,sea_orm=warn}
     volumes:
       - ./backend:/srv/backend
@@ -62,8 +60,8 @@ services:
     env_file:
       - .env
     volumes:
-      # Serve /media/ straight from the shared mount (read-only), decoupling it
-      # from either backend so Django can be retired without losing media.
+      # Serve /media/ straight from the shared mount (read-only) so media is
+      # independent of the backend being up.
       - ./backend/media:/usr/share/nginx/media:ro
     depends_on:
       backend-rs:
@@ -72,6 +70,3 @@ services:
 networks:
   holy-net:
     driver: bridge
-
-volumes:
-  db_data:

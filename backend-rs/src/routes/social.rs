@@ -6,15 +6,13 @@ use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use sea_orm::ActiveValue::Set;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder};
 use serde_json::{json, Value};
 
 use crate::auth::AuthUser;
 use crate::dto::NotificationOut;
-use crate::entities::prelude::*;
 use crate::entities::notification;
+use crate::entities::prelude::*;
 use crate::error::{ApiError, ApiResult};
 use crate::service::build_notifications;
 use crate::state::AppState;
@@ -64,7 +62,10 @@ async fn mark_all_read(
     AuthUser(uid): AuthUser,
 ) -> ApiResult<Json<Value>> {
     Notification::update_many()
-        .col_expr(notification::Column::IsRead, sea_orm::sea_query::Expr::value(true))
+        .col_expr(
+            notification::Column::IsRead,
+            sea_orm::sea_query::Expr::value(true),
+        )
         .filter(notification::Column::RecipientId.eq(uid))
         .filter(notification::Column::IsRead.eq(false))
         .exec(&state.db)

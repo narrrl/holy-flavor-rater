@@ -142,7 +142,9 @@ async fn top(
         .limit(10)
         .all(&state.db)
         .await?;
-    Ok(Json(build_flavors(&state, &ctx, models, viewer, &[]).await?))
+    Ok(Json(
+        build_flavors(&state, &ctx, models, viewer, &[]).await?,
+    ))
 }
 
 /// GET /api/flavors/newest/ — 10 most recently created flavors.
@@ -156,7 +158,9 @@ async fn newest(
         .limit(10)
         .all(&state.db)
         .await?;
-    Ok(Json(build_flavors(&state, &ctx, models, viewer, &[]).await?))
+    Ok(Json(
+        build_flavors(&state, &ctx, models, viewer, &[]).await?,
+    ))
 }
 
 /// GET /api/flavors/followed_top/ — top 10 among flavors rated by people the
@@ -189,7 +193,9 @@ async fn followed_top(
         .limit(10)
         .all(&state.db)
         .await?;
-    Ok(Json(build_flavors(&state, &ctx, models, Some(uid), &[]).await?))
+    Ok(Json(
+        build_flavors(&state, &ctx, models, Some(uid), &[]).await?,
+    ))
 }
 
 #[derive(Deserialize)]

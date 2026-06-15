@@ -20,9 +20,7 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::blacklist::{blacklist, is_blacklisted, record_outstanding};
-use crate::cookies::{
-    clear_cookie, cookie_value, set_cookie, COOKIE_ACCESS, COOKIE_REFRESH,
-};
+use crate::cookies::{clear_cookie, cookie_value, set_cookie, COOKIE_ACCESS, COOKIE_REFRESH};
 use crate::entities::prelude::*;
 use crate::entities::user;
 use crate::error::ApiResult;
@@ -102,7 +100,11 @@ async fn login(
     )
     .await?;
 
-    Ok(ok_with_cookies(state.config.jwt_cookie_secure, &access, &refresh))
+    Ok(ok_with_cookies(
+        state.config.jwt_cookie_secure,
+        &access,
+        &refresh,
+    ))
 }
 
 #[derive(Deserialize, Default)]
@@ -225,7 +227,12 @@ fn ok_with_cookies(secure: bool, access: &Minted, refresh: &Minted) -> Response 
     );
     append_cookie(
         &mut resp,
-        &set_cookie(COOKIE_REFRESH, &refresh.token, REFRESH_LIFETIME_SECS, secure),
+        &set_cookie(
+            COOKIE_REFRESH,
+            &refresh.token,
+            REFRESH_LIFETIME_SECS,
+            secure,
+        ),
     );
     resp
 }

@@ -98,9 +98,10 @@ async fn create(
     body: Bytes,
 ) -> ApiResult<(StatusCode, Json<RatingOut>)> {
     // django_ratelimit(key="user", rate="10/m") on RatingViewSet.create.
-    state
-        .security
-        .check_rate(&format!("rating:user:{uid}"), crate::throttle::RATING_CREATE)?;
+    state.security.check_rate(
+        &format!("rating:user:{uid}"),
+        crate::throttle::RATING_CREATE,
+    )?;
     let data: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
 
     // DRF validation, aggregated and field-keyed, in serializer field order.
@@ -398,10 +399,7 @@ async fn feed(
 }
 
 /// GET /api/ratings/recent/ — 10 newest with a non-empty comment (AllowAny).
-async fn recent(
-    State(state): State<AppState>,
-    ctx: RequestCtx,
-) -> ApiResult<Json<Vec<RatingOut>>> {
+async fn recent(State(state): State<AppState>, ctx: RequestCtx) -> ApiResult<Json<Vec<RatingOut>>> {
     let models = Rating::find()
         .filter(rating::Column::Comment.is_not_null())
         .filter(rating::Column::Comment.ne(""))

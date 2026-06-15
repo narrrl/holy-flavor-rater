@@ -42,14 +42,17 @@ pub async fn send_mail(
 
     let mut builder = Message::builder().from(from).subject(subject);
     for r in recipients {
-        let mbox: Mailbox = r.parse().map_err(|e| format!("invalid recipient {r}: {e}"))?;
+        let mbox: Mailbox = r
+            .parse()
+            .map_err(|e| format!("invalid recipient {r}: {e}"))?;
         builder = builder.to(mbox);
     }
     let message = builder
         .body(body.to_string())
         .map_err(|e| format!("build email: {e}"))?;
 
-    let mut transport = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(host).port(cfg.port);
+    let mut transport =
+        AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(host).port(cfg.port);
 
     if cfg.use_ssl || cfg.use_tls {
         let tls = TlsParameters::builder(host.to_string())

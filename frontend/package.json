@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "schema:export": "cd ../backend && ./venv/bin/python manage.py spectacular --file schema.yaml",
+    "schema:export": "curl -fsS http://localhost:8001/api/schema/ -o ../backend/schema.yaml",
     "openapi:gen": "openapi-typescript ../backend/schema.yaml -o src/api/schema.d.ts",
     "openapi:sync": "npm run schema:export && npm run openapi:gen"
   },

@@ -15,7 +15,10 @@ use crate::entities::{flavor, notification, rating, reply};
 /// Rank a rating for conflict resolution: longest comment wins, newer breaks
 /// ties (mirrors Python's tuple comparison `(len(comment), created_at)`).
 fn quality(r: &rating::Model) -> (usize, chrono::NaiveDateTime) {
-    (r.comment.as_deref().unwrap_or("").chars().count(), r.created_at)
+    (
+        r.comment.as_deref().unwrap_or("").chars().count(),
+        r.created_at,
+    )
 }
 
 /// Merge `remove` into `keep`. Re-assigns all of `remove`'s ratings; when a user
