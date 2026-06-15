@@ -1,13 +1,12 @@
 #!/bin/sh
 
-# The backend hostname is 'holy-backend' based on docker-compose.yml
-# We wait for port 8000 to be open
-echo "Waiting for backend (holy-backend:8000) to be available..."
+# Wait for the Rust backend (holy-rust:8001) before serving.
+echo "Waiting for backend (holy-rust:8001) to be available..."
 
 MAX_RETRIES=30
 COUNT=0
 
-while ! nc -z holy-backend 8000; do
+while ! nc -z holy-rust 8001; do
   COUNT=$((COUNT + 1))
   if [ $COUNT -ge $MAX_RETRIES ]; then
     echo "Backend timed out after $MAX_RETRIES attempts - starting Nginx anyway"
