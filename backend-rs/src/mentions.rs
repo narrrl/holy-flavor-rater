@@ -5,7 +5,7 @@
 use sea_orm::sea_query::{Expr, Func};
 use sea_orm::{
     ActiveValue::{NotSet, Set},
-    ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter,
+    ColumnTrait, Condition, ConnectionTrait, EntityTrait, QueryFilter,
 };
 
 use crate::entities::prelude::*;
@@ -47,8 +47,8 @@ fn eq_or_null(col: notification::Column, value: Option<i32>) -> Condition {
     }
 }
 
-pub async fn parse_mentions(
-    db: &DatabaseConnection,
+pub async fn parse_mentions<C: ConnectionTrait>(
+    db: &C,
     text: &str,
     actor_id: i32,
     rating_id: Option<i32>,

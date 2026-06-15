@@ -68,6 +68,17 @@ jobs:
             backend-rs/target
           key: cargo-${{ hashFiles('backend-rs/Cargo.lock') }}
 
+      - name: Fetch common-passwords list
+        run: |
+          mkdir -p assets
+          curl -fsSL -o assets/common-passwords.txt.gz \
+            "https://raw.githubusercontent.com/django/django/${DJANGO_PASSWORDS_TAG}/django/contrib/auth/common-passwords.txt.gz"
+          echo "${DJANGO_PASSWORDS_SHA256}  assets/common-passwords.txt.gz" | sha256sum -c -
+        working-directory: backend-rs
+        env:
+          DJANGO_PASSWORDS_TAG: "5.2"
+          DJANGO_PASSWORDS_SHA256: "3c1baed62596de36860824eb3f436d5932d37ca8b06e59df78f5a44ec175afe4"
+
       - name: Format Check
         run: cargo fmt --check
         working-directory: backend-rs

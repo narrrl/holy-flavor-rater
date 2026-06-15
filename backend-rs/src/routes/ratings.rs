@@ -196,7 +196,13 @@ async fn create(
     }
 
     let now = crate::datetime::now_micros();
-    let model = rating::ActiveModel {
+    // Insert + mention fan-out in one transaction so a parse_mentions failure
+    // can't leave a rating with no notifications. The DB's UNIQUE(user_id,
+    // flavor_id) index is the real guard against a racing double-rate (the
+    // pre-check above is best-effort and not atomic): map that violation to the
+    // same clean validation error instead of a 500.
+    let txn = state.db.begin().await?;
+    let model = match (rating::ActiveModel {
         id: NotSet,
         user_id: Set(uid),
         flavor_id: Set(flavor_id),
@@ -204,12 +210,22 @@ async fn create(
         comment: Set(comment.clone()),
         created_at: Set(now),
     }
-    .insert(&state.db)
-    .await?;
+    .insert(&txn)
+    .await)
+    {
+        Ok(m) => m,
+        Err(e) if crate::error::is_unique_violation(&e) => {
+            return Err(ApiError::Validation(json!([
+                "You have already rated this flavor."
+            ])));
+        }
+        Err(e) => return Err(e.into()),
+    };
 
     if let Some(text) = comment.as_deref().filter(|s| !s.is_empty()) {
-        parse_mentions(&state.db, text, uid, Some(model.id), None).await?;
+        parse_mentions(&txn, text, uid, Some(model.id), None).await?;
     }
+    txn.commit().await?;
 
     let mut dtos = build_ratings(&state, &ctx, vec![model]).await?;
     let out = dtos.pop().ok_or(ApiError::Internal)?;
@@ -430,6 +446,9 @@ async fn reply(
     }
 
     let now = crate::datetime::now_micros();
+    // Reply + owner-notification + mention fan-out are one unit: a failure in any
+    // step must not persist a partial reply (orphaned reply, missing notification).
+    let txn = state.db.begin().await?;
     let reply_model = reply::ActiveModel {
         id: NotSet,
         user_id: Set(uid),
@@ -437,7 +456,7 @@ async fn reply(
         text: Set(text.to_string()),
         created_at: Set(now),
     }
-    .insert(&state.db)
+    .insert(&txn)
     .await?;
 
     if rating.user_id != uid {
@@ -453,11 +472,12 @@ async fn reply(
             notification_type: Set("reply".to_string()),
             profile_comment_id: Set(None),
         }
-        .insert(&state.db)
+        .insert(&txn)
         .await?;
     }
 
-    parse_mentions(&state.db, text, uid, Some(rating.id), Some(reply_model.id)).await?;
+    parse_mentions(&txn, text, uid, Some(rating.id), Some(reply_model.id)).await?;
+    txn.commit().await?;
 
     let mut dtos = build_replies(&state, vec![reply_model]).await?;
     let out = dtos.pop().ok_or(ApiError::Internal)?;
