@@ -491,6 +491,10 @@ async fn upsert_flavor(
         .filter(flavor::Column::ExternalId.eq(external_id))
         .one(db)
         .await?;
+    // A row already linked by external_id is the authoritative one for this
+    // product; its name may have been curated (admin rename) or chosen by a merge
+    // that kept the legacy row. Don't let a later sync overwrite that name.
+    let matched_by_external = existing.is_some();
     if existing.is_none() {
         existing = Flavor::find()
             .filter(flavor::Column::Name.eq(name))
@@ -527,7 +531,7 @@ async fn upsert_flavor(
                 if f_is_legacy {
                     am.is_legacy = Set(false);
                 }
-                if f_name != name {
+                if f_name != name && !matched_by_external {
                     let dup = Flavor::find()
                         .filter(flavor::Column::Name.eq(name))
                         .filter(flavor::Column::CategoryId.eq(category_id))
