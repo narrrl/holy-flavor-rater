@@ -1,138 +1,4 @@
 services:
-  # --- Redis (Celery broker + result backend) ---
-  redis:
-    image: redis:7-alpine
-    container_name: holy-redis
-    command: redis-server --appendonly yes --save 60 1
-    restart: unless-stopped
-    sysctls:
-      - net.core.somaxconn=512
-      - vm.overcommit_memory=1
-    networks:
-      - holy-net
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
-  # --- Backend Service ---
-  backend:
-    build:
-      context: ./backend
-    container_name: holy-backend
-    user: "app"
-    restart: unless-stopped
-    networks:
-      - holy-net
-    ports:
-      - 8000
-    env_file:
-      - .env
-    volumes:
-      - ./backend:/app
-      - ./legacy:/app/legacy
-    environment:
-      - PYTHONUNBUFFERED=1
-      - DOMAIN=${DOMAIN:-localhost}
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-holy_backend.settings.prod}
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
-      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
-    depends_on:
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  worker:
-    build:
-      context: ./backend
-    container_name: holy-worker
-    command: celery -A holy_backend worker -l info --concurrency=2
-    user: "app"
-    restart: unless-stopped
-    networks:
-      - holy-net
-    env_file:
-      - .env
-    environment:
-      - PYTHONUNBUFFERED=1
-      - DOMAIN=${DOMAIN:-localhost}
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-holy_backend.settings.prod}
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
-      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
-      - SKIP_INIT=true
-    volumes:
-      - ./backend:/app
-      - ./legacy:/app/legacy
-    depends_on:
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "celery -A holy_backend inspect ping -d celery@$$HOSTNAME || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  beat:
-    build:
-      context: ./backend
-    container_name: holy-beat
-    command: celery -A holy_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler --pidfile /tmp/celerybeat.pid
-    user: "app"
-    restart: unless-stopped
-    networks:
-      - holy-net
-    env_file:
-      - .env
-    environment:
-      - PYTHONUNBUFFERED=1
-      - DOMAIN=${DOMAIN:-localhost}
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-holy_backend.settings.prod}
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
-      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
-      - SKIP_INIT=true
-    volumes:
-      - ./backend:/app
-      - ./legacy:/app/legacy
-    depends_on:
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "test -f /tmp/celerybeat.pid && kill -0 $$(cat /tmp/celerybeat.pid) || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
-  flower:
-    image: mher/flower:2.0
-    container_name: holy-flower
-    restart: unless-stopped
-    command: celery --broker=${CELERY_BROKER_URL:-redis://redis:6379/0} flower --port=5555
-    environment:
-      - CELERY_BROKER_URL=${CELERY_BROKER_URL:-redis://redis:6379/0}
-      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
-      - FLOWER_BASIC_AUTH=${FLOWER_BASIC_AUTH:-admin:change-me}
-    ports:
-      - 5555
-    networks:
-      - holy-net
-    depends_on:
-      redis:
-        condition: service_healthy
-
   # --- Rust backend (strangler) --------------------------------------------
   # Runs beside Django, sharing the SAME db.sqlite3, media/, banners/ and
   # legacy/ via bind mounts and the SAME SECRET_KEY (so SimpleJWT tokens verify
@@ -170,10 +36,6 @@ services:
     volumes:
       - ./backend:/srv/backend
       - ./legacy:/srv/legacy
-    depends_on:
-      # Wait for Django to apply migrations / create the schema before reading it.
-      backend:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health/"]
       interval: 10s
@@ -204,9 +66,6 @@ services:
       # from either backend so Django can be retired without losing media.
       - ./backend/media:/usr/share/nginx/media:ro
     depends_on:
-      backend:
-        condition: service_healthy
-      # nginx resolves the rust upstream at startup, so the container must exist.
       backend-rs:
         condition: service_healthy
 
@@ -216,4 +75,3 @@ networks:
 
 volumes:
   db_data:
-  redis_data:
