@@ -20,6 +20,8 @@ use crate::state::AppState;
 pub struct Claims {
     pub user_id: i32,
     pub token_type: String,
+    // Read by jsonwebtoken's `validate_exp` during decode, not by our code.
+    #[allow(dead_code)]
     pub exp: usize,
 }
 
