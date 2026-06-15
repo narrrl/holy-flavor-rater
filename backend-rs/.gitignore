@@ -1,2 +1,6 @@
 /target
 .env
+
+# Not vendored: the embedded common-passwords list is fetched at build time
+# (see Dockerfile). A local copy lives here only for native `cargo build` dev.
+/assets
