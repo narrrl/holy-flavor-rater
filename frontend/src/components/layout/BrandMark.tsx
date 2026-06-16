@@ -51,7 +51,7 @@ export const BrandMark = ({ onNavigate, compact = false }: BrandMarkProps) => {
         </Typography>
       </Box>
       {!compact && (
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, display: { xs: 'none', md: 'block' } }}>
           <Typography sx={{ fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.01em' }} noWrap>
             {t('brand.name')}
           </Typography>

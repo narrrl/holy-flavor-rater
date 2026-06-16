@@ -28,12 +28,14 @@ import { BrandMark } from './BrandMark';
 import { NotificationMenu } from './NotificationMenu';
 
 /**
- * Desktop top bar (md+). Promotes global search to the primary, centered slot;
- * notifications + an account menu sit on the right. Everything that used to be
- * a flat sidebar row (profile, dashboard, settings, support, admin, following,
- * logout) now lives behind the avatar menu so the chrome stays light.
+ * Top bar for every breakpoint. Promotes global search to the primary, centered
+ * slot; notifications + an account menu sit on the right. Everything that used to
+ * be a flat sidebar row (profile, dashboard, settings, support, admin, following,
+ * logout) lives behind the avatar menu — so there's no mobile drawer anymore, the
+ * same dropdown serves all sizes. Browse links (home/community/categories) live
+ * in the CategoryBar below.
  */
-export const DesktopTopBar = () => {
+export const TopBar = () => {
   const { t } = useTranslation();
   const { user, following, logout } = useAuth();
 
@@ -45,7 +47,9 @@ export const DesktopTopBar = () => {
   const unreadCount = user?.unread_notifications_count || 0;
 
   return (
-    <GlassAppBar toolbarSx={{ maxWidth: 1400, width: '100%', mx: 'auto', px: { md: 6 } }}>
+    <GlassAppBar
+      toolbarSx={{ maxWidth: 1400, width: '100%', mx: 'auto', px: { xs: 1, sm: 4, md: 6 } }}
+    >
       <BrandMark />
 
       <GlobalSearch />

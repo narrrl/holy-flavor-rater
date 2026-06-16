@@ -1,32 +1,14 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
-import {
-  Typography,
-  Button,
-  Box,
-  IconButton,
-  SwipeableDrawer,
-  CircularProgress,
-  Badge,
-  useMediaQuery,
-  useTheme as useMuiTheme,
-} from '@mui/material';
-import { GlassAppBar } from './components/ui';
-import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
+import { Typography, Button, Box, CircularProgress, useTheme as useMuiTheme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import Footer from './components/Footer';
 import CookieBanner from './components/CookieBanner';
-import { GlobalSearch } from './app/GlobalSearch';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
-import { useDrawerAnchor } from './hooks/useDrawerAnchor';
-import { NavSidebar } from './components/layout/NavSidebar';
-import { BrandMark } from './components/layout/BrandMark';
-import { DesktopTopBar } from './components/layout/DesktopTopBar';
+import { TopBar } from './components/layout/TopBar';
 import { CategoryBar } from './components/layout/CategoryBar';
 import { useCategories } from './api/queries/useCategories';
-import { NotificationMenu } from './components/layout/NotificationMenu';
 import { RequireSuperuser } from './components/auth/RequireSuperuser';
 import type { CatppuccinTheme } from './theme';
 
@@ -58,14 +40,10 @@ const AdminReplyDetail = lazy(() => import('./pages/AdminReplyDetail'));
 const App: React.FC = () => {
   const { t } = useTranslation();
   const muiTheme = useMuiTheme();
-  const { user, loadingUser } = useAuth();
+  const { user } = useAuth();
   const { themeName, handleThemeChange } = useTheme();
-  const { anchor: mobileAnchor } = useDrawerAnchor();
 
-  const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
   const { data: categories = [] } = useCategories();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     document.body.style.backgroundColor = muiTheme.palette.background.default;
@@ -76,33 +54,6 @@ const App: React.FC = () => {
     await handleThemeChange(name, !!user);
   };
 
-  const hamburger = (
-    <IconButton
-      color="inherit"
-      onClick={() => setDrawerOpen((o) => !o)}
-      aria-label="toggle navigation"
-      sx={{ mx: 0.5 }}
-    >
-      <MenuIcon />
-    </IconButton>
-  );
-
-  const notificationsMenu = (
-    <>
-      <IconButton color="inherit" onClick={(e) => setNotifAnchorEl(e.currentTarget)} sx={{ ml: 1 }}>
-        <Badge badgeContent={user?.unread_notifications_count || 0} color="error">
-          <NotificationsIcon />
-        </Badge>
-      </IconButton>
-      <NotificationMenu
-        anchorEl={notifAnchorEl}
-        open={Boolean(notifAnchorEl)}
-        onClose={() => setNotifAnchorEl(null)}
-        menuSx={{ mt: 1 }}
-      />
-    </>
-  );
-
   return (
     <Box
       sx={{
@@ -112,63 +63,7 @@ const App: React.FC = () => {
         width: '100%',
       }}
     >
-      {isMobile && (
-        <GlassAppBar>
-          {mobileAnchor === 'left' && hamburger}
-
-          <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-            <BrandMark compact />
-          </Box>
-
-          <GlobalSearch />
-
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {!loadingUser && (
-              <>
-                {user && notificationsMenu}
-
-                {!user && (
-                  <Button
-                    variant="contained"
-                    component={Link}
-                    to="/login"
-                    sx={{ borderRadius: 2, ml: 1 }}
-                  >
-                    {t('nav.login')}
-                  </Button>
-                )}
-              </>
-            )}
-
-            {mobileAnchor === 'right' && hamburger}
-          </Box>
-        </GlassAppBar>
-      )}
-
-      {!isMobile && <DesktopTopBar />}
-
-      {isMobile && (
-        <SwipeableDrawer
-          anchor={mobileAnchor}
-          open={drawerOpen}
-          onOpen={() => setDrawerOpen(true)}
-          onClose={() => setDrawerOpen(false)}
-          disableBackdropTransition
-          disableDiscovery
-          slotProps={{
-            paper: {
-              sx: {
-                height: '100vh',
-                maxHeight: '100vh',
-                top: 0,
-                bottom: 0,
-              },
-            },
-          }}
-        >
-          <NavSidebar categories={categories} onNavigate={() => setDrawerOpen(false)} />
-        </SwipeableDrawer>
-      )}
+      <TopBar />
 
       <CategoryBar categories={categories} />
 
