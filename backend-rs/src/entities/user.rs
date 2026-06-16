@@ -26,6 +26,12 @@ pub struct Model {
     pub language: String,
     pub selected_banner_id: Option<i32>,
     pub drawer_anchor: String,
+    /// Dedicated account-deletion confirmation code + its expiry. Kept separate
+    /// from `email_confirmation_code` so other code-driven flows (email confirm,
+    /// password reset) can never clobber an in-flight deletion code, and
+    /// persisted so the 15-min TTL survives restarts / spans instances.
+    pub deletion_code: Option<String>,
+    pub deletion_code_expires: Option<ChronoDateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

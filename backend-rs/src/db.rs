@@ -52,6 +52,27 @@ async fn ensure_schema(conn: &DatabaseConnection) -> anyhow::Result<()> {
         "ALTER TABLE api_flavor ADD COLUMN aliases TEXT",
     )
     .await?;
+    // Account-deletion (GDPR "right to erasure") flow gets its own dedicated,
+    // DB-persisted code + expiry. Previously it reused `email_confirmation_code`
+    // and an in-process TTL, so a concurrent email-confirm/password-reset flow
+    // could silently clobber the deletion code (the column ended up empty) and a
+    // backend restart dropped the expiry — both could block a user from deleting
+    // their account. Dedicated, persisted columns make the flow restart-safe,
+    // multi-instance-safe, and immune to cross-flow collisions.
+    add_column_if_missing(
+        conn,
+        "api_user",
+        "deletion_code",
+        "ALTER TABLE api_user ADD COLUMN deletion_code TEXT",
+    )
+    .await?;
+    add_column_if_missing(
+        conn,
+        "api_user",
+        "deletion_code_expires",
+        "ALTER TABLE api_user ADD COLUMN deletion_code_expires DATETIME",
+    )
+    .await?;
     Ok(())
 }
 

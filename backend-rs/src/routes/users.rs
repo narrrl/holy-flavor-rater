@@ -16,7 +16,7 @@ use axum::extract::{ConnectInfo, Multipart, Path, Query, State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::routing::{get, patch, post};
 use axum::{Json, Router};
-use chrono::Datelike;
+use chrono::{Datelike, Duration};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, PaginatorTrait,
@@ -147,7 +147,11 @@ fn err_json(status: StatusCode, body: Value) -> ApiError {
 /// to be constant-time to avoid leaking a correct prefix.
 fn code_matches(stored: Option<&str>, provided: Option<&str>) -> bool {
     match (stored, provided) {
-        (Some(s), Some(p)) if s.len() == p.len() => s.as_bytes().ct_eq(p.as_bytes()).into(),
+        // An empty stored code is never a valid secret: it means the column was
+        // cleared/never set, so it must not be satisfiable by an empty input.
+        (Some(s), Some(p)) if !s.is_empty() && s.len() == p.len() => {
+            s.as_bytes().ct_eq(p.as_bytes()).into()
+        }
         _ => false,
     }
 }
@@ -995,10 +999,15 @@ async fn request_account_deletion(
     let code = gen_code();
     let uname = user.username.clone();
     let email = user.email.clone();
+    let expires = crate::datetime::now_micros()
+        + Duration::from_std(throttle::CODE_TTL).expect("CODE_TTL fits in chrono::Duration");
     let mut active: user::ActiveModel = user.into();
-    active.email_confirmation_code = Set(Some(code.clone()));
+    // Dedicated, persisted columns — never touch `email_confirmation_code`, so a
+    // concurrent email/password flow can't clobber the in-flight deletion code,
+    // and the TTL survives restarts instead of living only in process memory.
+    active.deletion_code = Set(Some(code.clone()));
+    active.deletion_code_expires = Set(Some(expires));
     active.update(&state.db).await?;
-    state.security.record_code(&del_code_key(uid));
 
     crate::email::spawn_mail(
         state.config.email.clone(),
@@ -1018,26 +1027,33 @@ async fn confirm_account_deletion(
     AuthUser(uid): AuthUser,
     body: Bytes,
 ) -> ApiResult<Json<Value>> {
-    let code_key = del_code_key(uid);
-    state
-        .security
-        .check_rate(&format!("attempt:{code_key}"), throttle::CODE_ATTEMPTS)?;
-    if state.security.code_expired(&code_key) {
+    // Per-process attempt throttle (defence-in-depth; nginx limits sit in front).
+    state.security.check_rate(
+        &format!("attempt:{}", del_code_key(uid)),
+        throttle::CODE_ATTEMPTS,
+    )?;
+    let user = load_user(&state, uid).await?;
+    let data = parse_body(&body);
+    let code = data.get("code").and_then(|v| v.as_str());
+
+    // Validate the dedicated, DB-persisted deletion code + expiry. Both checks
+    // read from the DB so they're restart-safe and consistent across instances.
+    let expired = user
+        .deletion_code_expires
+        .is_none_or(|exp| exp < crate::datetime::now_micros());
+    if expired {
         return Err(err_json(
             StatusCode::BAD_REQUEST,
             json!({ "error": "Deletion code has expired. Please request a new one." }),
         ));
     }
-    let user = load_user(&state, uid).await?;
-    let data = parse_body(&body);
-    let code = data.get("code").and_then(|v| v.as_str());
-    if !code_matches(user.email_confirmation_code.as_deref(), code) {
+    if !code_matches(user.deletion_code.as_deref(), code) {
         return Err(err_json(
             StatusCode::BAD_REQUEST,
             json!({ "error": "Invalid or expired code" }),
         ));
     }
-    state.security.clear_code(&code_key);
+    // delete_user_cascade removes the user row (and the code with it) atomically.
     delete_user_cascade(&state, uid).await?;
     Ok(Json(json!({ "status": "Account deleted" })))
 }
@@ -1546,5 +1562,39 @@ mod dashboard_stats_tests {
         let ratings = vec![rating(5, "banana", "Banana"), rating(5, "apple", "Apple")];
         let fav = dashboard_stats(&ratings, 0).favorite_category.unwrap();
         assert_eq!(fav.slug, "apple");
+    }
+}
+
+#[cfg(test)]
+mod deletion_code_tests {
+    use super::*;
+
+    // The account-deletion confirm endpoint gates on `code_matches`. Guard the
+    // exact failure that once blocked the GDPR erasure flow: an empty stored
+    // code (column was clobbered/never set) must never satisfy any input.
+    #[test]
+    fn empty_or_missing_stored_code_never_matches() {
+        assert!(!code_matches(None, Some("123456")));
+        assert!(!code_matches(Some(""), Some("")));
+        assert!(!code_matches(Some("123456"), None));
+        assert!(!code_matches(None, None));
+    }
+
+    #[test]
+    fn only_exact_equal_length_code_matches() {
+        assert!(code_matches(Some("123456"), Some("123456")));
+        assert!(!code_matches(Some("123456"), Some("123450")));
+        assert!(!code_matches(Some("123456"), Some("12345"))); // length mismatch
+    }
+
+    // Mirror the inline expiry guard in `confirm_account_deletion`: a missing or
+    // past expiry is treated as expired; a future expiry is valid.
+    #[test]
+    fn expiry_guard_treats_missing_or_past_as_expired() {
+        let now = crate::datetime::now_micros();
+        let is_expired = |exp: Option<chrono::NaiveDateTime>| exp.is_none_or(|e| e < now);
+        assert!(is_expired(None));
+        assert!(is_expired(Some(now - Duration::minutes(1))));
+        assert!(!is_expired(Some(now + Duration::minutes(1))));
     }
 }

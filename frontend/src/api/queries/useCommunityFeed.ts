@@ -60,6 +60,16 @@ export const useCommunityFeed = (page: number) =>
     placeholderData: (prev) => prev,
   });
 
+export const useRecentRatings = (enabled = true) =>
+  useQuery({
+    queryKey: ['recentRatings'],
+    queryFn: async (): Promise<FeedRating[]> => {
+      const res = await api.get<FeedRating[] | { results: FeedRating[] }>('ratings/recent/');
+      return Array.isArray(res.data) ? res.data : (res.data.results ?? []);
+    },
+    enabled,
+  });
+
 export const useFollowingList = () =>
   useQuery({
     queryKey: ['followingList'],
