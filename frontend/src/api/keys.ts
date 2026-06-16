@@ -17,4 +17,6 @@ export const queryKeys = {
   activeBanner: (username: string) => ['activeBanner', username] as const,
   notifications: () => ['notifications'] as const,
   communityFeed: (params: Record<string, unknown>) => ['communityFeed', params] as const,
+  communityDiscover: (params: Record<string, unknown>) => ['communityDiscover', params] as const,
+  communityActivity: (params: Record<string, unknown>) => ['communityActivity', params] as const,
 };

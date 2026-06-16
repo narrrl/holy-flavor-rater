@@ -73,6 +73,27 @@ async fn ensure_schema(conn: &DatabaseConnection) -> anyhow::Result<()> {
         "ALTER TABLE api_user ADD COLUMN deletion_code_expires DATETIME",
     )
     .await?;
+    // Rust-owned table (no Django model): emoji reactions on ratings. UNIQUE makes
+    // a duplicate react a no-op; the index keeps the per-feed count query cheap.
+    conn.execute(Statement::from_string(
+        DatabaseBackend::Sqlite,
+        "CREATE TABLE IF NOT EXISTS rating_reaction (\
+            id INTEGER PRIMARY KEY AUTOINCREMENT, \
+            user_id INTEGER NOT NULL, \
+            rating_id INTEGER NOT NULL, \
+            kind VARCHAR(32) NOT NULL, \
+            created_at DATETIME NOT NULL, \
+            UNIQUE(user_id, rating_id, kind))"
+            .to_owned(),
+    ))
+    .await?;
+    conn.execute(Statement::from_string(
+        DatabaseBackend::Sqlite,
+        "CREATE INDEX IF NOT EXISTS idx_rating_reaction_rating \
+            ON rating_reaction(rating_id)"
+            .to_owned(),
+    ))
+    .await?;
     Ok(())
 }
 

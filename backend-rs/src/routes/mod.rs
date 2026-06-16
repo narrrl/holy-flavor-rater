@@ -1,3 +1,4 @@
+pub mod activity;
 pub mod admin;
 pub mod auth;
 pub mod banners;
@@ -18,6 +19,7 @@ use crate::state::AppState;
 /// slash, so routes are declared with it explicitly.
 pub fn api_router() -> Router<AppState> {
     Router::new()
+        .merge(activity::router())
         .merge(auth::router())
         .merge(categories::router())
         .merge(flavors::router())

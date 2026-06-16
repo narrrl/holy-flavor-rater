@@ -12,6 +12,7 @@ pub mod job;
 pub mod notification;
 pub mod profile_comment;
 pub mod rating;
+pub mod rating_reaction;
 pub mod reply;
 pub mod system_config;
 pub mod ticket;
@@ -27,6 +28,7 @@ pub mod prelude {
     pub use super::notification::Entity as Notification;
     pub use super::profile_comment::Entity as ProfileComment;
     pub use super::rating::Entity as Rating;
+    pub use super::rating_reaction::Entity as RatingReaction;
     pub use super::reply::Entity as Reply;
     pub use super::system_config::Entity as SystemConfig;
     pub use super::ticket::Entity as Ticket;

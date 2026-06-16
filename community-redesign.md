@@ -53,43 +53,93 @@ No backend changes. Reuses the existing `GET /api/ratings/recent/` endpoint
 
 ## Phase 2 — needs backend
 
-### 1. Reactions (highest engagement lever)
+### 1. Reactions (highest engagement lever) — DONE
 
 Lightweight 👍 / emoji on ratings. Social proof, drives return visits.
 
 - New `rating_reaction` table (`user_id`, `rating_id`, `kind`, `created_at`;
-  unique on `user_id + rating_id + kind`).
+  unique on `user_id + rating_id + kind`). Created in `db.rs::ensure_schema`
+  (idempotent `CREATE TABLE IF NOT EXISTS` + index on `rating_id`).
 - Endpoints: `POST /api/ratings/{id}/react/`, `DELETE /api/ratings/{id}/react/`.
-- Include reaction counts + the caller's own reaction in `RatingOut`.
-- Frontend: reaction bar on each feed card; optimistic toggle.
+  Allow-listed `kind`, rate-limited (60/min/user), idempotent on the unique index.
+- `RatingOut` carries `reactions` (kind → count) + `my_reactions` (caller's own).
+  Threaded through `build_ratings(viewer_id)` via the `OptionalUser` extractor.
+- Frontend: `ReactionBar` on each feed card; optimistic toggle, server-reconciled.
 
-### 2. Discover feed with sort + pagination
+#### Files touched
 
-`recent/` is fixed at 10 and unpaginated. Promote Discover to a real feed.
+- `backend-rs/src/entities/rating_reaction.rs` (new), `entities/mod.rs`.
+- `backend-rs/src/db.rs` (table + index), `throttle.rs` (`REACTION` rate),
+  `dto.rs` (`reactions`/`my_reactions`), `service.rs` (`load_reactions`,
+  `build_ratings` viewer param), `routes/ratings.rs` (`react`/`unreact`),
+  plus call-site updates in `routes/users.rs`, `routes/admin.rs`.
+- `frontend/src/components/ReactionBar.tsx` (new),
+  `frontend/src/pages/CommunityFeed.tsx`, `api/queries/useCommunityFeed.ts`,
+  `frontend/src/i18n.ts`.
 
-- Extend `ratings/feed/` (or a new `ratings/discover/`) to accept
-  `?sort=recent|top` and `?category=<slug>` and `?page=`.
-- Frontend: sticky filter bar with `Recent | Top | <category chips>`. Reuse the
-  `category_slug` already in the payload.
+### 2. Discover feed with sort + pagination — DONE
 
-### 3. Who-to-follow
+`recent/` is fixed at 10 and unpaginated. Discover is now a real feed.
+
+- New `GET /api/ratings/discover/` (AllowAny) accepts `?sort=recent|top`,
+  `?category=<slug>`, `?page=`. Quality bar kept (non-empty comment only).
+  `top` orders by score desc then recency; category resolves slug → flavor ids.
+- Frontend: sticky filter bar — `Recent | Top rated` sort chips + `All` plus a
+  chip per category (reuses `useCategories`). Discover now paginates like
+  Following; page resets on tab/sort/category change.
+
+#### Files touched
+
+- `backend-rs/src/routes/ratings.rs` (`discover` handler + route).
+- `frontend/src/api/queries/useCommunityFeed.ts` (`useDiscoverFeed`),
+  `frontend/src/api/keys.ts` (`communityDiscover`),
+  `frontend/src/pages/CommunityFeed.tsx` (filter bar, discover pagination),
+  `frontend/src/i18n.ts` (`sortRecent`, `sortTop`, `allCategories`).
+
+### 3. Who-to-follow — DONE
 
 Sidebar card suggesting active raters the user doesn't follow yet.
 
-- `GET /api/users/suggested/` — most-active raters excluding self + already-followed.
-- Frontend: avatar + name + follow button; optimistic follow.
+- `GET /api/users/suggested/` — up to 5 most-active raters (by rating count),
+  excluding self + already-followed. Returns `UserOut` (reuses `build_users`),
+  re-sorted to the activity ranking after the id-ordered load.
+- Frontend: `SuggestedFollows` card (avatar + name + follower count + Follow
+  button), optimistic — drops the user from the list on follow, reverts on error.
 
-### 4. Richer activity types
+#### Files touched
+
+- `backend-rs/src/routes/users.rs` (`suggested` handler + route).
+- `frontend/src/api/queries/useCommunityFeed.ts` (`useSuggestedUsers`),
+  `frontend/src/pages/CommunityFeed.tsx` (`SuggestedFollows` sidebar card),
+  `frontend/src/i18n.ts` (`whoToFollow`, `follow`, `followFailed`,
+  `followerCount`).
+
+### 4. Richer activity types — DONE
 
 Make the feed alive when friends are quiet.
 
-- New-flavor drops (from the `sync_flavors` job) and milestones
-  ("X hit 100 ratings") as feed items.
-- Likely a unified activity payload or a separate `activity/` endpoint.
+- New `GET /api/activity/` (AllowAny, paginated): a unified, newest-first stream
+  of `new_flavor` drops + `milestone` events. No persistent event table — items
+  are synthesized on read from `flavor.created_at` and, for milestones, the
+  timestamp of the rating that crossed a threshold (25/50/100/250/500/1000;
+  one item per flavor at its highest crossed threshold). Candidate set is bounded
+  (latest 40 drops + flavors ≥25 ratings), built once and paged in memory.
+- Frontend: third **Activity** tab with its own card style (drop vs. milestone
+  icon), paginated like the others.
+
+#### Files touched
+
+- `backend-rs/src/dto.rs` (`ActivityOut`), `service.rs` (`build_activity`),
+  `routes/activity.rs` (new), `routes/mod.rs` (mount).
+- `frontend/src/api/queries/useCommunityFeed.ts` (`useActivityFeed`),
+  `frontend/src/api/keys.ts` (`communityActivity`),
+  `frontend/src/pages/CommunityFeed.tsx` (Activity tab + `renderActivityCard`),
+  `frontend/src/i18n.ts` (`tabActivity`, `activitySubtitle`, `activityEmpty`,
+  `activityEmptyHint`, `newDropLabel`, `milestoneLabel`, `milestoneText`).
 
 ---
 
 ## Suggested order
 
 Phase 2.1 (reactions) and 2.2 (Discover sort/filter) give the most UX lift per
-unit of backend work. 2.3 and 2.4 follow.
+unit of backend work. 2.3 and 2.4 follow. **All of Phase 2 is now complete.**

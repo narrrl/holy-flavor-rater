@@ -421,7 +421,7 @@ async fn build_user_detail(
         .order_by_desc(rating::Column::CreatedAt)
         .all(&state.db)
         .await?;
-    let ratings = build_ratings(state, ctx, ratings).await?;
+    let ratings = build_ratings(state, ctx, None, ratings).await?;
     let mut v = admin_user_json(u, &ips);
     v["ratings"] = serde_json::to_value(ratings).unwrap_or(Value::Null);
     Ok(v)

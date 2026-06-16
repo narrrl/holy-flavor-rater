@@ -5,13 +5,14 @@
 use std::collections::{BTreeMap, HashMap};
 
 use sea_orm::{
-    ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, QueryFilter, QueryOrder, Statement,
+    ColumnTrait, ConnectionTrait, DbBackend, EntityTrait, QueryFilter, QueryOrder, QuerySelect,
+    Statement,
 };
 use serde_json::Value;
 
 use crate::dto::{
-    FlavorOut, NotificationOut, ProfileCommentOut, RatingOut, ReplyOut, TicketMessageOut,
-    TicketOut, UserOut,
+    ActivityOut, FlavorOut, NotificationOut, ProfileCommentOut, RatingOut, ReplyOut,
+    TicketMessageOut, TicketOut, UserOut,
 };
 use crate::entities::prelude::*;
 use crate::entities::{
@@ -88,6 +89,7 @@ pub async fn build_replies(
 pub async fn build_ratings(
     state: &AppState,
     ctx: &RequestCtx,
+    viewer_id: Option<i32>,
     ratings: Vec<rating::Model>,
 ) -> ApiResult<Vec<RatingOut>> {
     let media = &state.config.media_url;
@@ -97,6 +99,8 @@ pub async fn build_ratings(
 
     let flavor_ids: Vec<i32> = ratings.iter().map(|r| r.flavor_id).collect();
     let rating_ids: Vec<i32> = ratings.iter().map(|r| r.id).collect();
+    let (mut counts_by_rating, mut mine_by_rating) =
+        load_reactions(state, &rating_ids, viewer_id).await?;
 
     let flavors = Flavor::find()
         .filter(flavor::Column::Id.is_in(flavor_ids))
@@ -184,9 +188,194 @@ pub async fn build_ratings(
             comment: r.comment.clone(),
             created_at: crate::datetime::drf_iso(&r.created_at),
             replies: replies_by_rating.remove(&r.id).unwrap_or_default(),
+            reactions: counts_by_rating.remove(&r.id).unwrap_or_default(),
+            my_reactions: mine_by_rating.remove(&r.id).unwrap_or_default(),
         });
     }
     Ok(out)
+}
+
+/// Build the community activity feed: recent new-flavor drops + flavors crossing
+/// rating-count milestones, merged newest-first. There's no persistent event
+/// table — items are synthesized from `flavor.created_at` and the crossing
+/// rating's timestamp, so the feed is correct without a writer job.
+pub async fn build_activity(state: &AppState, ctx: &RequestCtx) -> ApiResult<Vec<ActivityOut>> {
+    const MILESTONES: &[i64] = &[25, 50, 100, 250, 500, 1000];
+    const DROP_LIMIT: u64 = 40;
+    let media = &state.config.media_url;
+
+    // Recent catalog drops, newest first.
+    let drops = Flavor::find()
+        .order_by_desc(flavor::Column::CreatedAt)
+        .limit(DROP_LIMIT)
+        .all(&state.db)
+        .await?;
+
+    // Milestone candidates: flavors at/over the smallest threshold.
+    let rows = state
+        .db
+        .query_all(Statement::from_string(
+            state.db.get_database_backend(),
+            format!(
+                "SELECT flavor_id AS fid, COUNT(*) AS c FROM api_rating \
+                 GROUP BY flavor_id HAVING c >= {} ORDER BY c DESC",
+                MILESTONES[0]
+            ),
+        ))
+        .await?;
+    let milestone_counts: Vec<(i32, i64)> = rows
+        .into_iter()
+        .filter_map(|r| {
+            Some((
+                r.try_get::<i32>("", "fid").ok()?,
+                r.try_get::<i64>("", "c").ok()?,
+            ))
+        })
+        .collect();
+
+    if drops.is_empty() && milestone_counts.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // Resolve flavors + categories for both sets up front (two queries).
+    let mut needed: Vec<i32> = drops.iter().map(|f| f.id).collect();
+    needed.extend(milestone_counts.iter().map(|(fid, _)| *fid));
+    needed.sort_unstable();
+    needed.dedup();
+    let flavors = Flavor::find()
+        .filter(flavor::Column::Id.is_in(needed))
+        .all(&state.db)
+        .await?;
+    let flavor_map: HashMap<i32, flavor::Model> = flavors.into_iter().map(|f| (f.id, f)).collect();
+    let cat_ids: Vec<i32> = flavor_map.values().map(|f| f.category_id).collect();
+    let cats = Category::find()
+        .filter(category::Column::Id.is_in(cat_ids))
+        .all(&state.db)
+        .await?;
+    let cat_map: HashMap<i32, (String, String)> =
+        cats.into_iter().map(|c| (c.id, (c.name, c.slug))).collect();
+
+    let flavor_image = |f: &flavor::Model| -> Option<String> {
+        if let Some(img) = f.image.as_deref().filter(|s| !s.is_empty()) {
+            Some(image_field_url(ctx, media, img))
+        } else {
+            f.image_url.clone()
+        }
+    };
+
+    // (sort_key, item) — sort_key is the event's raw timestamp.
+    let mut items = Vec::new();
+
+    for f in &drops {
+        let (cn, cs) = cat_map.get(&f.category_id).cloned().unwrap_or_default();
+        items.push((
+            f.created_at,
+            ActivityOut {
+                kind: "new_flavor".into(),
+                id: format!("flavor-{}", f.id),
+                created_at: crate::datetime::drf_iso(&f.created_at),
+                flavor_id: f.id,
+                flavor_name: f.name.clone(),
+                flavor_image: flavor_image(f),
+                category_name: cn,
+                category_slug: cs,
+                milestone: None,
+                rating_count: None,
+            },
+        ));
+    }
+
+    for (fid, count) in &milestone_counts {
+        let Some(f) = flavor_map.get(fid) else {
+            continue;
+        };
+        // Highest threshold this flavor has crossed (one item per flavor).
+        let Some(threshold) = MILESTONES.iter().rev().copied().find(|m| *m <= *count) else {
+            continue;
+        };
+        // Event time = timestamp of the rating that crossed the threshold.
+        let crossing = Rating::find()
+            .filter(rating::Column::FlavorId.eq(*fid))
+            .order_by_asc(rating::Column::CreatedAt)
+            .offset((threshold - 1) as u64)
+            .limit(1)
+            .one(&state.db)
+            .await?;
+        let Some(crossing) = crossing else { continue };
+        let (cn, cs) = cat_map.get(&f.category_id).cloned().unwrap_or_default();
+        items.push((
+            crossing.created_at,
+            ActivityOut {
+                kind: "milestone".into(),
+                id: format!("milestone-{fid}-{threshold}"),
+                created_at: crate::datetime::drf_iso(&crossing.created_at),
+                flavor_id: f.id,
+                flavor_name: f.name.clone(),
+                flavor_image: flavor_image(f),
+                category_name: cn,
+                category_slug: cs,
+                milestone: Some(threshold),
+                rating_count: Some(*count),
+            },
+        ));
+    }
+
+    items.sort_by(|a, b| b.0.cmp(&a.0));
+    Ok(items.into_iter().map(|(_, a)| a).collect())
+}
+
+/// Batch-load reactions for a set of ratings. Returns `(counts, mine)`:
+/// `counts[rating_id][kind] = n`, and `mine[rating_id]` the kinds `viewer_id`
+/// reacted with (empty/absent for anonymous callers). One grouped query for
+/// counts, plus one for the viewer's own rows.
+pub async fn load_reactions(
+    state: &AppState,
+    rating_ids: &[i32],
+    viewer_id: Option<i32>,
+) -> ApiResult<(
+    HashMap<i32, BTreeMap<String, i64>>,
+    HashMap<i32, Vec<String>>,
+)> {
+    let mut counts: HashMap<i32, BTreeMap<String, i64>> = HashMap::new();
+    let mut mine: HashMap<i32, Vec<String>> = HashMap::new();
+    if rating_ids.is_empty() {
+        return Ok((counts, mine));
+    }
+    let ids = id_list(rating_ids);
+    let rows = state
+        .db
+        .query_all(Statement::from_string(
+            DbBackend::Sqlite,
+            format!(
+                "SELECT rating_id, kind, COUNT(*) AS n FROM rating_reaction \
+                 WHERE rating_id IN ({ids}) GROUP BY rating_id, kind"
+            ),
+        ))
+        .await?;
+    for row in rows {
+        let rid: i32 = row.try_get("", "rating_id")?;
+        let kind: String = row.try_get("", "kind")?;
+        let n: i64 = row.try_get("", "n")?;
+        counts.entry(rid).or_default().insert(kind, n);
+    }
+    if let Some(uid) = viewer_id {
+        let rows = state
+            .db
+            .query_all(Statement::from_string(
+                DbBackend::Sqlite,
+                format!(
+                    "SELECT rating_id, kind FROM rating_reaction \
+                     WHERE user_id = {uid} AND rating_id IN ({ids})"
+                ),
+            ))
+            .await?;
+        for row in rows {
+            let rid: i32 = row.try_get("", "rating_id")?;
+            let kind: String = row.try_get("", "kind")?;
+            mine.entry(rid).or_default().push(kind);
+        }
+    }
+    Ok((counts, mine))
 }
 
 /// Per-flavor rating rollup accumulated in a single pass over the loaded ratings,
@@ -381,6 +570,10 @@ pub async fn build_flavors(
                     comment: r.comment.clone(),
                     created_at: crate::datetime::drf_iso(&r.created_at),
                     replies: replies_by_rating.remove(&r.id).unwrap_or_default(),
+                    // Reactions surface on the community feed, not the flavor detail
+                    // ratings list — keep this path's payload light.
+                    reactions: std::collections::BTreeMap::new(),
+                    my_reactions: Vec::new(),
                 });
         }
 

@@ -17,19 +17,31 @@ import {
   Tabs,
   Tab,
   Skeleton,
+  Chip,
+  Stack,
 } from '@mui/material';
 import CommentIcon from '@mui/icons-material/Comment';
 import SendIcon from '@mui/icons-material/Send';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import ExploreIcon from '@mui/icons-material/Explore';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import BoltIcon from '@mui/icons-material/Bolt';
+import NewReleasesIcon from '@mui/icons-material/NewReleases';
+import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   useCommunityFeed,
   useFollowedTopFlavors,
-  useRecentRatings,
+  useDiscoverFeed,
+  useSuggestedUsers,
+  useActivityFeed,
   type FeedRating,
+  type DiscoverSort,
+  type ActivityItem,
 } from '../api/queries/useCommunityFeed';
+import { useCategories } from '../api/queries/useCategories';
+import { useFollowToggle } from '../api/mutations/useSocialMutations';
 import { useCreateReply } from '../api/mutations/useRatingMutations';
 import { useTitle } from '../hooks/useTitle';
 import { useAuth } from '../hooks/useAuth';
@@ -38,6 +50,7 @@ import { formatDate } from '../utils/date';
 import { useTranslation } from 'react-i18next';
 import MentionTextField from '../components/MentionTextField';
 import RatingBadge from '../components/RatingBadge';
+import ReactionBar from '../components/ReactionBar';
 import {
   PageShell,
   HeroBackdrop,
@@ -49,7 +62,7 @@ import {
 } from '../components/ui';
 import { useToast } from '../hooks/useToast';
 
-type FeedTab = 'following' | 'discover';
+type FeedTab = 'following' | 'discover' | 'activity';
 
 const SidebarCard: React.FC<{
   icon: React.ReactNode;
@@ -75,6 +88,74 @@ const SidebarCard: React.FC<{
     {children}
   </GlassCard>
 );
+
+/** Who-to-follow sidebar card. Optimistically drops a user from the list once
+ *  the caller follows them; reverts + toasts on failure. */
+const SuggestedFollows: React.FC = () => {
+  const { t } = useTranslation();
+  const { notify } = useToast();
+  const { data: suggestions = [] } = useSuggestedUsers();
+  const followToggle = useFollowToggle();
+  const [followed, setFollowed] = useState<Set<number>>(new Set());
+
+  const visible = suggestions.filter((u) => !followed.has(u.id));
+  if (visible.length === 0) return null;
+
+  const handleFollow = async (userId: number) => {
+    setFollowed((prev) => new Set(prev).add(userId));
+    try {
+      await followToggle.mutateAsync({ userId, currentlyFollowing: false });
+    } catch {
+      setFollowed((prev) => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+      notify({ message: t('community.followFailed'), severity: 'error' });
+    }
+  };
+
+  return (
+    <SidebarCard
+      icon={<PersonAddIcon color="primary" fontSize="small" />}
+      title={t('community.whoToFollow')}
+    >
+      <List disablePadding>
+        {visible.map((u) => (
+          <Box key={u.id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.25 }}>
+            <Link to={`/profile/${u.username}`} style={{ textDecoration: 'none' }}>
+              <Avatar src={u.avatar || undefined} sx={{ width: 36, height: 36 }}>
+                {!u.avatar && u.username.charAt(0).toUpperCase()}
+              </Avatar>
+            </Link>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <MuiLink
+                component={Link}
+                to={`/profile/${u.username}`}
+                sx={{ color: 'inherit', textDecoration: 'none', fontWeight: 700 }}
+              >
+                <Typography variant="body2" noWrap sx={{ fontWeight: 700 }}>
+                  {u.username}
+                </Typography>
+              </MuiLink>
+              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                {t('community.followerCount', { count: u.followers_count })}
+              </Typography>
+            </Box>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => handleFollow(u.id)}
+              sx={{ textTransform: 'none', borderRadius: 2, flexShrink: 0, fontWeight: 700 }}
+            >
+              {t('community.follow')}
+            </Button>
+          </Box>
+        ))}
+      </List>
+    </SidebarCard>
+  );
+};
 
 const FeedSkeleton: React.FC = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -112,6 +193,8 @@ const CommunityFeed: React.FC = () => {
   const { notify } = useToast();
   const [tab, setTab] = useState<FeedTab>('following');
   const [page, setPage] = useState(1);
+  const [discoverSort, setDiscoverSort] = useState<DiscoverSort>('recent');
+  const [discoverCategory, setDiscoverCategory] = useState<string | null>(null);
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<number, boolean>>({});
 
@@ -122,25 +205,59 @@ const CommunityFeed: React.FC = () => {
     data: discover,
     isLoading: discoverLoading,
     error: discoverError,
-  } = useRecentRatings(tab === 'discover');
+  } = useDiscoverFeed({
+    page,
+    sort: discoverSort,
+    category: discoverCategory,
+    enabled: tab === 'discover',
+  });
+  const {
+    data: activity,
+    isLoading: activityLoading,
+    error: activityError,
+  } = useActivityFeed(page, tab === 'activity');
+  const { data: categories = [] } = useCategories();
   const { data: topFollowed = [] } = useFollowedTopFlavors();
   const createReply = useCreateReply();
 
   const followingRatings: FeedRating[] = feed?.ratings ?? [];
-  const discoverRatings: FeedRating[] = discover ?? [];
-  const ratings = tab === 'following' ? followingRatings : discoverRatings;
-  const totalPages = feed?.totalPages ?? 1;
-  const loading = tab === 'following' ? feedLoading : discoverLoading;
+  const discoverRatings: FeedRating[] = discover?.ratings ?? [];
+  const activityItems: ActivityItem[] = activity?.items ?? [];
+  const ratings = tab === 'discover' ? discoverRatings : followingRatings;
+  const totalPages =
+    (tab === 'following'
+      ? feed?.totalPages
+      : tab === 'discover'
+        ? discover?.totalPages
+        : activity?.totalPages) ?? 1;
+  const loading =
+    tab === 'following' ? feedLoading : tab === 'discover' ? discoverLoading : activityLoading;
+
+  const handleTabChange = (next: FeedTab) => {
+    setTab(next);
+    setPage(1);
+  };
+
+  const handleSortChange = (next: DiscoverSort) => {
+    setDiscoverSort(next);
+    setPage(1);
+  };
+
+  const handleCategoryChange = (slug: string | null) => {
+    setDiscoverCategory(slug);
+    setPage(1);
+  };
 
   useEffect(() => {
     if (!isAuthed) navigate('/login');
   }, [isAuthed, navigate]);
 
   useEffect(() => {
-    const err = tab === 'following' ? feedError : discoverError;
+    const err =
+      tab === 'following' ? feedError : tab === 'discover' ? discoverError : activityError;
     const status = (err as { response?: { status?: number } } | null)?.response?.status;
     if (status === 401) navigate('/login');
-  }, [feedError, discoverError, tab, navigate]);
+  }, [feedError, discoverError, activityError, tab, navigate]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
@@ -242,22 +359,42 @@ const CommunityFeed: React.FC = () => {
               )}
             </Box>
             <Link to={`/flavor/${rating.flavor}`} style={{ flexShrink: 0 }}>
-              <FlavorThumb src={rating.flavor_image} name={rating.flavor_name} size={70} radius={1} />
+              <FlavorThumb
+                src={rating.flavor_image}
+                name={rating.flavor_name}
+                size={70}
+                radius={1}
+              />
             </Link>
           </Box>
 
           <Divider sx={{ my: 2 }} />
 
-          <Button
-            size="small"
-            startIcon={<CommentIcon fontSize="small" />}
-            onClick={() => handleReplyToggle(rating.id)}
-            sx={{ textTransform: 'none', color: 'text.secondary' }}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1.5,
+              flexWrap: 'wrap',
+            }}
           >
-            {rating.replies.length > 0
-              ? `${rating.replies.length} ${t('common.replies')}`
-              : t('common.reply')}
-          </Button>
+            <ReactionBar
+              ratingId={rating.id}
+              reactions={rating.reactions}
+              myReactions={rating.my_reactions}
+            />
+            <Button
+              size="small"
+              startIcon={<CommentIcon fontSize="small" />}
+              onClick={() => handleReplyToggle(rating.id)}
+              sx={{ textTransform: 'none', color: 'text.secondary', flexShrink: 0 }}
+            >
+              {rating.replies.length > 0
+                ? `${rating.replies.length} ${t('common.replies')}`
+                : t('common.reply')}
+            </Button>
+          </Box>
 
           {!expanded && latestReply && (
             <Box
@@ -275,7 +412,10 @@ const CommunityFeed: React.FC = () => {
                 minWidth: 0,
               }}
             >
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
+              <Typography
+                variant="subtitle2"
+                sx={{ fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}
+              >
                 {latestReply.user}
               </Typography>
               <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0 }}>
@@ -346,8 +486,63 @@ const CommunityFeed: React.FC = () => {
     );
   };
 
+  const renderActivityCard = (item: ActivityItem) => {
+    const isMilestone = item.kind === 'milestone';
+    return (
+      <GlassCard key={item.id} intensity="default">
+        <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 40,
+                height: 40,
+                borderRadius: '50%',
+                flexShrink: 0,
+                color: isMilestone ? 'warning.main' : 'success.main',
+                bgcolor: isMilestone ? 'warning.main' : 'success.main',
+                opacity: 0.9,
+              }}
+            >
+              {isMilestone ? (
+                <EmojiEventsIcon sx={{ color: 'common.white' }} />
+              ) : (
+                <NewReleasesIcon sx={{ color: 'common.white' }} />
+              )}
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="body2" color="text.secondary">
+                {isMilestone ? t('community.milestoneLabel') : t('community.newDropLabel')}
+              </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+                {isMilestone
+                  ? t('community.milestoneText', {
+                      flavor: item.flavor_name,
+                      count: item.milestone,
+                    })
+                  : item.flavor_name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {formatDate(item.created_at)}
+              </Typography>
+            </Box>
+            <Link to={`/flavor/${item.flavor_id}`} style={{ flexShrink: 0 }}>
+              <FlavorThumb src={item.flavor_image} name={item.flavor_name} size={56} radius={1} />
+            </Link>
+          </Box>
+        </CardContent>
+      </GlassCard>
+    );
+  };
+
   const subtitle =
-    tab === 'discover' ? t('community.discoverSubtitle') : t('community.subtitle');
+    tab === 'discover'
+      ? t('community.discoverSubtitle')
+      : tab === 'activity'
+        ? t('community.activitySubtitle')
+        : t('community.subtitle');
 
   return (
     <PageShell hero={<HeroBackdrop variant="minimal" />}>
@@ -357,7 +552,7 @@ const CommunityFeed: React.FC = () => {
 
       <Tabs
         value={tab}
-        onChange={(_, v: FeedTab) => setTab(v)}
+        onChange={(_, v: FeedTab) => handleTabChange(v)}
         sx={{ mb: 3, '& .MuiTab-root': { textTransform: 'none', fontWeight: 700 } }}
       >
         <Tab
@@ -372,11 +567,94 @@ const CommunityFeed: React.FC = () => {
           iconPosition="start"
           label={t('community.tabDiscover')}
         />
+        <Tab
+          value="activity"
+          icon={<BoltIcon fontSize="small" />}
+          iconPosition="start"
+          label={t('community.tabActivity')}
+        />
       </Tabs>
+
+      {tab === 'discover' && (
+        <Box
+          sx={{
+            position: 'sticky',
+            top: 8,
+            zIndex: 2,
+            mb: 3,
+            py: 1,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1,
+            alignItems: 'center',
+          }}
+        >
+          <Stack direction="row" spacing={1}>
+            <Chip
+              label={t('community.sortRecent')}
+              color={discoverSort === 'recent' ? 'primary' : 'default'}
+              variant={discoverSort === 'recent' ? 'filled' : 'outlined'}
+              onClick={() => handleSortChange('recent')}
+            />
+            <Chip
+              label={t('community.sortTop')}
+              color={discoverSort === 'top' ? 'primary' : 'default'}
+              variant={discoverSort === 'top' ? 'filled' : 'outlined'}
+              onClick={() => handleSortChange('top')}
+            />
+          </Stack>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Chip
+              label={t('community.allCategories')}
+              color={discoverCategory === null ? 'secondary' : 'default'}
+              variant={discoverCategory === null ? 'filled' : 'outlined'}
+              onClick={() => handleCategoryChange(null)}
+            />
+            {categories.map((cat) => (
+              <Chip
+                key={cat.slug}
+                label={t(`categories.${cat.slug}`, { defaultValue: cat.name })}
+                color={discoverCategory === cat.slug ? 'secondary' : 'default'}
+                variant={discoverCategory === cat.slug ? 'filled' : 'outlined'}
+                onClick={() => handleCategoryChange(cat.slug)}
+              />
+            ))}
+          </Box>
+        </Box>
+      )}
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, lg: 8 }}>
-          {loading && ratings.length === 0 ? (
+          {tab === 'activity' ? (
+            loading && activityItems.length === 0 ? (
+              <FeedSkeleton />
+            ) : activityItems.length === 0 ? (
+              <EmptyState
+                title={t('community.activityEmpty')}
+                subtitle={t('community.activityEmptyHint')}
+                action={
+                  <Button variant="contained" component={Link} to="/" sx={{ borderRadius: 2 }}>
+                    {t('home.exploreFlavors')}
+                  </Button>
+                }
+              />
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                {activityItems.map(renderActivityCard)}
+                {totalPages > 1 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={handlePageChange}
+                      color="primary"
+                    />
+                  </Box>
+                )}
+              </Box>
+            )
+          ) : loading && ratings.length === 0 ? (
             <FeedSkeleton />
           ) : ratings.length === 0 ? (
             tab === 'following' ? (
@@ -387,7 +665,7 @@ const CommunityFeed: React.FC = () => {
                   <Button
                     variant="contained"
                     startIcon={<ExploreIcon />}
-                    onClick={() => setTab('discover')}
+                    onClick={() => handleTabChange('discover')}
                     sx={{ borderRadius: 2 }}
                   >
                     {t('community.browseDiscover')}
@@ -408,7 +686,7 @@ const CommunityFeed: React.FC = () => {
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               {ratings.map(renderCard)}
-              {tab === 'following' && totalPages > 1 && (
+              {totalPages > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                   <Pagination
                     count={totalPages}
@@ -424,6 +702,7 @@ const CommunityFeed: React.FC = () => {
 
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <SuggestedFollows />
             <SidebarCard
               icon={<WhatshotIcon color="error" fontSize="small" />}
               title={t('community.topRated')}

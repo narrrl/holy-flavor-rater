@@ -54,6 +54,9 @@ pub const PASSWORD_RESET_COMPLETE: Rate = Rate::per_hour(5);
 pub const ACCOUNT_DELETION_REQUEST: Rate = Rate::per_hour(3);
 /// `RatingViewSet.create` — key="user" rate="10/m".
 pub const RATING_CREATE: Rate = Rate::per_minute(10);
+/// Reaction toggle (react/unreact) — key="user". No Django equivalent; generous
+/// since a user clicking around a feed legitimately fires several per minute.
+pub const REACTION: Rate = Rate::per_minute(60);
 
 // --- Added hardening (no Django equivalent) --------------------------------
 /// Login brute-force guard, keyed by IP (Django had none).

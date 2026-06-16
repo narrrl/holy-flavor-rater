@@ -14,10 +14,10 @@ use sea_orm::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 
-use crate::auth::AuthUser;
+use crate::auth::{AuthUser, OptionalUser};
 use crate::dto::{RatingOut, ReplyOut};
 use crate::entities::prelude::*;
-use crate::entities::{notification, rating, reply, user};
+use crate::entities::{notification, rating, rating_reaction, reply, user};
 use crate::error::{ApiError, ApiResult};
 use crate::mentions::parse_mentions;
 use crate::pagination::{parse_page, Paginated, DEFAULT_PAGE_SIZE};
@@ -32,16 +32,36 @@ pub fn router() -> Router<AppState> {
         .route("/ratings/", get(list).post(create))
         .route("/ratings/feed/", get(feed))
         .route("/ratings/recent/", get(recent))
+        .route("/ratings/discover/", get(discover))
         .route(
             "/ratings/{id}/",
             get(retrieve).put(update).patch(update).delete(destroy),
         )
         .route("/ratings/{id}/reply/", post(reply))
+        .route("/ratings/{id}/react/", post(react).delete(unreact))
+}
+
+/// Reaction kinds the API accepts. Keeping this an allow-list (rather than a free
+/// string) stops the table filling with junk and keeps the frontend emoji map total.
+const REACTION_KINDS: &[&str] = &["like", "love", "fire", "yum", "mind", "meh"];
+
+#[derive(Deserialize)]
+struct ReactBody {
+    kind: Option<String>,
 }
 
 #[derive(Deserialize)]
 struct PageParam {
     page: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct DiscoverParams {
+    page: Option<String>,
+    /// `recent` (default) or `top` (highest score first).
+    sort: Option<String>,
+    /// Filter to a single category by its slug.
+    category: Option<String>,
 }
 
 /// Load the acting user row (for superuser checks). 401 if the id is stale.
@@ -61,6 +81,7 @@ fn as_i32(v: &Value) -> Option<i32> {
 async fn list(
     State(state): State<AppState>,
     ctx: RequestCtx,
+    OptionalUser(viewer): OptionalUser,
     Query(params): Query<PageParam>,
 ) -> ApiResult<Json<Paginated<RatingOut>>> {
     let page = parse_page(params.page.as_deref());
@@ -72,7 +93,7 @@ async fn list(
         .offset((page - 1) * size)
         .all(&state.db)
         .await?;
-    let results = build_ratings(&state, &ctx, models).await?;
+    let results = build_ratings(&state, &ctx, viewer, models).await?;
     Ok(Json(Paginated::build(&ctx, results, count, page, size)))
 }
 
@@ -80,13 +101,14 @@ async fn list(
 async fn retrieve(
     State(state): State<AppState>,
     ctx: RequestCtx,
+    OptionalUser(viewer): OptionalUser,
     Path(id): Path<i32>,
 ) -> ApiResult<Json<RatingOut>> {
     let model = Rating::find_by_id(id)
         .one(&state.db)
         .await?
         .ok_or(ApiError::NotFound)?;
-    let mut dtos = build_ratings(&state, &ctx, vec![model]).await?;
+    let mut dtos = build_ratings(&state, &ctx, viewer, vec![model]).await?;
     dtos.pop().map(Json).ok_or(ApiError::NotFound)
 }
 
@@ -227,7 +249,7 @@ async fn create(
     }
     txn.commit().await?;
 
-    let mut dtos = build_ratings(&state, &ctx, vec![model]).await?;
+    let mut dtos = build_ratings(&state, &ctx, Some(uid), vec![model]).await?;
     let out = dtos.pop().ok_or(ApiError::Internal)?;
     Ok((StatusCode::CREATED, Json(out)))
 }
@@ -325,7 +347,7 @@ async fn update(
     }
 
     let model = active.update(&state.db).await?;
-    let mut dtos = build_ratings(&state, &ctx, vec![model]).await?;
+    let mut dtos = build_ratings(&state, &ctx, Some(uid), vec![model]).await?;
     dtos.pop().map(Json).ok_or(ApiError::Internal)
 }
 
@@ -410,12 +432,16 @@ async fn feed(
         .offset((page - 1) * size)
         .all(&state.db)
         .await?;
-    let results = build_ratings(&state, &ctx, models).await?;
+    let results = build_ratings(&state, &ctx, Some(uid), models).await?;
     Ok(Json(Paginated::build(&ctx, results, count, page, size)))
 }
 
 /// GET /api/ratings/recent/ — 10 newest with a non-empty comment (AllowAny).
-async fn recent(State(state): State<AppState>, ctx: RequestCtx) -> ApiResult<Json<Vec<RatingOut>>> {
+async fn recent(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    OptionalUser(viewer): OptionalUser,
+) -> ApiResult<Json<Vec<RatingOut>>> {
     let models = Rating::find()
         .filter(rating::Column::Comment.is_not_null())
         .filter(rating::Column::Comment.ne(""))
@@ -423,7 +449,68 @@ async fn recent(State(state): State<AppState>, ctx: RequestCtx) -> ApiResult<Jso
         .limit(10)
         .all(&state.db)
         .await?;
-    Ok(Json(build_ratings(&state, &ctx, models).await?))
+    Ok(Json(build_ratings(&state, &ctx, viewer, models).await?))
+}
+
+/// GET /api/ratings/discover/ — global community feed (AllowAny), paginated.
+/// `?sort=recent|top`, `?category=<slug>`, `?page=`. Only ratings with a non-empty
+/// comment, matching the prior Discover tab's quality bar.
+async fn discover(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    OptionalUser(viewer): OptionalUser,
+    Query(params): Query<DiscoverParams>,
+) -> ApiResult<Json<Paginated<RatingOut>>> {
+    let page = parse_page(params.page.as_deref());
+    let size = FEED_PAGE_SIZE;
+    let top = params.sort.as_deref() == Some("top");
+
+    let mut cond = Condition::all()
+        .add(rating::Column::Comment.is_not_null())
+        .add(rating::Column::Comment.ne(""));
+
+    // Category filter: resolve slug → category id → its flavor ids. An unknown
+    // slug or an empty category yields an empty feed rather than an error.
+    if let Some(slug) = params.category.as_deref().filter(|s| !s.is_empty()) {
+        let cat = Category::find()
+            .filter(crate::entities::category::Column::Slug.eq(slug))
+            .one(&state.db)
+            .await?;
+        let Some(cat) = cat else {
+            return Ok(Json(Paginated::build(&ctx, Vec::new(), 0, page, size)));
+        };
+        let flavor_ids: Vec<i32> = Flavor::find()
+            .filter(crate::entities::flavor::Column::CategoryId.eq(cat.id))
+            .all(&state.db)
+            .await?
+            .into_iter()
+            .map(|f| f.id)
+            .collect();
+        if flavor_ids.is_empty() {
+            return Ok(Json(Paginated::build(&ctx, Vec::new(), 0, page, size)));
+        }
+        cond = cond.add(rating::Column::FlavorId.is_in(flavor_ids));
+    }
+
+    let count = Rating::find()
+        .filter(cond.clone())
+        .count(&state.db)
+        .await?;
+    let mut query = Rating::find().filter(cond);
+    query = if top {
+        query
+            .order_by_desc(rating::Column::Score)
+            .order_by_desc(rating::Column::CreatedAt)
+    } else {
+        query.order_by_desc(rating::Column::CreatedAt)
+    };
+    let models = query
+        .limit(size)
+        .offset((page - 1) * size)
+        .all(&state.db)
+        .await?;
+    let results = build_ratings(&state, &ctx, viewer, models).await?;
+    Ok(Json(Paginated::build(&ctx, results, count, page, size)))
 }
 
 /// POST /api/ratings/{id}/reply/ — add a reply, notify the rating owner, and
@@ -482,4 +569,94 @@ async fn reply(
     let mut dtos = build_replies(&state, vec![reply_model]).await?;
     let out = dtos.pop().ok_or(ApiError::Internal)?;
     Ok((StatusCode::CREATED, Json(out)))
+}
+
+/// Validate `{kind}` against the allow-list, returning a DRF-style field error.
+fn parse_kind(body: &Bytes) -> ApiResult<String> {
+    let data: ReactBody = serde_json::from_slice(body).unwrap_or(ReactBody { kind: None });
+    let kind = data.kind.unwrap_or_default();
+    if REACTION_KINDS.contains(&kind.as_str()) {
+        Ok(kind)
+    } else {
+        Err(ApiError::Validation(
+            json!({ "kind": ["Unsupported reaction."] }),
+        ))
+    }
+}
+
+/// Load the rating and re-render it for `uid` (so the response carries fresh
+/// `reactions` + `my_reactions` for an optimistic UI to reconcile against).
+async fn reaction_response(
+    state: &AppState,
+    ctx: &RequestCtx,
+    uid: i32,
+    rating: rating::Model,
+) -> ApiResult<Json<RatingOut>> {
+    let mut dtos = build_ratings(state, ctx, Some(uid), vec![rating]).await?;
+    dtos.pop().map(Json).ok_or(ApiError::Internal)
+}
+
+/// POST /api/ratings/{id}/react/ — add `{kind}` for the caller. Idempotent: a
+/// repeat react is absorbed by the UNIQUE(user, rating, kind) index.
+async fn react(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    AuthUser(uid): AuthUser,
+    Path(id): Path<i32>,
+    body: Bytes,
+) -> ApiResult<Json<RatingOut>> {
+    state
+        .security
+        .check_rate(&format!("react:user:{uid}"), crate::throttle::REACTION)?;
+    let kind = parse_kind(&body)?;
+    let rating = Rating::find_by_id(id)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    match (rating_reaction::ActiveModel {
+        id: NotSet,
+        user_id: Set(uid),
+        rating_id: Set(id),
+        kind: Set(kind),
+        created_at: Set(crate::datetime::now_micros()),
+    }
+    .insert(&state.db)
+    .await)
+    {
+        Ok(_) => {}
+        // Already reacted with this kind — treat as success (idempotent toggle-on).
+        Err(e) if crate::error::is_unique_violation(&e) => {}
+        Err(e) => return Err(e.into()),
+    }
+
+    reaction_response(&state, &ctx, uid, rating).await
+}
+
+/// DELETE /api/ratings/{id}/react/ — remove `{kind}` for the caller. A no-op when
+/// the reaction isn't present.
+async fn unreact(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    AuthUser(uid): AuthUser,
+    Path(id): Path<i32>,
+    body: Bytes,
+) -> ApiResult<Json<RatingOut>> {
+    state
+        .security
+        .check_rate(&format!("react:user:{uid}"), crate::throttle::REACTION)?;
+    let kind = parse_kind(&body)?;
+    let rating = Rating::find_by_id(id)
+        .one(&state.db)
+        .await?
+        .ok_or(ApiError::NotFound)?;
+
+    RatingReaction::delete_many()
+        .filter(rating_reaction::Column::UserId.eq(uid))
+        .filter(rating_reaction::Column::RatingId.eq(id))
+        .filter(rating_reaction::Column::Kind.eq(kind))
+        .exec(&state.db)
+        .await?;
+
+    reaction_response(&state, &ctx, uid, rating).await
 }

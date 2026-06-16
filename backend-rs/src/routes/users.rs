@@ -69,6 +69,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/users/", get(list))
         .route("/users/following_list/", get(following_list))
+        .route("/users/suggested/", get(suggested))
         .route("/users/signup/", post(signup))
         .route("/users/resend_verification/", post(resend_verification))
         .route("/users/verify_signup/", post(verify_signup))
@@ -319,6 +320,41 @@ async fn following_list(
     let ids = following_ids(&state, uid).await?;
     let users = users_by_ids(&state, &ids).await?;
     Ok(Json(build_users(&state, &ctx, users, Some(uid)).await?))
+}
+
+/// GET /api/users/suggested/ — up to 5 most-active raters the caller doesn't
+/// already follow (and not themselves). Powers the "who to follow" sidebar card.
+async fn suggested(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    AuthUser(uid): AuthUser,
+) -> ApiResult<Json<Vec<UserOut>>> {
+    let mut exclude = following_ids(&state, uid).await?;
+    exclude.push(uid);
+
+    // Rating counts per user, most-active first. The dataset is small, so rank
+    // in SQL and filter the caller's excludes in Rust rather than build a NOT IN.
+    let rows = state
+        .db
+        .query_all(Statement::from_sql_and_values(
+            DbBackend::Sqlite,
+            "SELECT user_id AS uid, COUNT(*) AS c FROM api_rating \
+             GROUP BY user_id ORDER BY c DESC, uid ASC",
+            [],
+        ))
+        .await?;
+    let ranked: Vec<i32> = rows
+        .into_iter()
+        .filter_map(|r| r.try_get::<i32>("", "uid").ok())
+        .filter(|id| !exclude.contains(id))
+        .take(5)
+        .collect();
+
+    // users_by_ids orders by id; restore the activity ranking afterwards.
+    let users = users_by_ids(&state, &ranked).await?;
+    let mut out = build_users(&state, &ctx, users, Some(uid)).await?;
+    out.sort_by_key(|u| ranked.iter().position(|id| *id == u.id).unwrap_or(usize::MAX));
+    Ok(Json(out))
 }
 
 // ---- me / preferences / profile -----------------------------------------
@@ -1280,7 +1316,7 @@ async fn public_profile(
         .order_by_desc(rating::Column::Score)
         .all(&state.db)
         .await?;
-    let ratings = build_ratings(&state, &ctx, ratings_models).await?;
+    let ratings = build_ratings(&state, &ctx, None, ratings_models).await?;
 
     let comment_models = ProfileComment::find()
         .filter(profile_comment::Column::ProfileOwnerId.eq(user.id))
@@ -1356,7 +1392,7 @@ async fn dashboard(
         .filter(|r| r.created_at.year() == this_year && r.created_at.month() == this_month)
         .count() as i64;
 
-    let my_ratings = build_ratings(&state, &ctx, my_ratings_models).await?;
+    let my_ratings = build_ratings(&state, &ctx, Some(uid), my_ratings_models).await?;
     let stats = dashboard_stats(&my_ratings, ratings_this_month);
 
     // "To try" count: flavors the user hasn't rated, excluding the "Packs and other"
@@ -1521,6 +1557,8 @@ mod dashboard_stats_tests {
             comment: None,
             created_at: String::new(),
             replies: vec![],
+            reactions: std::collections::BTreeMap::new(),
+            my_reactions: vec![],
         }
     }
 

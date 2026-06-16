@@ -40,6 +40,33 @@ pub struct RatingOut {
     pub comment: Option<String>,
     pub created_at: String,
     pub replies: Vec<ReplyOut>,
+    /// Reaction counts keyed by kind (e.g. `{"fire": 3, "yum": 1}`). Empty when none.
+    pub reactions: BTreeMap<String, i64>,
+    /// Kinds the requesting user has reacted with (empty for anonymous callers).
+    pub my_reactions: Vec<String>,
+}
+
+/// One item in the community activity feed (`GET /api/activity/`). A heterogeneous
+/// event — `kind` discriminates `new_flavor` (a fresh catalog drop) from
+/// `milestone` (a flavor crossing a rating-count threshold). New endpoint with no
+/// Django counterpart, so it isn't bound by DRF field parity.
+#[derive(Serialize, ToSchema)]
+pub struct ActivityOut {
+    pub kind: String,
+    /// Stable composite id (e.g. `flavor-12`, `milestone-12-100`) for React keys.
+    pub id: String,
+    pub created_at: String,
+    pub flavor_id: i32,
+    pub flavor_name: String,
+    pub flavor_image: Option<String>,
+    pub category_name: String,
+    pub category_slug: String,
+    /// Threshold reached, for `milestone` items only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub milestone: Option<i64>,
+    /// Current rating count, for `milestone` items only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rating_count: Option<i64>,
 }
 
 #[derive(Serialize, ToSchema)]

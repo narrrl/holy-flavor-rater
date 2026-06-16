@@ -67,12 +67,7 @@ export const DesktopCategoryBar = ({ categories }: DesktopCategoryBarProps) => {
           scrollbarWidth: 'none',
         }}
       >
-        <Button
-          component={Link}
-          to="/"
-          disableRipple
-          sx={{ ...tabSx(isActive('/')), ml: -1.75 }}
-        >
+        <Button component={Link} to="/" disableRipple sx={{ ...tabSx(isActive('/')), ml: -1.75 }}>
           <HomeOutlinedIcon sx={{ fontSize: '1.1rem', mr: 0.75 }} />
           {t('nav.home')}
         </Button>
@@ -85,12 +80,7 @@ export const DesktopCategoryBar = ({ categories }: DesktopCategoryBarProps) => {
         )}
 
         {user && (
-          <Button
-            component={Link}
-            to="/dashboard"
-            disableRipple
-            sx={tabSx(isActive('/dashboard'))}
-          >
+          <Button component={Link} to="/dashboard" disableRipple sx={tabSx(isActive('/dashboard'))}>
             <CollectionsBookmarkOutlinedIcon sx={{ fontSize: '1.1rem', mr: 0.75 }} />
             {t('nav.dashboard')}
           </Button>
