@@ -1,5 +1,5 @@
 import { useEffect, useRef, type CSSProperties, type DependencyList, type RefObject } from 'react';
-import { useBannerFrameGate } from './BannerPerformanceWrapper';
+import { useBannerFrameGate } from './banner-perf';
 
 export interface CanvasMouse {
   x: number;

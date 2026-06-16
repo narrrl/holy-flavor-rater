@@ -77,8 +77,22 @@ export const isLightTheme = (mode: CatppuccinTheme): boolean => {
   ].includes(mode);
 };
 
+interface PaletteColor {
+  hex: string;
+}
+
+interface ThemePalette {
+  base: PaletteColor;
+  surface0: PaletteColor;
+  crust: PaletteColor;
+  text: PaletteColor;
+  subtext0: PaletteColor;
+  primary: PaletteColor;
+  secondary: PaletteColor;
+}
+
 export const getTheme = (mode: CatppuccinTheme) => {
-  let palette: any;
+  let palette: ThemePalette;
 
   // Define Holy branding colors
   const holyPurple = { light: '#7c3aed', dark: '#a78bfa' };
@@ -216,7 +230,7 @@ export const getTheme = (mode: CatppuccinTheme) => {
     };
   } else {
     // Handle Catppuccin flavors
-    const flavor = (flavors as any)[mode];
+    const flavor = flavors[mode as keyof typeof flavors];
     if (flavor) {
       const colors = flavor.colors;
       palette = {

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useContext } from 'react';
 import { act, render } from '@testing-library/react';
-import { BannerPerfContext, BannerPerformanceWrapper } from './BannerPerformanceWrapper';
+import { BannerPerformanceWrapper } from './BannerPerformanceWrapper';
+import { BannerPerfContext } from './banner-perf';
 
 type IOEntryLike = { isIntersecting: boolean };
 type IOCallback = (entries: IOEntryLike[]) => void;
@@ -50,12 +51,13 @@ describe('BannerPerformanceWrapper', () => {
     ioCallback = null;
     observeMock = vi.fn();
     disconnectMock = vi.fn();
-    (globalThis as any).IntersectionObserver = FakeIntersectionObserver;
+    (globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver =
+      FakeIntersectionObserver;
     mockMatchMedia(false);
   });
 
   afterEach(() => {
-    delete (globalThis as any).IntersectionObserver;
+    delete (globalThis as unknown as { IntersectionObserver?: unknown }).IntersectionObserver;
   });
 
   it('defaults to isActive=true with configured targetFps', () => {

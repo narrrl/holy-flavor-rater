@@ -1,10 +1,10 @@
 import React from 'react';
-import { Box, alpha, useTheme } from '@mui/material';
+import { Box, alpha, useTheme, type SxProps, type Theme } from '@mui/material';
 
 interface RatingBadgeProps {
   score: number;
   size?: 'small' | 'medium' | 'large';
-  sx?: any;
+  sx?: SxProps<Theme>;
 }
 
 const sizeMap = {

@@ -25,12 +25,14 @@ const AdminRatingDetail: React.FC = () => {
   const { notify } = useToast();
   const { confirm } = useConfirm();
 
-  useEffect(() => {
-    if (rating) {
-      setScore(rating.score);
-      setComment(rating.comment || '');
-    }
-  }, [rating]);
+  // Seed the form from the loaded rating during render (tracking the
+  // previously-synced row) so it re-fills only when the data changes.
+  const [syncedRating, setSyncedRating] = useState(rating);
+  if (rating && rating !== syncedRating) {
+    setSyncedRating(rating);
+    setScore(rating.score);
+    setComment(rating.comment || '');
+  }
 
   useEffect(() => {
     if (error) navigate('/admin-panel');

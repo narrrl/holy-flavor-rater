@@ -22,11 +22,17 @@ export const useDrawerAnchor = (): UseDrawerAnchorResult => {
     (user?.drawer_anchor as DrawerAnchor) ?? readLocal(),
   );
 
+  // Adopt the server-side preference when it loads/changes. Derived during
+  // render (tracking the previously-applied value) so it doesn't cost an extra
+  // effect pass; the localStorage mirror is written in the effect below.
+  const [appliedAnchor, setAppliedAnchor] = useState(user?.drawer_anchor);
+  if (user?.drawer_anchor && user.drawer_anchor !== appliedAnchor) {
+    setAppliedAnchor(user.drawer_anchor);
+    setAnchorState(user.drawer_anchor);
+  }
+
   useEffect(() => {
-    if (user?.drawer_anchor) {
-      setAnchorState(user.drawer_anchor);
-      localStorage.setItem(STORAGE_KEY, user.drawer_anchor);
-    }
+    if (user?.drawer_anchor) localStorage.setItem(STORAGE_KEY, user.drawer_anchor);
   }, [user?.drawer_anchor]);
 
   const setAnchor = useCallback(

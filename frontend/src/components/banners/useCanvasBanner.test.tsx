@@ -77,12 +77,11 @@ beforeEach(() => {
   });
   // jsdom doesn't implement Canvas 2D — stub it.
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     () =>
       ({
         scale: vi.fn(),
         setTransform: vi.fn(),
-      }) as any,
+      }) as unknown as CanvasRenderingContext2D,
   );
 });
 

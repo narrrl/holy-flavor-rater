@@ -1,24 +1,13 @@
-import { createContext, useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
+import { ConfirmContext, type ConfirmOptions } from './confirm-context';
 
-export interface ConfirmOptions {
-  title?: string;
-  message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  danger?: boolean;
-}
-
-export interface ConfirmContextValue {
-  confirm: (opts: ConfirmOptions | string) => Promise<boolean>;
-}
-
-export const ConfirmContext = createContext<ConfirmContextValue | null>(null);
+export type { ConfirmOptions, ConfirmContextValue } from './confirm-context';
 
 export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
   const [open, setOpen] = useState(false);

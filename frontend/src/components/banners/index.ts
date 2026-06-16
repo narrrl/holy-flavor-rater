@@ -5,6 +5,7 @@ export { default as HextechBanner } from './HextechBanner';
 export { default as HextechCorruptionBanner } from './HextechCorruptionBanner';
 export { default as MatrixBanner } from './MatrixBanner';
 export { default as NebulaBanner } from './NebulaBanner';
-export { BannerPerformanceWrapper, useBannerFrameGate } from './BannerPerformanceWrapper';
+export { BannerPerformanceWrapper } from './BannerPerformanceWrapper';
+export { useBannerFrameGate } from './banner-perf';
 export { useCanvasBanner, CANVAS_STYLE } from './useCanvasBanner';
 export type { CanvasMouse, DrawArgs, UseCanvasBannerOptions } from './useCanvasBanner';

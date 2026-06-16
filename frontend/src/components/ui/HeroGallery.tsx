@@ -38,9 +38,16 @@ const Carousel: React.FC<CarouselProps> = ({ images, alt, onMainClick, variant }
 
   useEffect(() => {
     if (!emblaApi) return;
-    updateState();
     emblaApi.on('select', updateState);
     emblaApi.on('reInit', updateState);
+    // Defer the initial sync off the effect body so it isn't a synchronous
+    // setState (avoids the cascading-render lint and matches the event path).
+    const raf = requestAnimationFrame(updateState);
+    return () => {
+      cancelAnimationFrame(raf);
+      emblaApi.off('select', updateState);
+      emblaApi.off('reInit', updateState);
+    };
   }, [emblaApi, updateState]);
 
   const scrollPrev = () => emblaApi?.scrollPrev();

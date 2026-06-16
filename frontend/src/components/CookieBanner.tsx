@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Typography,
   Button,
@@ -19,14 +19,8 @@ interface CookieBannerProps {
 
 const CookieBanner: React.FC<CookieBannerProps> = ({ onThemeChange, currentTheme }) => {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const consent = localStorage.getItem('cookie-consent');
-    if (!consent) {
-      setOpen(true);
-    }
-  }, []);
+  // Open on first render only if consent hasn't been recorded yet.
+  const [open, setOpen] = useState(() => !localStorage.getItem('cookie-consent'));
 
   const handleAccept = () => {
     localStorage.setItem('cookie-consent', 'true');

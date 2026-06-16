@@ -19,6 +19,13 @@ interface UserSuggestion {
   avatar: string | null;
 }
 
+interface SearchResultItem {
+  type: string;
+  id: number;
+  name: string;
+  image_url: string | null;
+}
+
 interface MentionTextFieldProps {
   value: string;
   onChange: (value: string) => void;
@@ -52,10 +59,10 @@ const MentionTextField: React.FC<MentionTextFieldProps> = ({
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await api.get('flavors/search/');
+        const res = await api.get<SearchResultItem[]>('flavors/search/');
         const users = (res.data || [])
-          .filter((item: any) => item.type === 'user')
-          .map((item: any) => ({
+          .filter((item) => item.type === 'user')
+          .map((item) => ({
             id: item.id,
             username: item.name,
             avatar: item.image_url,

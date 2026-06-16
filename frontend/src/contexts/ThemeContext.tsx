@@ -1,15 +1,10 @@
-import { createContext, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 import { getTheme, type CatppuccinTheme } from '../theme';
 import api from '../lib/api';
+import { ThemeContext } from './theme-context';
 
-export interface ThemeContextValue {
-  themeName: CatppuccinTheme;
-  setThemeName: (name: CatppuccinTheme) => void;
-  handleThemeChange: (name: CatppuccinTheme, isLoggedIn: boolean) => Promise<void>;
-}
-
-export const ThemeContext = createContext<ThemeContextValue | null>(null);
+export type { ThemeContextValue } from './theme-context';
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [themeName, setThemeName] = useState<CatppuccinTheme>(

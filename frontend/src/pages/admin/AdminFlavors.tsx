@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../../hooks/useToast';
-import { useFlavorsList } from '../../api/queries/useFlavorsList';
+import { useFlavorsList, type FlavorListItem } from '../../api/queries/useFlavorsList';
 import api from '../../lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../api/keys';
@@ -28,8 +28,8 @@ const AdminFlavors: React.FC = () => {
   const queryClient = useQueryClient();
   const { data: flavors = [], isLoading } = useFlavorsList();
 
-  const [keepFlavor, setKeepFlavor] = useState<any>(null);
-  const [removeFlavor, setRemoveFlavor] = useState<any>(null);
+  const [keepFlavor, setKeepFlavor] = useState<FlavorListItem | null>(null);
+  const [removeFlavor, setRemoveFlavor] = useState<FlavorListItem | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
 
@@ -55,8 +55,10 @@ const AdminFlavors: React.FC = () => {
       setKeepFlavor(null);
       setRemoveFlavor(null);
       setConfirmOpen(false);
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.error || err.message;
+    } catch (err) {
+      const errorMsg =
+        (err as { response?: { data?: { error?: string } } }).response?.data?.error ||
+        (err as Error).message;
       notify({ message: t('admin.errorPrefix', { message: errorMsg }), severity: 'error' });
     } finally {
       setIsMerging(false);

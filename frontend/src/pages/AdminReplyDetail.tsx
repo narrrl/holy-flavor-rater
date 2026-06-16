@@ -25,9 +25,13 @@ const AdminReplyDetail: React.FC = () => {
   const { notify } = useToast();
   const { confirm } = useConfirm();
 
-  useEffect(() => {
-    if (reply) setText(reply.text);
-  }, [reply]);
+  // Seed the form from the loaded reply during render (tracking the
+  // previously-synced row) so it re-fills only when the data changes.
+  const [syncedReply, setSyncedReply] = useState(reply);
+  if (reply && reply !== syncedReply) {
+    setSyncedReply(reply);
+    setText(reply.text);
+  }
 
   useEffect(() => {
     if (error) navigate('/admin-panel');

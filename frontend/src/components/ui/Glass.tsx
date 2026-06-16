@@ -1,4 +1,4 @@
-import { styled } from '@mui/material/styles';
+import { styled, type Theme } from '@mui/material/styles';
 import MuiCard from '@mui/material/Card';
 import MuiPaper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
@@ -7,7 +7,7 @@ type Intensity = 'subtle' | 'default' | 'strong';
 
 const intensityStyles =
   (intensity: Intensity) =>
-  ({ theme }: { theme: any }) => {
+  ({ theme }: { theme: Theme }) => {
     const t = theme.tokens;
     const tint =
       intensity === 'strong'

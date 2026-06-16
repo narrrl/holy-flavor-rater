@@ -34,7 +34,7 @@ interface Banner {
   slug: string;
   description: string;
   is_active: boolean;
-  settings: any;
+  settings: Record<string, unknown>;
   schema: BannerSettingSchema[];
 }
 
@@ -52,7 +52,7 @@ const BannerSettingsDialog: React.FC<BannerSettingsDialogProps> = ({
   onSave,
 }) => {
   const { t } = useTranslation();
-  const [localSettings, setLocalSettings] = useState<any>({});
+  const [localSettings, setLocalSettings] = useState<Record<string, unknown>>({});
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -71,15 +71,18 @@ const BannerSettingsDialog: React.FC<BannerSettingsDialogProps> = ({
       await api.patch(`banners/${banner.id}/`, { settings: localSettings });
       onSave();
       onClose();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to save settings');
+    } catch (err) {
+      setError(
+        (err as { response?: { data?: { error?: string } } }).response?.data?.error ||
+          'Failed to save settings',
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const updateSetting = (key: string, value: any) => {
-    setLocalSettings((prev: any) => ({
+  const updateSetting = (key: string, value: unknown) => {
+    setLocalSettings((prev) => ({
       ...prev,
       [key]: value,
     }));
@@ -119,7 +122,7 @@ const BannerSettingsDialog: React.FC<BannerSettingsDialogProps> = ({
             type="number"
             fullWidth
             size="small"
-            value={value}
+            value={String(value)}
             inputProps={{ min: schema.min, max: schema.max, step: schema.step }}
             onChange={(e) => updateSetting(schema.key, Number(e.target.value))}
           />
@@ -127,7 +130,7 @@ const BannerSettingsDialog: React.FC<BannerSettingsDialogProps> = ({
           <TextField
             fullWidth
             size="small"
-            value={value}
+            value={String(value)}
             onChange={(e) => updateSetting(schema.key, e.target.value)}
           />
         )}

@@ -74,20 +74,18 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const [pendingConfirmation, setPendingConfirmation] = useState(false);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [deletionCode, setDeletionCode] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [deletionCode, setDeletionCode] = useState(() => searchParams.get('deletion_code') ?? '');
+  const [isDeleting, setIsDeleting] = useState(() => searchParams.has('deletion_code'));
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedBannerId, setSelectedBannerId] = useState<number | string>('');
 
   // Deep link from the deletion email: ?deletion_code=NNNNNN pre-fills the code
-  // and opens the confirm form. The user still has to click "Delete" — the link
-  // is a convenience, not a one-click destruct. Strip the param after reading so
-  // it doesn't linger in the URL / browser history.
+  // and opens the confirm form (see the lazy useState initializers above). The
+  // user still has to click "Delete" — the link is a convenience, not a
+  // one-click destruct. Strip the param after reading so it doesn't linger in
+  // the URL / browser history.
   useEffect(() => {
-    const code = searchParams.get('deletion_code');
-    if (!code) return;
-    setDeletionCode(code);
-    setIsDeleting(true);
+    if (!searchParams.has('deletion_code')) return;
     searchParams.delete('deletion_code');
     setSearchParams(searchParams, { replace: true });
   }, [searchParams, setSearchParams]);
@@ -97,15 +95,20 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
     else navigate('/');
   };
 
-  useEffect(() => {
-    if (!me) return;
+  // Seed the editable form fields from the loaded profile. Done during render
+  // (tracking the previously-synced `me`) rather than in an effect so the
+  // inputs reflect server data without an extra commit/paint, and re-sync only
+  // when the query data actually changes.
+  const [syncedMe, setSyncedMe] = useState<typeof me>(undefined);
+  if (me && me !== syncedMe) {
+    setSyncedMe(me);
     setUsername(me.username);
     setEmail(me.email);
     setCurrentEmail(me.email);
     setAvatar(me.avatar);
     setSelectedBannerId(me.selected_banner || '');
     if (me.language) setLanguage(me.language);
-  }, [me]);
+  }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

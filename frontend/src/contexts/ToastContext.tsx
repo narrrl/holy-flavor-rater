@@ -1,18 +1,9 @@
-import { createContext, useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import Snackbar from '@mui/material/Snackbar';
-import Alert, { type AlertColor } from '@mui/material/Alert';
+import Alert from '@mui/material/Alert';
+import { ToastContext, type ToastOptions } from './toast-context';
 
-export interface ToastOptions {
-  message: string;
-  severity?: AlertColor;
-  duration?: number;
-}
-
-export interface ToastContextValue {
-  notify: (opts: ToastOptions | string) => void;
-}
-
-export const ToastContext = createContext<ToastContextValue | null>(null);
+export type { ToastOptions, ToastContextValue } from './toast-context';
 
 interface ToastState extends ToastOptions {
   key: number;

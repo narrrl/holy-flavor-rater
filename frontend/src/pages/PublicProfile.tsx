@@ -66,6 +66,14 @@ const PublicProfile: React.FC = () => {
   const { notify } = useToast();
   const { confirm } = useConfirm();
 
+  // No avatar → no palette. Cleared during render (tracking the previous
+  // avatar) so the reset isn't a synchronous setState inside the effect.
+  const [paletteAvatar, setPaletteAvatar] = useState(data?.avatar);
+  if (data?.avatar !== paletteAvatar) {
+    setPaletteAvatar(data?.avatar);
+    if (!data?.avatar) setPalette([]);
+  }
+
   useEffect(() => {
     if (data?.avatar) {
       const img = new Image();
@@ -96,8 +104,6 @@ const PublicProfile: React.FC = () => {
           setPalette([]);
         }
       };
-    } else {
-      setPalette([]);
     }
   }, [data?.avatar]);
 

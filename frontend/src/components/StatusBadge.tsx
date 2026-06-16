@@ -1,12 +1,12 @@
 import React from 'react';
-import { Box, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Typography, alpha, useTheme, type SxProps, type Theme } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 interface StatusBadgeProps {
   isLegacy?: boolean;
   isAvailable?: boolean;
   size?: 'small' | 'medium';
-  sx?: any;
+  sx?: SxProps<Theme>;
 }
 
 const sizeMap = {

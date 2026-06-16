@@ -1,25 +1,17 @@
-import { createContext, useCallback, useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../hooks/useToast';
 import { queryKeys } from '../api/keys';
-import { useNotificationsQuery, type Notification } from '../api/queries/useNotifications';
+import { useNotificationsQuery } from '../api/queries/useNotifications';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
 } from '../api/mutations/useMarkNotifications';
+import { NotificationContext } from './notification-context';
 
-export type { Notification };
-
-export interface NotificationContextValue {
-  notifications: Notification[];
-  fetchNotifications: () => Promise<void>;
-  markAllRead: () => Promise<void>;
-  markRead: (id: number) => Promise<void>;
-}
-
-export const NotificationContext = createContext<NotificationContextValue | null>(null);
+export type { Notification } from './notification-context';
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const { user, setUser, refetchUser } = useAuth();
