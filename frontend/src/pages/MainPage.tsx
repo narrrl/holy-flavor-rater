@@ -31,6 +31,7 @@ import {
   FlavorCard,
   EmptyState,
 } from '../components/ui';
+import MainPageRecommendations from './MainPageRecommendations';
 
 const TOP_LIMIT = 5;
 
@@ -458,6 +459,9 @@ const MainPage: React.FC = () => {
           <EmptyState title={t('home.noTopFlavors')} />
         )}
       </Box>
+
+      {/* Algorithmic discovery: personalized (members) or popular picks (visitors) */}
+      <MainPageRecommendations isLoggedIn={isLoggedIn} />
 
       {/* Newest Arrivals */}
       <Box>

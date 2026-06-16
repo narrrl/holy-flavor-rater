@@ -9,13 +9,13 @@ use sea_orm::{
 use serde::Deserialize;
 
 use crate::auth::{AuthUser, OptionalUser};
-use crate::dto::{FlavorOut, SearchHit, SimilarFlavorOut};
+use crate::dto::{FlavorOut, RecommendationOut, SearchHit, SimilarFlavorOut};
 use crate::entities::prelude::*;
 use crate::entities::{category, flavor, rating};
 use crate::error::{ApiError, ApiResult};
 use crate::media::image_field_url;
 use crate::pagination::{parse_page, Paginated, DEFAULT_PAGE_SIZE};
-use crate::recommend::{similar_flavors, RatingInput};
+use crate::recommend::{recommend, similar_flavors, RatingInput};
 use crate::search::{extract_category_slug, query_words, score_relevance};
 use crate::service::build_flavors;
 use crate::state::AppState;
@@ -24,12 +24,21 @@ use crate::web::RequestCtx;
 /// Max "similar flavors" returned by `/flavors/{id}/similar/`.
 const SIMILAR_LIMIT: usize = 8;
 
+/// Max "popular picks" returned by `/flavors/popular/`.
+const POPULAR_LIMIT: usize = 12;
+
+/// Sentinel target for the public popularity ranking: a user id that owns no
+/// ratings, so the recommender cold-starts straight into its Bayesian-popularity
+/// fallback over the whole catalog (nothing excluded as "already rated").
+const POPULAR_SENTINEL: i32 = -1;
+
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/flavors/", get(list))
         .route("/flavors/search/", get(search))
         .route("/flavors/top/", get(top))
         .route("/flavors/newest/", get(newest))
+        .route("/flavors/popular/", get(popular))
         .route("/flavors/followed_top/", get(followed_top))
         .route("/flavors/{id}/", get(retrieve))
         .route("/flavors/{id}/similar/", get(similar))
@@ -236,6 +245,64 @@ async fn newest(
     Ok(Json(
         build_flavors(&state, &ctx, models, viewer, &[], false, false).await?,
     ))
+}
+
+/// GET /api/flavors/popular/ — public algorithmic "popular picks" for the front
+/// page (logged-out discovery). Runs the recommender against a ratingless sentinel
+/// user so it returns the Bayesian-popularity ranking over the whole catalog — the
+/// same engine + payload shape as `/users/recommendations/`, so the frontend reuses
+/// the recommendation card. All rows carry `reason: "popular"`.
+async fn popular(
+    State(state): State<AppState>,
+    ctx: RequestCtx,
+    OptionalUser(viewer): OptionalUser,
+) -> ApiResult<Json<Vec<RecommendationOut>>> {
+    // Whole rating matrix (hundreds of rows at current scale) → in-process scoring.
+    let all = Rating::find().all(&state.db).await?;
+    let inputs: Vec<RatingInput> = all
+        .iter()
+        .map(|r| RatingInput {
+            user_id: r.user_id,
+            flavor_id: r.flavor_id,
+            score: r.score as f64,
+        })
+        .collect();
+
+    let recs = recommend(POPULAR_SENTINEL, &inputs, POPULAR_LIMIT);
+    if recs.is_empty() {
+        return Ok(Json(Vec::new()));
+    }
+
+    // Resolve the recommended flavor ids to card payloads, then re-zip with the
+    // recommendation metadata in the engine's ranked order.
+    let rec_ids: Vec<i32> = recs.iter().map(|r| r.flavor_id).collect();
+    let models = Flavor::find()
+        .filter(flavor::Column::Id.is_in(rec_ids))
+        .all(&state.db)
+        .await?;
+    let flavors = build_flavors(&state, &ctx, models, viewer, &[], false, false).await?;
+    let by_id: std::collections::HashMap<i32, _> = flavors.into_iter().map(|f| (f.id, f)).collect();
+
+    let out: Vec<RecommendationOut> = recs
+        .into_iter()
+        .filter_map(|rec| {
+            by_id.get(&rec.flavor_id).map(|f| RecommendationOut {
+                id: f.id,
+                name: f.name.clone(),
+                image_url: f.image_url.clone(),
+                category_name: f.category_name.clone(),
+                category_slug: f.category_slug.clone(),
+                average_rating: f.average_rating,
+                is_legacy: f.is_legacy,
+                is_available: f.is_available,
+                predicted_score: rec.predicted_score,
+                contributing_neighbours: rec.contributing_neighbours,
+                reason: rec.source.as_str().to_string(),
+            })
+        })
+        .collect();
+
+    Ok(Json(out))
 }
 
 /// GET /api/flavors/followed_top/ — top 10 among flavors rated by people the

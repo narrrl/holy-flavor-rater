@@ -7,6 +7,7 @@ export const queryKeys = {
   categories: () => ['categories'] as const,
   dashboard: () => ['dashboard'] as const,
   recommendations: () => ['recommendations'] as const,
+  popularRecommendations: () => ['recommendations', 'popular'] as const,
   publicProfile: (username: string) => ['publicProfile', username] as const,
   publicProfileAll: () => ['publicProfile'] as const,
   flavors: (params: Record<string, unknown>) => ['flavors', params] as const,
