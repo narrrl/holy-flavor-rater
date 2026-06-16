@@ -227,7 +227,10 @@ const FlavorDetail: React.FC = () => {
                   </Box>
                 )}
 
-                <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}
+                >
                   <RichText text={flavor.description} />
                 </Typography>
 

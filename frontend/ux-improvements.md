@@ -19,7 +19,7 @@ Tracking doc from the frontend/UX audit. Items grouped by priority. Check off as
 
 ## 🟡 Medium
 
-- [ ] **#5 Hall of Fame carousel** — no swipe/auto-advance; arrows far from card on mobile; featured quote is arbitrary (first-with-comment).
+- [x] **#5 Hall of Fame carousel** (`MainPage.tsx`) — added 6s auto-advance (stops on manual control, pauses on hover, off for reduced-motion), touch swipe, on-card overlay arrows on mobile (header arrows desktop-only), and featured quote now picks the highest-scored comment instead of the first.
 - [x] **#6 Admin edit leaks into product card** (`FlavorDetail.tsx`) — extracted to `components/AdminFlavorEditDialog.tsx`; card keeps a clean read view, edit opens a focused dialog.
 - [ ] **#7 CommunityFeed duplication** — in-page notifications + following duplicate the nav/global menus.
 - [ ] **#8 Reply Enter-to-submit on multiline** — surprising; blocks newlines.

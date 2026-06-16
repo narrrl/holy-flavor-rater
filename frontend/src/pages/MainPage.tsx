@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Typography,
   Box,
@@ -107,11 +107,11 @@ const MainPage: React.FC = () => {
   const currentTop = topFlavors[safeIndex];
   // Feature the highest-scored review with a comment, not just the first one —
   // a Hall-of-Fame quote should be the most glowing, not whatever loaded first.
-  const featuredReview = useMemo(() => {
-    const withComment = (currentTop?.ratings ?? []).filter((r) => r.comment);
-    if (withComment.length === 0) return null;
-    return withComment.reduce((best, r) => (r.score > best.score ? r : best));
-  }, [currentTop]);
+  const featuredReview = (currentTop?.ratings ?? [])
+    .filter((r) => r.comment)
+    .reduce<
+      (typeof currentTop)['ratings'][number] | null
+    >((best, r) => (best === null || r.score > best.score ? r : best), null);
 
   useTitle(query ? `Search: ${query}` : 'Holy Flavors Archive');
 

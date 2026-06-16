@@ -37,10 +37,7 @@ const CategoryFlavors: React.FC = () => {
       <SectionHeader title={categoryName || t('home.flavorsFallback')} />
 
       {flavors.length === 0 ? (
-        <EmptyState
-          title={t('home.noCategoryFlavors')}
-          subtitle={t('home.noCategoryFlavorsSub')}
-        />
+        <EmptyState title={t('home.noCategoryFlavors')} subtitle={t('home.noCategoryFlavorsSub')} />
       ) : (
         <Box
           sx={{

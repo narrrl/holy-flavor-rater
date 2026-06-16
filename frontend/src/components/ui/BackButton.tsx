@@ -39,9 +39,7 @@ export const BackButton: React.FC<BackButtonProps> = ({ to, sx }) => {
 
   const label = to || !canGoBack ? t('common.backToHome') : t('common.back');
 
-  const linkProps = to
-    ? { component: Link as React.ElementType, to }
-    : { onClick: handleGoBack };
+  const linkProps = to ? { component: Link as React.ElementType, to } : { onClick: handleGoBack };
 
   return (
     <Button
