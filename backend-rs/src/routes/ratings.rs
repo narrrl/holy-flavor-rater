@@ -492,10 +492,7 @@ async fn discover(
         cond = cond.add(rating::Column::FlavorId.is_in(flavor_ids));
     }
 
-    let count = Rating::find()
-        .filter(cond.clone())
-        .count(&state.db)
-        .await?;
+    let count = Rating::find().filter(cond.clone()).count(&state.db).await?;
     let mut query = Rating::find().filter(cond);
     query = if top {
         query

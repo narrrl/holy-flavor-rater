@@ -353,7 +353,12 @@ async fn suggested(
     // users_by_ids orders by id; restore the activity ranking afterwards.
     let users = users_by_ids(&state, &ranked).await?;
     let mut out = build_users(&state, &ctx, users, Some(uid)).await?;
-    out.sort_by_key(|u| ranked.iter().position(|id| *id == u.id).unwrap_or(usize::MAX));
+    out.sort_by_key(|u| {
+        ranked
+            .iter()
+            .position(|id| *id == u.id)
+            .unwrap_or(usize::MAX)
+    });
     Ok(Json(out))
 }
 
@@ -1045,12 +1050,21 @@ async fn request_account_deletion(
     active.deletion_code_expires = Set(Some(expires));
     active.update(&state.db).await?;
 
+    let link = format!(
+        "{}/settings?deletion_code={}",
+        state.config.frontend_url, code
+    );
     crate::email::spawn_mail(
         state.config.email.clone(),
         "Confirm Account Deletion - Holy Flavors Archive".into(),
         format!(
             "Hi {uname},\n\nYou requested to delete your account. \
-             This action is permanent.\n\nYour deletion code is: {code}"
+             This action is permanent and cannot be undone.\n\n\
+             Your deletion code is: {code}\n\n\
+             Or open this link (while signed in) to pre-fill the code, then \
+             confirm the deletion on the page:\n{link}\n\n\
+             If you didn't request this, you can safely ignore this email — \
+             nothing will be deleted without confirmation."
         ),
         vec![email],
     );
@@ -1136,6 +1150,19 @@ pub(crate) async fn delete_user_cascade(state: &AppState, uid: i32) -> ApiResult
         .await?;
     txn.execute(exec(
         "DELETE FROM api_user_following WHERE from_user_id = ?1 OR to_user_id = ?1",
+    ))
+    .await?;
+    // Legacy Django tables that still carry FKs to api_user: the DRF auth token,
+    // the admin action log, and the (empty but constrained) group / permission
+    // M2M join tables. SQLite blocks the user delete unless these go first.
+    txn.execute(exec("DELETE FROM authtoken_token WHERE user_id = ?"))
+        .await?;
+    txn.execute(exec("DELETE FROM django_admin_log WHERE user_id = ?"))
+        .await?;
+    txn.execute(exec("DELETE FROM api_user_groups WHERE user_id = ?"))
+        .await?;
+    txn.execute(exec(
+        "DELETE FROM api_user_user_permissions WHERE user_id = ?",
     ))
     .await?;
     // Token blacklist tables reference the user via outstanding tokens.

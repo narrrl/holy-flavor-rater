@@ -28,7 +28,7 @@ import {
   Switch,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hooks/useAuth';
@@ -49,6 +49,7 @@ const readErr = (err: unknown): string | undefined =>
 const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { refetchUser } = useAuth();
   useTitle(t('nav.settings'));
@@ -77,6 +78,19 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedBannerId, setSelectedBannerId] = useState<number | string>('');
+
+  // Deep link from the deletion email: ?deletion_code=NNNNNN pre-fills the code
+  // and opens the confirm form. The user still has to click "Delete" — the link
+  // is a convenience, not a one-click destruct. Strip the param after reading so
+  // it doesn't linger in the URL / browser history.
+  useEffect(() => {
+    const code = searchParams.get('deletion_code');
+    if (!code) return;
+    setDeletionCode(code);
+    setIsDeleting(true);
+    searchParams.delete('deletion_code');
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const handleGoBack = () => {
     if (window.history.length > 1) navigate(-1);
