@@ -15,12 +15,12 @@ Tracking doc from the frontend/UX audit. Items grouped by priority. Check off as
   - [ ] **Deferred (admin-only, superuser surface):** `AdminUserDetail.tsx`, `admin/*` (Banners, Tickets, Overview, Config, Jobs, Users), `AdminRatingDetail.tsx`, `AdminReplyDetail.tsx`, `Settings.tsx` theme-list subheaders. Lower UX priority — only the operator sees these.
 - [x] **#2 Delete dead code** — `FlavorList.tsx` (240 LOC) + `AdminDashboard.tsx` (873 LOC). Zero imports, not in router (replaced by `admin/` folder + `flavors/FlavorDetail`).
 - [ ] **#3 Add brand/logo** — no app identity anchor in sidebar or mobile appbar.
-- [ ] **#4 Categories discoverable** — collapsed-by-default accordion hides primary browse axis.
+- [x] **#4 Categories discoverable** — accordion now open by default (`NavSidebar.tsx`); primary browse axis visible without an extra click.
 
 ## 🟡 Medium
 
 - [ ] **#5 Hall of Fame carousel** — no swipe/auto-advance; arrows far from card on mobile; featured quote is arbitrary (first-with-comment).
-- [ ] **#6 Admin edit leaks into product card** (`FlavorDetail.tsx`) — move to dialog/drawer.
+- [x] **#6 Admin edit leaks into product card** (`FlavorDetail.tsx`) — extracted to `components/AdminFlavorEditDialog.tsx`; card keeps a clean read view, edit opens a focused dialog.
 - [ ] **#7 CommunityFeed duplication** — in-page notifications + following duplicate the nav/global menus.
 - [ ] **#8 Reply Enter-to-submit on multiline** — surprising; blocks newlines.
 - [ ] **#9 Login password UX** — no show/hide toggle, no strength hint, no inline validation.

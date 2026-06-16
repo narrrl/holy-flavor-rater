@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Typography,
   Box,
@@ -8,6 +8,7 @@ import {
   Chip,
   IconButton,
   Skeleton,
+  useMediaQuery,
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +35,8 @@ import {
 import MainPageRecommendations from './MainPageRecommendations';
 
 const TOP_LIMIT = 5;
+const AUTO_ADVANCE_MS = 6000;
+const SWIPE_THRESHOLD = 50;
 
 const FlavorCardSkeleton: React.FC<{ compact?: boolean }> = ({ compact }) => (
   <Box sx={{ height: '100%' }}>
@@ -82,6 +85,12 @@ const MainPage: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const [activeIndex, setActiveIndex] = useState(0);
+  // Auto-advance stops for good once the user takes manual control; hover only
+  // pauses temporarily. Reduced-motion users never get auto-advance.
+  const [autoPlay, setAutoPlay] = useState(true);
+  const [hovered, setHovered] = useState(false);
+  const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const touchStartX = useRef<number | null>(null);
 
   const query = new URLSearchParams(location.search).get('q') || '';
   const { user } = useAuth();
@@ -96,18 +105,50 @@ const MainPage: React.FC = () => {
     .slice(0, TOP_LIMIT);
   const safeIndex = topFlavors.length > 0 ? activeIndex % topFlavors.length : 0;
   const currentTop = topFlavors[safeIndex];
-  const featuredReview = currentTop?.ratings?.find((r) => r.comment) || null;
+  // Feature the highest-scored review with a comment, not just the first one —
+  // a Hall-of-Fame quote should be the most glowing, not whatever loaded first.
+  const featuredReview = useMemo(() => {
+    const withComment = (currentTop?.ratings ?? []).filter((r) => r.comment);
+    if (withComment.length === 0) return null;
+    return withComment.reduce((best, r) => (r.score > best.score ? r : best));
+  }, [currentTop]);
 
   useTitle(query ? `Search: ${query}` : 'Holy Flavors Archive');
 
   const handlePrev = () => {
     if (topFlavors.length === 0) return;
+    setAutoPlay(false);
     setActiveIndex((prev) => (prev - 1 + topFlavors.length) % topFlavors.length);
   };
   const handleNext = () => {
     if (topFlavors.length === 0) return;
+    setAutoPlay(false);
     setActiveIndex((prev) => (prev + 1) % topFlavors.length);
   };
+  const goTo = (i: number) => {
+    setAutoPlay(false);
+    setActiveIndex(i);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(delta) < SWIPE_THRESHOLD) return;
+    if (delta < 0) handleNext();
+    else handlePrev();
+  };
+
+  useEffect(() => {
+    if (topFlavors.length <= 1 || !autoPlay || hovered || prefersReducedMotion) return;
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % topFlavors.length);
+    }, AUTO_ADVANCE_MS);
+    return () => clearInterval(timer);
+  }, [topFlavors.length, autoPlay, hovered, prefersReducedMotion]);
 
   // --- SEARCH VIEW ---
   if (query) {
@@ -258,7 +299,7 @@ const MainPage: React.FC = () => {
           subtitle={t('home.hallOfFameSubtitle')}
           action={
             topFlavors.length > 1 ? (
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
                 <IconButton
                   onClick={handlePrev}
                   aria-label={t('home.previousFlavor')}
@@ -284,6 +325,13 @@ const MainPage: React.FC = () => {
           <>
             <GlassCard
               intensity="strong"
+              role="region"
+              aria-roledescription="carousel"
+              aria-label={t('home.hallOfFame')}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
               sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', md: 'row' },
@@ -292,6 +340,44 @@ const MainPage: React.FC = () => {
                 position: 'relative',
               }}
             >
+              {topFlavors.length > 1 && (
+                <>
+                  <IconButton
+                    onClick={handlePrev}
+                    aria-label={t('home.previousFlavor')}
+                    sx={{
+                      display: { xs: 'flex', md: 'none' },
+                      position: 'absolute',
+                      top: '50%',
+                      left: 8,
+                      transform: 'translateY(-50%)',
+                      zIndex: 2,
+                      bgcolor: 'background.paper',
+                      boxShadow: 2,
+                      '&:hover': { bgcolor: 'background.paper' },
+                    }}
+                  >
+                    <ChevronLeftIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={handleNext}
+                    aria-label={t('home.nextFlavor')}
+                    sx={{
+                      display: { xs: 'flex', md: 'none' },
+                      position: 'absolute',
+                      top: '50%',
+                      right: 8,
+                      transform: 'translateY(-50%)',
+                      zIndex: 2,
+                      bgcolor: 'background.paper',
+                      boxShadow: 2,
+                      '&:hover': { bgcolor: 'background.paper' },
+                    }}
+                  >
+                    <ChevronRightIcon />
+                  </IconButton>
+                </>
+              )}
               <Box
                 component={Link}
                 to={`/flavor/${currentTop.id}`}
@@ -432,7 +518,7 @@ const MainPage: React.FC = () => {
                   <Box
                     key={i}
                     component="button"
-                    onClick={() => setActiveIndex(i)}
+                    onClick={() => goTo(i)}
                     aria-label={t('home.goToFlavor', { n: i + 1 })}
                     aria-current={safeIndex === i ? 'true' : undefined}
                     sx={{

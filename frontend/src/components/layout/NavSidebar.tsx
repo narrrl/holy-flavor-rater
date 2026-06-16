@@ -51,7 +51,9 @@ export const NavSidebar = ({
   const { t } = useTranslation();
   const location = useLocation();
   const { user, following, logout } = useAuth();
-  const [catOpen, setCatOpen] = useState(false);
+  // Categories are the primary browse axis — open by default so they're
+  // discoverable without an extra click (UX audit #4).
+  const [catOpen, setCatOpen] = useState(true);
   const [followingOpen, setFollowingOpen] = useState(false);
   const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
 

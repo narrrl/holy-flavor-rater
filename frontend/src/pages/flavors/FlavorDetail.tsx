@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -14,14 +14,9 @@ import {
   alpha,
   useTheme,
   Collapse,
-  TextField,
-  FormControlLabel,
-  Switch,
-  Divider,
 } from '@mui/material';
 import { useFlavorDetail, type FlavorDetailRating } from '../../api/queries/useFlavorDetail';
 import { useCurrentUserLite } from '../../api/queries/useCurrentUserLite';
-import { useUpdateFlavor } from '../../api/mutations/useFlavorMutations';
 import {
   useDeleteRating,
   useCreateReply,
@@ -34,8 +29,6 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import CommentIcon from '@mui/icons-material/Comment';
 import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
-import CancelIcon from '@mui/icons-material/Cancel';
 import { formatDate } from '../../utils/date';
 import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
@@ -54,6 +47,7 @@ import {
 } from '../../components/ui';
 import RatingForm from './components/RatingForm';
 import SimilarFlavorsSection from './components/SimilarFlavorsSection';
+import AdminFlavorEditDialog from './components/AdminFlavorEditDialog';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 
@@ -68,7 +62,6 @@ const FlavorDetail: React.FC = () => {
   const { data: meData } = useCurrentUserLite();
   const currentUser = meData?.username ?? null;
   const isSuperuser = !!meData?.is_superuser;
-  const updateFlavor = useUpdateFlavor();
   const deleteRatingMutation = useDeleteRating();
   const updateRating = useUpdateRating();
   const createReply = useCreateReply();
@@ -77,16 +70,8 @@ const FlavorDetail: React.FC = () => {
   const [replyInputs, setReplyInputs] = useState<{ [key: number]: string }>({});
   const [expandedReplies, setExpandedReplies] = useState<{ [key: number]: boolean }>({});
 
-  // Product Edit state (Admin)
-  const [isAdminEditing, setIsAdminEditing] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [editFlavorData, setEditFlavorData] = useState({
-    name: '',
-    description: '',
-    shop_url: '',
-    is_available: true,
-    is_legacy: false,
-  });
+  // Product Edit dialog (Admin) — form moved out of the card (UX audit #6).
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
 
   // Edit state
   const [editMode, setEditMode] = useState<number | null>(null);
@@ -97,48 +82,9 @@ const FlavorDetail: React.FC = () => {
   const [editingReplyId, setEditingReplyId] = useState<number | null>(null);
   const [editReplyText, setEditReplyText] = useState('');
 
-  useEffect(() => {
-    if (flavor) {
-      setEditFlavorData({
-        name: flavor.name,
-        description: flavor.description,
-        shop_url: flavor.shop_url || '',
-        is_available: flavor.is_available,
-        is_legacy: flavor.is_legacy,
-      });
-    }
-  }, [flavor]);
-
   useTitle(flavor?.name || t('common.loading'));
 
   const galleryImages = useMemo(() => flavor?.image_urls ?? [], [flavor?.image_urls]);
-
-  const handleAdminUpdate = async () => {
-    if (!id) return;
-    try {
-      await updateFlavor.mutateAsync({ id, data: editFlavorData });
-      setIsAdminEditing(false);
-    } catch {
-      notify({ message: t('flavorDetail.adminUpdateFailed'), severity: 'error' });
-    }
-  };
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !id) return;
-
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      setUploadingImage(true);
-      await updateFlavor.mutateAsync({ id, data: formData, isFormData: true });
-    } catch {
-      notify({ message: t('flavorDetail.imageUploadFailed'), severity: 'error' });
-    } finally {
-      setUploadingImage(false);
-    }
-  };
 
   const handleReplySubmit = async (ratingId: number) => {
     const text = replyInputs[ratingId];
@@ -241,154 +187,51 @@ const FlavorDetail: React.FC = () => {
               <CardContent sx={{ p: 3 }}>
                 {isSuperuser && (
                   <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                    {!isAdminEditing ? (
-                      <Button
-                        startIcon={<EditIcon />}
-                        size="small"
-                        onClick={() => setIsAdminEditing(true)}
-                      >
-                        {t('flavorDetail.editProductAdmin')}
-                      </Button>
-                    ) : (
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          startIcon={<SaveIcon />}
-                          size="small"
-                          color="success"
-                          variant="contained"
-                          onClick={handleAdminUpdate}
-                        >
-                          {t('common.save')}
-                        </Button>
-                        <Button
-                          startIcon={<CancelIcon />}
-                          size="small"
-                          onClick={() => setIsAdminEditing(false)}
-                        >
-                          {t('common.cancel')}
-                        </Button>
-                      </Stack>
-                    )}
+                    <Button
+                      startIcon={<EditIcon />}
+                      size="small"
+                      onClick={() => setAdminDialogOpen(true)}
+                    >
+                      {t('flavorDetail.editProductAdmin')}
+                    </Button>
                   </Box>
                 )}
 
-                {isAdminEditing ? (
-                  <Stack spacing={2} sx={{ mb: 2 }}>
-                    <TextField
-                      label={t('flavorDetail.nameLabel')}
-                      fullWidth
-                      size="small"
-                      value={editFlavorData.name}
-                      onChange={(e) =>
-                        setEditFlavorData({ ...editFlavorData, name: e.target.value })
-                      }
-                    />
-                    <TextField
-                      label={t('flavorDetail.descriptionLabel')}
-                      fullWidth
-                      size="small"
-                      multiline
-                      rows={4}
-                      value={editFlavorData.description}
-                      onChange={(e) =>
-                        setEditFlavorData({ ...editFlavorData, description: e.target.value })
-                      }
-                    />
-                    <TextField
-                      label={t('flavorDetail.shopUrlLabel')}
-                      fullWidth
-                      size="small"
-                      value={editFlavorData.shop_url}
-                      onChange={(e) =>
-                        setEditFlavorData({ ...editFlavorData, shop_url: e.target.value })
-                      }
-                    />
+                <Chip
+                  label={flavor.category_name}
+                  size="small"
+                  sx={{
+                    mb: 2,
+                    fontWeight: 'bold',
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: 'primary.main',
+                  }}
+                />
+                <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, lineHeight: 1.2 }}>
+                  {flavor.name}
+                </Typography>
 
-                    <Box>
-                      <Button
-                        variant="outlined"
-                        component="label"
-                        size="small"
-                        fullWidth
-                        disabled={uploadingImage}
-                      >
-                        {uploadingImage
-                          ? t('flavorDetail.uploading')
-                          : t('flavorDetail.uploadImage')}
-                        <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-                      </Button>
-                    </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <RatingBadge score={flavor.average_rating || 0} size="large" />
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                    {flavor.ratings.length} {t('common.reviews')}
+                  </Typography>
+                </Box>
 
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={editFlavorData.is_available}
-                          onChange={(e) =>
-                            setEditFlavorData({ ...editFlavorData, is_available: e.target.checked })
-                          }
-                        />
-                      }
-                      label={t('flavorDetail.inStock')}
+                {flavor.ratings.length > 0 && (
+                  <Box sx={{ mb: 3 }}>
+                    <RatingDistribution
+                      distribution={flavor.rating_distribution}
+                      total={flavor.ratings.length}
                     />
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={editFlavorData.is_legacy}
-                          onChange={(e) =>
-                            setEditFlavorData({ ...editFlavorData, is_legacy: e.target.checked })
-                          }
-                        />
-                      }
-                      label={t('flavorDetail.legacyLimited')}
-                    />
-                    <Divider sx={{ my: 1 }} />
-                  </Stack>
-                ) : (
-                  <>
-                    <Chip
-                      label={flavor.category_name}
-                      size="small"
-                      sx={{
-                        mb: 2,
-                        fontWeight: 'bold',
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        color: 'primary.main',
-                      }}
-                    />
-                    <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, lineHeight: 1.2 }}>
-                      {flavor.name}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                      <RatingBadge score={flavor.average_rating || 0} size="large" />
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ fontWeight: 'bold' }}
-                      >
-                        {flavor.ratings.length} {t('common.reviews')}
-                      </Typography>
-                    </Box>
-
-                    {flavor.ratings.length > 0 && (
-                      <Box sx={{ mb: 3 }}>
-                        <RatingDistribution
-                          distribution={flavor.rating_distribution}
-                          total={flavor.ratings.length}
-                        />
-                      </Box>
-                    )}
-
-                    <Typography
-                      variant="body2"
-                      sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}
-                    >
-                      <RichText text={flavor.description} />
-                    </Typography>
-                  </>
+                  </Box>
                 )}
 
-                {flavor.shop_url && !isAdminEditing && (
+                <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary', mb: 4 }}>
+                  <RichText text={flavor.description} />
+                </Typography>
+
+                {flavor.shop_url && (
                   <Button
                     variant="contained"
                     fullWidth
@@ -761,6 +604,15 @@ const FlavorDetail: React.FC = () => {
       </Grid>
 
       <SimilarFlavorsSection flavorId={flavor.id} />
+
+      {isSuperuser && id && (
+        <AdminFlavorEditDialog
+          open={adminDialogOpen}
+          onClose={() => setAdminDialogOpen(false)}
+          flavorId={id}
+          flavor={flavor}
+        />
+      )}
     </PageShell>
   );
 };
