@@ -18,7 +18,7 @@ const baseSx: SxProps<Theme> = {
   alignSelf: 'flex-start',
   borderRadius: 2,
   textTransform: 'none',
-  fontWeight: 'bold',
+  fontWeight: 700,
   color: 'text.secondary',
 };
 

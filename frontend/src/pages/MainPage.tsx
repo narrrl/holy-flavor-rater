@@ -30,6 +30,7 @@ import {
   SectionHeader,
   HeroBackdrop,
   FlavorCard,
+  FlavorGrid,
   EmptyState,
 } from '../components/ui';
 import MainPageRecommendations from './MainPageRecommendations';
@@ -163,39 +164,19 @@ const MainPage: React.FC = () => {
           }
         />
         {searchLoading ? (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'repeat(auto-fill, minmax(280px, 1fr))',
-                lg: 'repeat(auto-fill, minmax(240px, 1fr))',
-              },
-              gap: 3,
-            }}
-          >
+          <FlavorGrid>
             {Array.from({ length: 8 }).map((_, i) => (
               <FlavorCardSkeleton key={i} />
             ))}
-          </Box>
+          </FlavorGrid>
         ) : searchResults.length === 0 ? (
           <EmptyState title={t('home.noSearchResults', { query })} />
         ) : (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: 'repeat(auto-fill, minmax(280px, 1fr))',
-                lg: 'repeat(auto-fill, minmax(240px, 1fr))',
-              },
-              gap: 3,
-            }}
-          >
+          <FlavorGrid>
             {searchResults.map((flavor) => (
               <FlavorCard key={flavor.id} flavor={flavor} />
             ))}
-          </Box>
+          </FlavorGrid>
         )}
       </PageShell>
     );
@@ -423,7 +404,7 @@ const MainPage: React.FC = () => {
                   label={`${t('common.rank')} #${safeIndex + 1}`}
                   color="primary"
                   size="small"
-                  sx={{ width: 'fit-content', mb: 1, fontWeight: 'bold' }}
+                  sx={{ width: 'fit-content', mb: 1, fontWeight: 700 }}
                 />
                 <Typography
                   variant="h3"
@@ -446,7 +427,7 @@ const MainPage: React.FC = () => {
                   }}
                 >
                   <RatingBadge score={currentTop.average_rating || 0} size="large" />
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
                     {currentTop.ratings.length} {t('common.reviews')}
                   </Typography>
                 </Box>
@@ -486,7 +467,7 @@ const MainPage: React.FC = () => {
                         src={featuredReview.user_avatar || undefined}
                         sx={{ width: 22, height: 22, fontSize: '0.6rem' }}
                       >
-                        {!featuredReview.user_avatar && featuredReview.user.charAt(0)}
+                        {!featuredReview.user_avatar && featuredReview.user.charAt(0).toUpperCase()}
                       </Avatar>
                       <Typography variant="caption" color="text.secondary">
                         — {featuredReview.user}
@@ -553,46 +534,19 @@ const MainPage: React.FC = () => {
       <Box>
         <SectionHeader title={t('home.newArrivals')} subtitle={t('home.newArrivalsSubtitle')} />
         {newestLoading ? (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(2, minmax(0, 1fr))',
-                sm: 'repeat(3, minmax(0, 1fr))',
-                md: 'repeat(4, minmax(0, 1fr))',
-                lg: 'repeat(5, minmax(0, 1fr))',
-                xl: 'repeat(6, minmax(0, 1fr))',
-              },
-              gap: 2,
-              width: '100%',
-            }}
-          >
+          <FlavorGrid compact>
             {Array.from({ length: 6 }).map((_, i) => (
               <FlavorCardSkeleton key={i} compact />
             ))}
-          </Box>
+          </FlavorGrid>
         ) : newestFlavors.length === 0 ? (
           <EmptyState title={t('home.noNewest')} />
         ) : (
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: 'repeat(2, minmax(0, 1fr))',
-                sm: 'repeat(3, minmax(0, 1fr))',
-                md: 'repeat(4, minmax(0, 1fr))',
-                lg: 'repeat(5, minmax(0, 1fr))',
-                xl: 'repeat(6, minmax(0, 1fr))',
-              },
-              gap: 2,
-              width: '100%',
-              minWidth: 0,
-            }}
-          >
+          <FlavorGrid compact>
             {newestFlavors.map((flavor) => (
               <FlavorCard key={flavor.id} flavor={flavor} compact />
             ))}
-          </Box>
+          </FlavorGrid>
         )}
       </Box>
     </PageShell>

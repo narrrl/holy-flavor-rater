@@ -36,27 +36,29 @@ const AdminRatingDetail: React.FC = () => {
     if (error) navigate('/admin-panel');
   }, [error, navigate]);
 
-  useTitle(rating ? `${t('admin.manageRating')}: ${rating.flavor_name}` : 'Rating Management');
+  useTitle(
+    rating ? `${t('admin.manageRating')}: ${rating.flavor_name}` : t('admin.ratingMgmtTitle'),
+  );
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
     try {
       await updateRating.mutateAsync({ id: Number(id), score, comment });
-      notify({ message: 'Rating updated!', severity: 'success' });
+      notify({ message: t('admin.ratingUpdated'), severity: 'success' });
     } catch {
-      notify({ message: 'Update failed', severity: 'error' });
+      notify({ message: t('admin.updateFailed'), severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!(await confirm({ message: 'Delete this rating and all replies?', danger: true }))) return;
+    if (!(await confirm({ message: t('admin.deleteRatingRepliesConfirm'), danger: true }))) return;
     try {
       await deleteRating.mutateAsync(Number(id));
       navigate('/admin-panel');
     } catch {
-      notify({ message: 'Delete failed', severity: 'error' });
+      notify({ message: t('admin.deleteFailed'), severity: 'error' });
     }
   };
 
@@ -87,7 +89,7 @@ const AdminRatingDetail: React.FC = () => {
       <Box sx={{ maxWidth: 560, width: '100%' }}>
         <FormCard
           title={rating.flavor_name}
-          subtitle={`User: ${rating.user}`}
+          subtitle={t('admin.userLabel', { user: rating.user })}
           onSubmit={handleUpdate}
           actions={
             <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
@@ -107,7 +109,7 @@ const AdminRatingDetail: React.FC = () => {
           }
         >
           <TextField
-            label="Score"
+            label={t('admin.scoreLabel')}
             type="number"
             slotProps={{ input: { inputProps: { min: 1, max: 10 } } }}
             value={score}

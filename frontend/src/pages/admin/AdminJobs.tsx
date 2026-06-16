@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import { useTranslation } from 'react-i18next';
 import { GlassCard } from '../../components/ui';
 import { useToast } from '../../hooks/useToast';
 import { formatDate } from '../../utils/date';
@@ -35,6 +36,7 @@ interface Job {
 }
 
 const AdminJobs = () => {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { notify } = useToast();
   const [search, setSearch] = useState('');
@@ -58,9 +60,9 @@ const AdminJobs = () => {
   const handleTriggerJob = async (id: number) => {
     try {
       await triggerJobMutation.mutateAsync(id);
-      notify({ message: 'Job queued', severity: 'success' });
+      notify({ message: t('admin.jobQueued'), severity: 'success' });
     } catch {
-      notify({ message: 'Failed to trigger job', severity: 'error' });
+      notify({ message: t('admin.jobTriggerFailed'), severity: 'error' });
     }
   };
 
@@ -68,7 +70,7 @@ const AdminJobs = () => {
     try {
       await updateJobScheduleMutation.mutateAsync({ id, data: { interval_hours: interval } });
     } catch {
-      notify({ message: 'Failed to update schedule', severity: 'error' });
+      notify({ message: t('admin.jobScheduleFailed'), severity: 'error' });
     }
   };
 
@@ -95,12 +97,12 @@ const AdminJobs = () => {
         sx={{ mb: 3 }}
         spacing={2}
       >
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-          Background Worker Jobs ({filtered.length})
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {t('admin.jobsTitle')} ({filtered.length})
         </Typography>
         <TextField
           size="small"
-          placeholder="Filter jobs…"
+          placeholder={t('admin.jobsFilter')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           sx={{ width: { xs: '100%', md: 300 } }}
@@ -122,11 +124,13 @@ const AdminJobs = () => {
                   mb: 2,
                 }}
               >
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
                   {job.name_display}
                 </Typography>
                 <Chip
-                  label={job.status === 'pending' ? 'QUEUED' : job.status.toUpperCase()}
+                  label={
+                    job.status === 'pending' ? t('admin.jobStatusQueued') : job.status.toUpperCase()
+                  }
                   size="small"
                   color={
                     job.status === 'completed'
@@ -144,22 +148,22 @@ const AdminJobs = () => {
               <Grid container spacing={2} sx={{ mb: 2 }}>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    Last Run
+                    {t('admin.jobLastRun')}
                   </Typography>
                   <Typography variant="body2">
-                    {job.last_run ? formatDate(job.last_run) : 'Never'}
+                    {job.last_run ? formatDate(job.last_run) : t('admin.jobNever')}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    Next Run
+                    {t('admin.jobNextRun')}
                   </Typography>
                   <Typography variant="body2">
                     {job.next_run
                       ? formatDate(job.next_run)
                       : job.interval_hours > 0
-                        ? 'Queued…'
-                        : 'Disabled'}
+                        ? t('admin.jobQueuedShort')
+                        : t('admin.jobDisabled')}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
@@ -169,7 +173,7 @@ const AdminJobs = () => {
                     display="block"
                     sx={{ mb: 0.5 }}
                   >
-                    Schedule
+                    {t('admin.jobSchedule')}
                   </Typography>
                   <FormControl size="small" fullWidth>
                     <Select
@@ -177,12 +181,12 @@ const AdminJobs = () => {
                       onChange={(e) => handleUpdateJobSchedule(job.id, Number(e.target.value))}
                       sx={{ height: 32, fontSize: '0.875rem' }}
                     >
-                      <MenuItem value={0}>Disabled</MenuItem>
-                      <MenuItem value={1}>Hourly</MenuItem>
-                      <MenuItem value={6}>Every 6 Hours</MenuItem>
-                      <MenuItem value={12}>Every 12 Hours</MenuItem>
-                      <MenuItem value={24}>Daily</MenuItem>
-                      <MenuItem value={168}>Weekly</MenuItem>
+                      <MenuItem value={0}>{t('admin.jobDisabled')}</MenuItem>
+                      <MenuItem value={1}>{t('admin.schedHourly')}</MenuItem>
+                      <MenuItem value={6}>{t('admin.sched6h')}</MenuItem>
+                      <MenuItem value={12}>{t('admin.sched12h')}</MenuItem>
+                      <MenuItem value={24}>{t('admin.schedDaily')}</MenuItem>
+                      <MenuItem value={168}>{t('admin.schedWeekly')}</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -191,7 +195,7 @@ const AdminJobs = () => {
               {job.last_output && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                    Last Run Output
+                    {t('admin.jobLastOutput')}
                   </Typography>
                   <Box
                     sx={{
@@ -221,7 +225,7 @@ const AdminJobs = () => {
               {job.error_message && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="caption" color="error" display="block" gutterBottom>
-                    Last Error
+                    {t('admin.jobLastError')}
                   </Typography>
                   <Alert severity="error" sx={{ py: 0 }}>
                     {job.error_message}
@@ -235,7 +239,7 @@ const AdminJobs = () => {
                 disabled={job.status === 'running'}
                 onClick={() => handleTriggerJob(job.id)}
               >
-                Trigger Now
+                {t('admin.jobTriggerNow')}
               </Button>
             </CardContent>
           </GlassCard>

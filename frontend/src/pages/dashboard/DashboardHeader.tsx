@@ -70,12 +70,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               variant="outlined"
               onClick={onBack}
               startIcon={<ArrowBackIcon />}
-              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
             >
               {t('common.back')}
             </Button>
           )}
-          <Typography variant="h5" sx={{ fontWeight: '900', display: { xs: 'none', md: 'block' } }}>
+          <Typography variant="h5" sx={{ fontWeight: 900, display: { xs: 'none', md: 'block' } }}>
             {t('dashboard.title')}
           </Typography>
         </Box>
@@ -96,7 +96,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             variant="contained"
             onClick={onShare}
             startIcon={<ShareIcon />}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
           >
             {t('dashboard.shareProfile')}
           </Button>
@@ -177,7 +177,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               <Typography
                 variant={isXs ? 'h5' : 'h3'}
                 sx={{
-                  fontWeight: '900',
+                  fontWeight: 900,
                   mb: 0.25,
                   letterSpacing: -1,
                   overflow: 'hidden',
@@ -222,14 +222,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       >
                         <Typography
                           variant="h6"
-                          sx={{ fontWeight: '900', lineHeight: 1, color: 'text.primary' }}
+                          sx={{ fontWeight: 900, lineHeight: 1, color: 'text.primary' }}
                         >
                           {stat.val}
                         </Typography>
                         <Typography
                           variant="caption"
                           sx={{
-                            fontWeight: '900',
+                            fontWeight: 900,
                             textTransform: 'uppercase',
                             opacity: 0.5,
                             fontSize: '0.6rem',

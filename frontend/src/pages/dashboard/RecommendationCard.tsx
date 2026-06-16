@@ -93,7 +93,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ rec }) => {
           <Typography
             variant="subtitle2"
             sx={{
-              fontWeight: 'bold',
+              fontWeight: 700,
               mb: 0.5,
               display: '-webkit-box',
               WebkitLineClamp: 1,
@@ -112,7 +112,7 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ rec }) => {
             label={reasonLabel}
             color={rec.reason === 'cf' ? 'primary' : 'default'}
             variant="outlined"
-            sx={{ fontWeight: 'bold', maxWidth: '100%' }}
+            sx={{ fontWeight: 700, maxWidth: '100%' }}
           />
         </CardContent>
       </Link>

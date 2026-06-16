@@ -111,7 +111,7 @@ export const GlobalSearch = ({ compact = false }: GlobalSearchProps) => {
                 }}
               />
               <Box>
-                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>
                   {option.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">

@@ -58,7 +58,9 @@ const AdminOverview = () => {
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
       notify({
-        message: `Error: ${error.response?.data?.error || 'Failed to send'}`,
+        message: t('admin.errorPrefix', {
+          message: error.response?.data?.error || t('admin.testEmailFailed'),
+        }),
         severity: 'error',
       });
     }
@@ -84,7 +86,7 @@ const AdminOverview = () => {
               <Typography variant="overline" sx={{ fontSize: '0.6rem' }}>
                 {t('admin.totalUsers')}
               </Typography>
-              <Typography variant={isMobile ? 'h5' : 'h4'} sx={{ fontWeight: 'bold' }}>
+              <Typography variant={isMobile ? 'h5' : 'h4'} sx={{ fontWeight: 700 }}>
                 {stats.total_users}
               </Typography>
             </CardContent>
@@ -98,7 +100,7 @@ const AdminOverview = () => {
               </Typography>
               <Typography
                 variant={isMobile ? 'h5' : 'h4'}
-                sx={{ fontWeight: 'bold', color: 'error.main' }}
+                sx={{ fontWeight: 700, color: 'error.main' }}
               >
                 {stats.open_tickets}
               </Typography>
@@ -115,7 +117,7 @@ const AdminOverview = () => {
                 spacing={2}
               >
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                     {t('admin.config')}: SMTP
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
@@ -139,8 +141,8 @@ const AdminOverview = () => {
         </Grid>
       </Grid>
 
-      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-        Environment Info (.env)
+      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+        {t('admin.envInfo')}
       </Typography>
       <GlassPaper intensity="subtle" sx={{ p: 3 }}>
         <Stack spacing={2.5}>
@@ -148,9 +150,9 @@ const AdminOverview = () => {
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}
+              sx={{ fontWeight: 700, textTransform: 'uppercase' }}
             >
-              API Status
+              {t('admin.apiStatus')}
             </Typography>
             <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
               DEBUG={String(stats.server_info.debug)}
@@ -160,9 +162,9 @@ const AdminOverview = () => {
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}
+              sx={{ fontWeight: 700, textTransform: 'uppercase' }}
             >
-              Frontend URL
+              {t('admin.frontendUrl')}
             </Typography>
             <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
               {stats.server_info.frontend_url}
@@ -172,9 +174,9 @@ const AdminOverview = () => {
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}
+              sx={{ fontWeight: 700, textTransform: 'uppercase' }}
             >
-              Allowed Hosts
+              {t('admin.allowedHosts')}
             </Typography>
             <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
               {stats.server_info.allowed_hosts.join(', ')}
@@ -184,8 +186,7 @@ const AdminOverview = () => {
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
             <InfoIcon fontSize="small" color="primary" />
             <Typography variant="caption" color="text.secondary">
-              These values are read from your server environment or .env file. To change them, you
-              must update the file and restart the backend container.
+              {t('admin.envHint')}
             </Typography>
           </Box>
         </Stack>

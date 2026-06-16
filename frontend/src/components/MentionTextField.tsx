@@ -194,7 +194,7 @@ const MentionTextField: React.FC<MentionTextFieldProps> = ({
                 </ListItemAvatar>
                 <ListItemText
                   primary={user.username}
-                  primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }}
+                  primaryTypographyProps={{ variant: 'body2', fontWeight: 700 }}
                 />
               </MenuItem>
             ))}

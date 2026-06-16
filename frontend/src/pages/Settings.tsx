@@ -202,7 +202,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
         variant="outlined"
         onClick={handleGoBack}
         startIcon={<ArrowBackIcon />}
-        sx={{ alignSelf: 'flex-start', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+        sx={{ alignSelf: 'flex-start', borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
       >
         {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
       </Button>
@@ -215,7 +215,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
           {!avatar && username.charAt(0).toUpperCase()}
         </Avatar>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
             {username}
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -235,7 +235,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
         <Grid size={{ xs: 12, lg: 5 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <GlassCard sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
                 {t('settings.appearanceTitle')}
               </Typography>
               <FormControl fullWidth margin="normal">
@@ -245,11 +245,11 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
                   label={t('settings.themeLabel')}
                   onChange={(e) => onThemeChange(e.target.value as CatppuccinTheme)}
                 >
-                  <ListSubheader>Holy Archive</ListSubheader>
+                  <ListSubheader>{t('settings.themeGroupHoly')}</ListSubheader>
                   <MenuItem value="holy_light">Holy Light</MenuItem>
                   <MenuItem value="holy_dark">Holy Dark</MenuItem>
 
-                  <ListSubheader>Light Themes</ListSubheader>
+                  <ListSubheader>{t('settings.themeGroupLight')}</ListSubheader>
                   <MenuItem value="latte">Catppuccin Latte</MenuItem>
                   <MenuItem value="pink_pastel">Pink Pastel</MenuItem>
                   <MenuItem value="mint_pastel">Mint Pastel</MenuItem>
@@ -258,7 +258,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
 
                   <Divider />
 
-                  <ListSubheader>Dark Themes</ListSubheader>
+                  <ListSubheader>{t('settings.themeGroupDark')}</ListSubheader>
                   <MenuItem value="mocha">Catppuccin Mocha</MenuItem>
                   <MenuItem value="frappe">Catppuccin Frappé</MenuItem>
                   <MenuItem value="macchiato">Catppuccin Macchiato</MenuItem>
@@ -336,7 +336,7 @@ const Settings: React.FC<SettingsProps> = ({ themeName, onThemeChange }) => {
 
             {/* Avatar: NOT a FormCard — file input lives outside any form */}
             <GlassCard sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
                 {t('settings.avatarTitle')}
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, my: 2 }}>

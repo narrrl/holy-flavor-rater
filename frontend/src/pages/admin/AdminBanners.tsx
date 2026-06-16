@@ -46,10 +46,10 @@ const AdminBanners = () => {
   const handleActivateBanner = async (id: number) => {
     try {
       await activateBannerMutation.mutateAsync(id);
-      notify({ message: 'Banner set as default', severity: 'success' });
+      notify({ message: t('admin.bannerSetDefault'), severity: 'success' });
     } catch (err) {
       console.error(err);
-      notify({ message: 'Failed to activate banner', severity: 'error' });
+      notify({ message: t('admin.bannerActivateFailed'), severity: 'error' });
     }
   };
 
@@ -59,7 +59,7 @@ const AdminBanners = () => {
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
       notify({
-        message: error.response?.data?.error || 'Failed to toggle visibility',
+        message: error.response?.data?.error || t('admin.bannerToggleFailed'),
         severity: 'error',
       });
     }
@@ -75,20 +75,20 @@ const AdminBanners = () => {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
         {t('admin.banners')} ({banners.length})
       </Typography>
 
       {banners.length === 0 ? (
         <EmptyState
-          title="No banner models found"
-          subtitle="No banners registered in the database."
+          title={t('admin.noBanners')}
+          subtitle={t('admin.noBannersSub')}
           action={
             <Button
               variant="outlined"
               onClick={() => qc.invalidateQueries({ queryKey: ['banners'] })}
             >
-              Retry Loading
+              {t('admin.retryLoading')}
             </Button>
           }
         />
@@ -108,20 +108,20 @@ const AdminBanners = () => {
                     mb: 2,
                   }}
                 >
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {banner.name} (Slug: {banner.slug})
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    {banner.name} ({t('admin.bannerSlug')}: {banner.slug})
                   </Typography>
                   <Stack direction="row" spacing={1}>
                     {!banner.is_enabled && (
                       <Chip
-                        label="Hidden from Users"
+                        label={t('admin.bannerHidden')}
                         color="warning"
                         size="small"
                         variant="outlined"
                       />
                     )}
                     {banner.is_active && (
-                      <Chip label="Global Default" color="success" size="small" />
+                      <Chip label={t('admin.bannerGlobalDefault')} color="success" size="small" />
                     )}
                   </Stack>
                 </Box>
@@ -145,7 +145,7 @@ const AdminBanners = () => {
                       setIsSettingsDialogOpen(true);
                     }}
                   >
-                    Edit Settings
+                    {t('admin.editSettings')}
                   </Button>
                   <Button
                     variant="outlined"
@@ -154,7 +154,7 @@ const AdminBanners = () => {
                     onClick={() => handleToggleEnabled(banner.id)}
                     disabled={banner.is_active}
                   >
-                    {banner.is_enabled ? 'Disable for Users' : 'Enable for Users'}
+                    {banner.is_enabled ? t('admin.disableForUsers') : t('admin.enableForUsers')}
                   </Button>
                   {!banner.is_active && (
                     <Button
@@ -162,7 +162,7 @@ const AdminBanners = () => {
                       size="small"
                       onClick={() => handleActivateBanner(banner.id)}
                     >
-                      Set as Default
+                      {t('admin.setAsDefault')}
                     </Button>
                   )}
                 </Stack>

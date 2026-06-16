@@ -88,7 +88,7 @@ export const NotificationMenu = ({
           borderColor: 'divider',
         }}
       >
-        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
           {t('community.notifications')}
         </Typography>
         {unreadCount > 0 && (

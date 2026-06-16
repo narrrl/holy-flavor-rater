@@ -59,13 +59,13 @@ const AdminConfig = () => {
       await api.patch('admin-custom/config/', draft);
       qc.invalidateQueries({ queryKey: ['adminConfig'] });
       notify({
-        message: t('admin.configSaved', { defaultValue: 'Configuration saved' }),
+        message: t('admin.configSaved'),
         severity: 'success',
       });
     } catch (err) {
       const error = err as { response?: { data?: { error?: string } } };
       notify({
-        message: error.response?.data?.error || 'Failed to save configuration',
+        message: error.response?.data?.error || t('admin.configSaveFailed'),
         severity: 'error',
       });
     } finally {
@@ -87,21 +87,21 @@ const AdminConfig = () => {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
-        {t('admin.sections.config', { defaultValue: 'System Configuration' })}
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+        {t('admin.config')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Live values applied without restart. Form posts the full config on save.
+        {t('admin.configLiveHint')}
       </Typography>
 
       <GlassPaper intensity="subtle" sx={{ p: 3, maxWidth: 720 }}>
         <Stack spacing={3} component="form" onSubmit={(e) => e.preventDefault()}>
           <TextField
-            label="Site Name"
+            label={t('admin.siteName')}
             value={draft.site_name}
             onChange={(e) => setDraft({ ...draft, site_name: e.target.value })}
             fullWidth
-            helperText="Displayed in the browser tab and various headers."
+            helperText={t('admin.siteNameHint')}
           />
 
           <FormGroup>
@@ -114,9 +114,9 @@ const AdminConfig = () => {
               }
               label={
                 <Box>
-                  <Typography variant="body1">Maintenance Mode</Typography>
+                  <Typography variant="body1">{t('admin.maintenanceMode')}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Block non-admin users from interacting with the site.
+                    {t('admin.maintenanceModeHint')}
                   </Typography>
                 </Box>
               }
@@ -130,9 +130,9 @@ const AdminConfig = () => {
               }
               label={
                 <Box>
-                  <Typography variant="body1">Allow New Signups</Typography>
+                  <Typography variant="body1">{t('admin.allowSignups')}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    When off, the registration endpoint rejects new accounts.
+                    {t('admin.allowSignupsHint')}
                   </Typography>
                 </Box>
               }
@@ -148,9 +148,9 @@ const AdminConfig = () => {
               }
               label={
                 <Box>
-                  <Typography variant="body1">Require Email Verification</Typography>
+                  <Typography variant="body1">{t('admin.requireVerification')}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    New accounts must confirm their email before logging in.
+                    {t('admin.requireVerificationHint')}
                   </Typography>
                 </Box>
               }
@@ -165,7 +165,7 @@ const AdminConfig = () => {
               disabled={!dirty || saving}
               onClick={handleSave}
             >
-              {saving ? 'Saving…' : 'Save changes'}
+              {saving ? t('admin.saving') : t('admin.saveChanges')}
             </Button>
             <Button
               variant="outlined"
@@ -173,7 +173,7 @@ const AdminConfig = () => {
               onClick={handleReset}
               disabled={!dirty || saving}
             >
-              Discard
+              {t('admin.discard')}
             </Button>
           </Stack>
         </Stack>

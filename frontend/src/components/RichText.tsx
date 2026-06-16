@@ -24,7 +24,7 @@ const RichText: React.FC<RichTextProps> = ({ text }) => {
               style={{
                 color: theme.palette.primary.main,
                 textDecoration: 'none',
-                fontWeight: 'bold',
+                fontWeight: 700,
                 backgroundColor: alpha(theme.palette.primary.main, 0.1),
                 padding: '0 4px',
                 borderRadius: '4px',

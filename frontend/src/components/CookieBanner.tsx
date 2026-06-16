@@ -56,7 +56,7 @@ const CookieBanner: React.FC<CookieBannerProps> = ({ onThemeChange, currentTheme
         },
       }}
     >
-      <DialogTitle sx={{ fontWeight: 'bold', fontSize: '1.5rem', pt: 3 }}>
+      <DialogTitle sx={{ fontWeight: 700, fontSize: '1.5rem', pt: 3 }}>
         {t('cookieBanner.title')} 🍪
       </DialogTitle>
       <DialogContent>
@@ -76,7 +76,7 @@ const CookieBanner: React.FC<CookieBannerProps> = ({ onThemeChange, currentTheme
           <Typography
             variant="caption"
             color="text.secondary"
-            sx={{ fontWeight: 'bold', display: 'block', mb: 1, textTransform: 'uppercase' }}
+            sx={{ fontWeight: 700, display: 'block', mb: 1, textTransform: 'uppercase' }}
           >
             Technical Details:
           </Typography>
@@ -94,7 +94,7 @@ const CookieBanner: React.FC<CookieBannerProps> = ({ onThemeChange, currentTheme
           variant="outlined"
           color="primary"
           onClick={handleToggleTheme}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold', m: '0 !important' }}
+          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, m: '0 !important' }}
         >
           {currentTheme === 'holy_light'
             ? t('cookieBanner.switchToDark')
@@ -108,7 +108,7 @@ const CookieBanner: React.FC<CookieBannerProps> = ({ onThemeChange, currentTheme
           sx={{
             borderRadius: 2,
             textTransform: 'none',
-            fontWeight: 'bold',
+            fontWeight: 700,
             px: 4,
             m: '0 !important',
           }}

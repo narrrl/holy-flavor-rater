@@ -32,6 +32,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 import { GlobalSearch } from '../../app/GlobalSearch';
 import { NotificationMenu } from './NotificationMenu';
+import { BrandMark } from './BrandMark';
 
 export const NAV_SIDEBAR_WIDTH = 280;
 
@@ -73,6 +74,16 @@ export const NavSidebar = ({
       }}
       role="presentation"
     >
+      <Box
+        sx={{
+          p: 2,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        <BrandMark onNavigate={close} />
+      </Box>
+
       {user ? (
         <Box
           component={Link}

@@ -50,7 +50,7 @@ export const ConfirmProvider = ({ children }: { children: ReactNode }) => {
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        {opts?.title && <DialogTitle sx={{ fontWeight: 'bold' }}>{opts.title}</DialogTitle>}
+        {opts?.title && <DialogTitle sx={{ fontWeight: 700 }}>{opts.title}</DialogTitle>}
         <DialogContent>
           <DialogContentText>{opts?.message}</DialogContentText>
         </DialogContent>

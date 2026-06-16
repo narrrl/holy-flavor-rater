@@ -91,7 +91,7 @@ const BannerSettingsDialog: React.FC<BannerSettingsDialogProps> = ({
     return (
       <Box key={schema.key} sx={{ mb: 3 }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
             {schema.label}
           </Typography>
           {schema.description && (
@@ -143,7 +143,7 @@ const BannerSettingsDialog: React.FC<BannerSettingsDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: 'bold' }}>Banner Settings: {banner?.name}</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 700 }}>Banner Settings: {banner?.name}</DialogTitle>
       <DialogContent dividers>
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>

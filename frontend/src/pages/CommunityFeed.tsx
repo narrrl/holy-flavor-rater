@@ -38,6 +38,7 @@ import {
   HeroBackdrop,
   SectionHeader,
   GlassCard,
+  FlavorThumb,
   EmptyState,
   BackButton,
 } from '../components/ui';
@@ -60,7 +61,7 @@ const SidebarCard: React.FC<{
       }}
     >
       {icon}
-      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
         {title}
       </Typography>
     </Box>
@@ -170,7 +171,7 @@ const CommunityFeed: React.FC = () => {
                           >
                             <Typography
                               variant="subtitle1"
-                              sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
+                              sx={{ fontWeight: 700, lineHeight: 1.2 }}
                             >
                               {rating.user}
                             </Typography>
@@ -193,7 +194,7 @@ const CommunityFeed: React.FC = () => {
                         variant="outlined"
                         color="secondary"
                         onClick={() => navigate(`/admin-panel/rating/${rating.id}`)}
-                        sx={{ mb: 2, borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                        sx={{ mb: 2, borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
                       >
                         {t('admin.manageRating')}
                       </Button>
@@ -208,7 +209,7 @@ const CommunityFeed: React.FC = () => {
                             to={`/flavor/${rating.flavor}`}
                             sx={{
                               color: 'primary.main',
-                              fontWeight: 'bold',
+                              fontWeight: 700,
                               textDecoration: 'none',
                             }}
                           >
@@ -233,24 +234,12 @@ const CommunityFeed: React.FC = () => {
                         )}
                       </Box>
                       <Link to={`/flavor/${rating.flavor}`} style={{ flexShrink: 0 }}>
-                        <Box
-                          sx={{
-                            width: 70,
-                            height: 70,
-                            borderRadius: 1,
-                            overflow: 'hidden',
-                            bgcolor: 'background.default',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                          }}
-                        >
-                          <Box
-                            component="img"
-                            src={rating.flavor_image || undefined}
-                            alt={rating.flavor_name}
-                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        </Box>
+                        <FlavorThumb
+                          src={rating.flavor_image}
+                          name={rating.flavor_name}
+                          size={70}
+                          radius={1}
+                        />
                       </Link>
                     </Box>
 
@@ -274,7 +263,7 @@ const CommunityFeed: React.FC = () => {
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                               <Typography
                                 variant="subtitle2"
-                                sx={{ fontWeight: 'bold', fontSize: '0.8rem' }}
+                                sx={{ fontWeight: 700, fontSize: '0.8rem' }}
                               >
                                 {reply.user}
                               </Typography>
@@ -355,34 +344,21 @@ const CommunityFeed: React.FC = () => {
               <List disablePadding>
                 {topFollowed.map((flavor, idx) => (
                   <ListItemButton key={flavor.id} component={Link} to={`/flavor/${flavor.id}`}>
-                    <Box sx={{ mr: 2, fontWeight: 'bold', color: 'text.secondary', width: 15 }}>
+                    <Box sx={{ mr: 2, fontWeight: 700, color: 'text.secondary', width: 15 }}>
                       {idx + 1}
                     </Box>
-                    <Box
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        mr: 2,
-                        bgcolor: 'background.default',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 0.5,
-                        overflow: 'hidden',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={flavor.image_url || undefined}
-                        alt={flavor.name}
-                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </Box>
+                    <FlavorThumb
+                      src={flavor.image_url}
+                      name={flavor.name}
+                      size={32}
+                      radius={0.5}
+                      sx={{ mr: 2 }}
+                    />
                     <ListItemText
                       primary={flavor.name}
                       primaryTypographyProps={{
                         variant: 'body2',
-                        fontWeight: 'bold',
+                        fontWeight: 700,
                         noWrap: true,
                       }}
                     />

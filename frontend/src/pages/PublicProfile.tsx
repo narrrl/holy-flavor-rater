@@ -230,7 +230,7 @@ const PublicProfile: React.FC = () => {
               borderColor: 'divider',
             }}
           >
-            {user.username.charAt(0)}
+            {user.username.charAt(0).toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography
@@ -238,7 +238,7 @@ const PublicProfile: React.FC = () => {
               to={`/profile/${user.username}`}
               variant="subtitle1"
               sx={{
-                fontWeight: '900',
+                fontWeight: 900,
                 color: 'text.primary',
                 textDecoration: 'none',
                 '&:hover': { color: 'primary.main' },
@@ -249,7 +249,7 @@ const PublicProfile: React.FC = () => {
             >
               {user.username}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>
               Community Member
             </Typography>
           </Box>
@@ -288,7 +288,7 @@ const PublicProfile: React.FC = () => {
           alignSelf: 'flex-start',
           borderRadius: 2,
           textTransform: 'none',
-          fontWeight: 'bold',
+          fontWeight: 700,
           color: 'text.secondary',
         }}
       >
@@ -367,7 +367,7 @@ const PublicProfile: React.FC = () => {
               <Typography
                 variant="h2"
                 sx={{
-                  fontWeight: '900',
+                  fontWeight: 900,
                   letterSpacing: -2,
                   fontSize: { xs: '2.8rem', sm: '4.2rem' },
                   lineHeight: 0.9,
@@ -391,13 +391,13 @@ const PublicProfile: React.FC = () => {
                   ].map((stat, i) => (
                     <React.Fragment key={stat.label}>
                       <Box sx={{ py: 1.2, width: { xs: 90, sm: 120 }, textAlign: 'center' }}>
-                        <Typography variant="h6" sx={{ fontWeight: '900', lineHeight: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, lineHeight: 1 }}>
                           {stat.val}
                         </Typography>
                         <Typography
                           variant="caption"
                           sx={{
-                            fontWeight: '900',
+                            fontWeight: 900,
                             textTransform: 'uppercase',
                             opacity: 0.5,
                             fontSize: '0.6rem',
@@ -433,7 +433,7 @@ const PublicProfile: React.FC = () => {
                   sx={{
                     borderRadius: 1,
                     px: 4,
-                    fontWeight: '900',
+                    fontWeight: 900,
                     py: 1.2,
                     textTransform: 'none',
                     fontSize: '1rem',
@@ -447,7 +447,7 @@ const PublicProfile: React.FC = () => {
                   variant="outlined"
                   color="secondary"
                   onClick={() => navigate(`/admin-panel/user/${data.id}`)}
-                  sx={{ borderRadius: 1, px: 2.5, fontWeight: 'bold', textTransform: 'none' }}
+                  sx={{ borderRadius: 1, px: 2.5, fontWeight: 700, textTransform: 'none' }}
                 >
                   {t('admin.manageUser')}
                 </Button>
@@ -474,7 +474,7 @@ const PublicProfile: React.FC = () => {
           variant="fullWidth"
           sx={{
             '& .MuiTab-root': {
-              fontWeight: '900',
+              fontWeight: 900,
               textTransform: 'none',
               fontSize: '1rem',
               borderRadius: 1,
@@ -509,7 +509,7 @@ const PublicProfile: React.FC = () => {
                   onClick={() => setCategoryTab(idx)}
                   color={categoryTab === idx ? 'primary' : 'default'}
                   variant={categoryTab === idx ? 'filled' : 'outlined'}
-                  sx={{ fontWeight: '900', px: 1.5, borderRadius: 1 }}
+                  sx={{ fontWeight: 900, px: 1.5, borderRadius: 1 }}
                 />
               ))}
             </Box>
@@ -542,7 +542,7 @@ const PublicProfile: React.FC = () => {
                             justifyContent: 'center',
                             bgcolor: tier.color,
                             color: 'black',
-                            fontWeight: '900',
+                            fontWeight: 900,
                             fontSize: '2rem',
                             borderRadius: 0.5,
                             boxShadow: `0 0 20px ${alpha(tier.color, 0.6)}`,
@@ -553,14 +553,14 @@ const PublicProfile: React.FC = () => {
                         <Box>
                           <Typography
                             variant="h4"
-                            sx={{ fontWeight: '900', lineHeight: 1.1, letterSpacing: -0.5 }}
+                            sx={{ fontWeight: 900, lineHeight: 1.1, letterSpacing: -0.5 }}
                           >
                             {tier.title}
                           </Typography>
                           <Typography
                             variant="subtitle2"
                             color="text.secondary"
-                            sx={{ fontWeight: 'bold', opacity: 0.7 }}
+                            sx={{ fontWeight: 700, opacity: 0.7 }}
                           >
                             {items.length} items
                           </Typography>
@@ -622,7 +622,7 @@ const PublicProfile: React.FC = () => {
                                   <Typography
                                     variant="subtitle2"
                                     sx={{
-                                      fontWeight: '900',
+                                      fontWeight: 900,
                                       fontSize: '0.85rem',
                                       lineHeight: 1.2,
                                       display: '-webkit-box',
@@ -652,7 +652,7 @@ const PublicProfile: React.FC = () => {
                                       textTransform: 'none',
                                       fontSize: '0.6rem',
                                       py: 0,
-                                      fontWeight: 'bold',
+                                      fontWeight: 700,
                                     }}
                                   >
                                     Manage
@@ -683,7 +683,7 @@ const PublicProfile: React.FC = () => {
                       variant="contained"
                       type="submit"
                       endIcon={<SendIcon />}
-                      sx={{ borderRadius: 2, px: 5, fontWeight: '900', textTransform: 'none' }}
+                      sx={{ borderRadius: 2, px: 5, fontWeight: 900, textTransform: 'none' }}
                     >
                       {t('support.reply')}
                     </Button>
@@ -742,7 +742,7 @@ const PublicProfile: React.FC = () => {
                             >
                               <Typography
                                 variant="subtitle1"
-                                sx={{ fontWeight: '900', lineHeight: 1.2 }}
+                                sx={{ fontWeight: 900, lineHeight: 1.2 }}
                               >
                                 {comment.author_username}
                               </Typography>
@@ -750,7 +750,7 @@ const PublicProfile: React.FC = () => {
                             <Typography
                               variant="caption"
                               color="text.secondary"
-                              sx={{ fontWeight: 'bold' }}
+                              sx={{ fontWeight: 700 }}
                             >
                               {formatDate(comment.created_at)}
                             </Typography>

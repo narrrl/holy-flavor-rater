@@ -88,7 +88,7 @@ const MyReviewsTab: React.FC<MyReviewsTabProps> = ({ ratings, currentUsername, o
                   <SortIcon fontSize="small" />
                 </InputAdornment>
               }
-              sx={{ minWidth: { lg: 140 }, fontWeight: 'bold' }}
+              sx={{ minWidth: { lg: 140 }, fontWeight: 700 }}
             >
               <MenuItem value="date">{t('dashboard.date')}</MenuItem>
               <MenuItem value="rating">{t('dashboard.rating')}</MenuItem>
@@ -125,7 +125,7 @@ const MyReviewsTab: React.FC<MyReviewsTabProps> = ({ ratings, currentUsername, o
                   onClick={() => setCategory(cat)}
                   color={category === cat ? 'primary' : 'default'}
                   variant={category === cat ? 'filled' : 'outlined'}
-                  sx={{ fontWeight: 'bold', flexShrink: 0 }}
+                  sx={{ fontWeight: 700, flexShrink: 0 }}
                 />
               ))}
             </Box>

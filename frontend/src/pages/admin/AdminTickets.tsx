@@ -111,26 +111,29 @@ const AdminTickets: React.FC = () => {
       await addMessage.mutateAsync({ ticketId, text });
       setReplyText({ ...replyText, [ticketId]: '' });
     } catch {
-      notify({ message: 'Failed to send message', severity: 'error' });
+      notify({ message: t('admin.ticketMessageFailed'), severity: 'error' });
     }
   };
 
   const handleUpdateStatus = async (ticketId: number, status: string) => {
     try {
       await updateStatusMutation.mutateAsync({ ticketId, status });
-      notify({ message: `Status set to ${t(`support.${status}`)}`, severity: 'success' });
+      notify({
+        message: t('admin.ticketStatusSet', { status: t(`support.${status}`) }),
+        severity: 'success',
+      });
     } catch {
-      notify({ message: 'Failed to update status', severity: 'error' });
+      notify({ message: t('admin.ticketStatusFailed'), severity: 'error' });
     }
   };
 
   const handleDeleteTicket = async (ticketId: number) => {
-    if (!(await confirm({ message: 'Delete this ticket?', danger: true }))) return;
+    if (!(await confirm({ message: t('admin.ticketDeleteConfirm'), danger: true }))) return;
     try {
       await deleteTicketMutation.mutateAsync(ticketId);
-      notify({ message: 'Ticket deleted', severity: 'success' });
+      notify({ message: t('admin.ticketDeleted'), severity: 'success' });
     } catch {
-      notify({ message: 'Failed to delete ticket', severity: 'error' });
+      notify({ message: t('admin.ticketDeleteFailed'), severity: 'error' });
     }
   };
 
@@ -151,7 +154,7 @@ const AdminTickets: React.FC = () => {
         spacing={2}
         sx={{ mb: 3 }}
       >
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
           {t('support.title')} ({filtered.length})
         </Typography>
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -204,7 +207,7 @@ const AdminTickets: React.FC = () => {
                         />
                       )}
                       <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                           {ticket.subject}
                           <Typography
                             component="span"
@@ -225,14 +228,14 @@ const AdminTickets: React.FC = () => {
                           label={t('support.unread')}
                           color="primary"
                           size="small"
-                          sx={{ fontWeight: 'bold', height: 20, fontSize: '0.6rem' }}
+                          sx={{ fontWeight: 700, height: 20, fontSize: '0.6rem' }}
                         />
                       )}
                       <Chip
                         label={t(`support.${ticket.status}`)}
                         color={getChipColor(ticket.status)}
                         size="small"
-                        sx={{ fontWeight: 'bold' }}
+                        sx={{ fontWeight: 700 }}
                       />
                       <IconButton
                         size="small"
@@ -268,7 +271,7 @@ const AdminTickets: React.FC = () => {
                       <Typography
                         variant="caption"
                         sx={{
-                          fontWeight: 'bold',
+                          fontWeight: 700,
                           display: 'block',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -286,7 +289,7 @@ const AdminTickets: React.FC = () => {
                       }}
                       sx={{ minWidth: 0, py: 0, textTransform: 'none', fontSize: '0.7rem' }}
                     >
-                      View Profile
+                      {t('admin.viewProfile')}
                     </Button>
                     <Button
                       size="small"
@@ -354,11 +357,8 @@ const AdminTickets: React.FC = () => {
                             boxShadow: msg.is_admin ? 2 : 0,
                           }}
                         >
-                          <Typography
-                            variant="caption"
-                            sx={{ fontWeight: 'bold', display: 'block' }}
-                          >
-                            {msg.username} {msg.is_admin && '(Support)'}
+                          <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>
+                            {msg.username} {msg.is_admin && `(${t('admin.supportTag')})`}
                           </Typography>
                           <Typography variant="body2" sx={{ my: 0.5 }}>
                             {msg.text}

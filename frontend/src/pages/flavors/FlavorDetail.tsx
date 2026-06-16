@@ -202,18 +202,18 @@ const FlavorDetail: React.FC = () => {
                   size="small"
                   sx={{
                     mb: 2,
-                    fontWeight: 'bold',
+                    fontWeight: 700,
                     bgcolor: alpha(theme.palette.primary.main, 0.1),
                     color: 'primary.main',
                   }}
                 />
-                <Typography variant="h4" sx={{ fontWeight: '800', mb: 2, lineHeight: 1.2 }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, mb: 2, lineHeight: 1.2 }}>
                   {flavor.name}
                 </Typography>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                   <RatingBadge score={flavor.average_rating || 0} size="large" />
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
                     {flavor.ratings.length} {t('common.reviews')}
                   </Typography>
                 </Box>
@@ -248,7 +248,7 @@ const FlavorDetail: React.FC = () => {
                       borderRadius: 3,
                       py: 1.5,
                       fontSize: '1rem',
-                      fontWeight: '900',
+                      fontWeight: 900,
                       boxShadow: (theme) => `0 8px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
                     }}
                   >
@@ -340,7 +340,7 @@ const FlavorDetail: React.FC = () => {
                               >
                                 <Typography
                                   variant="subtitle2"
-                                  sx={{ fontWeight: 'bold', fontSize: '1rem' }}
+                                  sx={{ fontWeight: 700, fontSize: '1rem' }}
                                 >
                                   {rating.user}
                                 </Typography>
@@ -358,7 +358,7 @@ const FlavorDetail: React.FC = () => {
                                 variant="outlined"
                                 color="secondary"
                                 onClick={() => navigate(`/admin-panel/rating/${rating.id}`)}
-                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
                               >
                                 {t('admin.manageRating')}
                               </Button>
@@ -402,7 +402,7 @@ const FlavorDetail: React.FC = () => {
                             sx={{
                               textTransform: 'none',
                               color: 'text.secondary',
-                              fontWeight: 'bold',
+                              fontWeight: 700,
                             }}
                           >
                             {rating.replies.length > 0
@@ -415,7 +415,7 @@ const FlavorDetail: React.FC = () => {
                               <Button
                                 size="small"
                                 onClick={() => startEdit(rating)}
-                                sx={{ minWidth: 0, mr: 1, fontWeight: 'bold' }}
+                                sx={{ minWidth: 0, mr: 1, fontWeight: 700 }}
                               >
                                 {t('common.edit')}
                               </Button>
@@ -423,7 +423,7 @@ const FlavorDetail: React.FC = () => {
                                 size="small"
                                 color="error"
                                 onClick={() => handleDeleteRating(rating.id)}
-                                sx={{ minWidth: 0, fontWeight: 'bold' }}
+                                sx={{ minWidth: 0, fontWeight: 700 }}
                               >
                                 {t('common.delete')}
                               </Button>
@@ -461,7 +461,7 @@ const FlavorDetail: React.FC = () => {
                                 >
                                   <Typography
                                     variant="subtitle2"
-                                    sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}
+                                    sx={{ fontWeight: 700, fontSize: '0.85rem' }}
                                   >
                                     {reply.user}
                                     {reply.user === rating.user && (
@@ -492,7 +492,7 @@ const FlavorDetail: React.FC = () => {
                                       minWidth: 0,
                                       py: 0,
                                       fontSize: '0.7rem',
-                                      fontWeight: 'bold',
+                                      fontWeight: 700,
                                     }}
                                     onClick={() => {
                                       setEditingReplyId(reply.id);
@@ -508,7 +508,7 @@ const FlavorDetail: React.FC = () => {
                                       minWidth: 0,
                                       py: 0,
                                       fontSize: '0.7rem',
-                                      fontWeight: 'bold',
+                                      fontWeight: 700,
                                     }}
                                     onClick={() => handleDeleteReply(reply.id)}
                                   >
@@ -526,7 +526,7 @@ const FlavorDetail: React.FC = () => {
                                     minWidth: 0,
                                     py: 0,
                                     fontSize: '0.7rem',
-                                    fontWeight: 'bold',
+                                    fontWeight: 700,
                                   }}
                                 >
                                   {t('admin.manageReply')}
@@ -591,7 +591,7 @@ const FlavorDetail: React.FC = () => {
                               onClick={() => handleReplySubmit(rating.id)}
                               sx={{
                                 px: 2,
-                                fontWeight: 'bold',
+                                fontWeight: 700,
                                 height: 40,
                                 alignSelf: 'flex-start',
                               }}

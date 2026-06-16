@@ -81,7 +81,7 @@ const Privacy: React.FC = () => {
             ] as const
           ).map(([titleKey, descKey]) => (
             <Box key={titleKey} sx={{ mb: 2 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
                 {t(`privacy.${titleKey}`)}
               </Typography>
               <Typography variant="body2" sx={{ lineHeight: 1.7 }}>

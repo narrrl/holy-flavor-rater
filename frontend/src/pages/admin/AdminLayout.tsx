@@ -53,11 +53,11 @@ const AdminLayout = () => {
 
   const detailLabel = () => {
     if (!detailSegment) return null;
-    if (sectionSlug === 'users' && params.id) return `User #${params.id}`;
+    if (sectionSlug === 'users' && params.id) return t('admin.userNum', { n: params.id });
     if (sectionSlug === 'ratings' || segments[1] === 'rating')
-      return `Rating #${params.id ?? detailSegment}`;
+      return t('admin.ratingNum', { n: params.id ?? detailSegment });
     if (sectionSlug === 'replies' || segments[1] === 'reply')
-      return `Reply #${params.id ?? detailSegment}`;
+      return t('admin.replyNum', { n: params.id ?? detailSegment });
     return decodeURIComponent(detailSegment);
   };
 
@@ -67,7 +67,7 @@ const AdminLayout = () => {
         <MuiLink component={RouterLink} to="/" underline="hover" color="inherit">
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <HomeOutlinedIcon fontSize="small" />
-            {t('common.home', { defaultValue: 'Home' })}
+            {t('common.home')}
           </Box>
         </MuiLink>
         <MuiLink component={RouterLink} to="/admin-panel" underline="hover" color="inherit">
@@ -86,7 +86,7 @@ const AdminLayout = () => {
         {detailLabel() && <Typography color="text.primary">{detailLabel()}</Typography>}
       </Breadcrumbs>
 
-      <Typography variant={isMobile ? 'h4' : 'h3'} sx={{ fontWeight: 'bold', mb: 3 }}>
+      <Typography variant={isMobile ? 'h4' : 'h3'} sx={{ fontWeight: 700, mb: 3 }}>
         {t('admin.title')}
       </Typography>
 

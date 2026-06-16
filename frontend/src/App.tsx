@@ -23,6 +23,7 @@ import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { useDrawerAnchor } from './hooks/useDrawerAnchor';
 import { NavSidebar, NAV_SIDEBAR_WIDTH } from './components/layout/NavSidebar';
+import { BrandMark } from './components/layout/BrandMark';
 import { useCategories } from './api/queries/useCategories';
 import { NotificationMenu } from './components/layout/NotificationMenu';
 import { RequireSuperuser } from './components/auth/RequireSuperuser';
@@ -113,6 +114,10 @@ const App: React.FC = () => {
       {isMobile && (
         <GlassAppBar>
           {mobileAnchor === 'left' && hamburger}
+
+          <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+            <BrandMark compact />
+          </Box>
 
           <GlobalSearch />
 

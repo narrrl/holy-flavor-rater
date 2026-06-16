@@ -214,7 +214,7 @@ const Support: React.FC = () => {
                         />
                       )}
                       <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                           {ticket.subject}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -228,14 +228,14 @@ const Support: React.FC = () => {
                           label={t('support.unread')}
                           color="primary"
                           size="small"
-                          sx={{ fontWeight: 'bold', height: 20, fontSize: '0.6rem' }}
+                          sx={{ fontWeight: 700, height: 20, fontSize: '0.6rem' }}
                         />
                       )}
                       <Chip
                         label={t(`support.${ticket.status}`)}
                         color={getChipColor(ticket.status)}
                         size="small"
-                        sx={{ fontWeight: 'bold' }}
+                        sx={{ fontWeight: 700 }}
                       />
                     </Stack>
                   </Box>
@@ -276,10 +276,7 @@ const Support: React.FC = () => {
                             boxShadow: msg.is_admin ? 2 : 0,
                           }}
                         >
-                          <Typography
-                            variant="caption"
-                            sx={{ fontWeight: 'bold', display: 'block' }}
-                          >
+                          <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>
                             {msg.username} {msg.is_admin && '(Support)'}
                           </Typography>
                           <Typography variant="body2" sx={{ my: 0.5 }}>

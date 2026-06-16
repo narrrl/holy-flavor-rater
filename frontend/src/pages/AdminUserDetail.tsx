@@ -110,14 +110,14 @@ const AdminUserDetail: React.FC = () => {
     if (error) navigate('/admin-panel');
   }, [error, navigate]);
 
-  useTitle(user ? `${t('admin.manageUser')}: ${user.username}` : 'User Management');
+  useTitle(user ? `${t('admin.manageUser')}: ${user.username}` : t('admin.userMgmtTitle'));
 
   const handleToggleActive = async () => {
     if (!user || !id) return;
     try {
       await toggleActive.mutateAsync({ id, isActive: user.is_active });
     } catch {
-      notify({ message: 'Action failed', severity: 'error' });
+      notify({ message: t('admin.actionFailed'), severity: 'error' });
     }
   };
 
@@ -130,16 +130,16 @@ const AdminUserDetail: React.FC = () => {
       });
       setEditingRatingId(null);
     } catch {
-      notify({ message: 'Update failed', severity: 'error' });
+      notify({ message: t('admin.updateFailed'), severity: 'error' });
     }
   };
 
   const handleDeleteRating = async (ratingId: number) => {
-    if (!(await confirm({ message: 'Delete this rating?', danger: true }))) return;
+    if (!(await confirm({ message: t('admin.deleteRatingConfirm'), danger: true }))) return;
     try {
       await deleteRatingMutation.mutateAsync(ratingId);
     } catch {
-      notify({ message: 'Delete failed', severity: 'error' });
+      notify({ message: t('admin.deleteFailed'), severity: 'error' });
     }
   };
 
@@ -148,25 +148,25 @@ const AdminUserDetail: React.FC = () => {
       await updateReplyMutation.mutateAsync({ replyId, text: editReplyText });
       setEditingReplyId(null);
     } catch {
-      notify({ message: 'Update failed', severity: 'error' });
+      notify({ message: t('admin.updateFailed'), severity: 'error' });
     }
   };
 
   const handleDeleteReply = async (replyId: number) => {
-    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
+    if (!(await confirm({ message: t('admin.deleteReplyConfirm'), danger: true }))) return;
     try {
       await deleteReplyMutation.mutateAsync(replyId);
     } catch {
-      notify({ message: 'Delete failed', severity: 'error' });
+      notify({ message: t('admin.deleteFailed'), severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
     if (!id) return;
     const ok = await confirm({
-      title: 'Delete user',
-      message: 'PERMANENTLY DELETE THIS USER AND ALL DATA? This cannot be undone.',
-      confirmLabel: 'Delete forever',
+      title: t('admin.deleteUserTitle'),
+      message: t('admin.deleteUserConfirm'),
+      confirmLabel: t('admin.deleteForever'),
       danger: true,
     });
     if (!ok) return;
@@ -174,7 +174,7 @@ const AdminUserDetail: React.FC = () => {
       await deleteUserMutation.mutateAsync(id);
       navigate('/admin-panel');
     } catch {
-      notify({ message: 'Delete failed', severity: 'error' });
+      notify({ message: t('admin.deleteFailed'), severity: 'error' });
     }
   };
 
@@ -184,7 +184,7 @@ const AdminUserDetail: React.FC = () => {
         <CircularProgress />
       </Box>
     );
-  if (!user) return <Typography>User not found</Typography>;
+  if (!user) return <Typography>{t('admin.userNotFound')}</Typography>;
 
   return (
     <PageShell>
@@ -215,7 +215,7 @@ const AdminUserDetail: React.FC = () => {
             </Grid>
             <Grid size={{ xs: 12, sm: 8, md: 9 }}>
               <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                <Typography variant="h4" sx={{ fontWeight: 700 }}>
                   {user.username}
                 </Typography>
                 <Typography variant="body1" color="text.secondary">
@@ -227,7 +227,8 @@ const AdminUserDetail: React.FC = () => {
                   display="block"
                   sx={{ mt: 0.5 }}
                 >
-                  Joined: {formatDate(user.date_joined)} • Last Login: {formatDate(user.last_login)}
+                  {t('admin.joinedLabel')}: {formatDate(user.date_joined)} •{' '}
+                  {t('admin.lastLoginLabel')}: {formatDate(user.last_login)}
                 </Typography>
                 <Stack
                   direction="row"
@@ -235,11 +236,13 @@ const AdminUserDetail: React.FC = () => {
                   sx={{ mt: 1.5, justifyContent: { xs: 'center', sm: 'flex-start' } }}
                 >
                   <Chip
-                    label={user.is_active ? 'Active' : 'Inactive'}
+                    label={user.is_active ? t('common.active') : t('common.inactive')}
                     color={user.is_active ? 'success' : 'default'}
                     size="small"
                   />
-                  {user.is_superuser && <Chip label="Superuser" color="secondary" size="small" />}
+                  {user.is_superuser && (
+                    <Chip label={t('admin.roleSuperuser')} color="secondary" size="small" />
+                  )}
                 </Stack>
               </Box>
             </Grid>
@@ -249,7 +252,7 @@ const AdminUserDetail: React.FC = () => {
                 variant="contained"
                 color={user.is_active ? 'warning' : 'success'}
                 onClick={handleToggleActive}
-                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
+                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
               >
                 {user.is_active ? t('admin.deactivate') : t('admin.activate')}
               </Button>
@@ -262,14 +265,14 @@ const AdminUserDetail: React.FC = () => {
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant="fullWidth">
           <Tab
             icon={<RateReviewIcon />}
-            label={`Content (${user.ratings.length})`}
-            sx={{ fontWeight: 'bold' }}
+            label={`${t('admin.tabContent')} (${user.ratings.length})`}
+            sx={{ fontWeight: 700 }}
           />
-          <Tab icon={<HistoryIcon />} label="Security & IP" sx={{ fontWeight: 'bold' }} />
+          <Tab icon={<HistoryIcon />} label={t('admin.tabSecurity')} sx={{ fontWeight: 700 }} />
           <Tab
             icon={<SecurityIcon />}
-            label="Danger Zone"
-            sx={{ fontWeight: 'bold', color: 'error.main' }}
+            label={t('admin.tabDanger')}
+            sx={{ fontWeight: 700, color: 'error.main' }}
           />
         </Tabs>
         <Divider />
@@ -277,7 +280,7 @@ const AdminUserDetail: React.FC = () => {
 
       {activeTab === 0 && (
         <Box>
-          <SectionHeader title="User Ratings & Discussion" compact />
+          <SectionHeader title={t('admin.ratingsDiscussion')} compact />
           <Stack spacing={2}>
             {user.ratings.map((rating) => (
               <GlassCard key={rating.id} intensity="subtle">
@@ -285,7 +288,7 @@ const AdminUserDetail: React.FC = () => {
                   {editingRatingId === rating.id ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <Stack direction="row" spacing={2} alignItems="center">
-                        <Typography variant="body2">Score:</Typography>
+                        <Typography variant="body2">{t('admin.scoreLabel')}:</Typography>
                         <TextField
                           type="number"
                           size="small"
@@ -326,7 +329,7 @@ const AdminUserDetail: React.FC = () => {
                         alignItems="flex-start"
                         sx={{ mb: 1 }}
                       >
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                           {rating.flavor_name}
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -334,7 +337,7 @@ const AdminUserDetail: React.FC = () => {
                             label={`${rating.score}/10`}
                             size="small"
                             color="primary"
-                            sx={{ fontWeight: '900' }}
+                            sx={{ fontWeight: 900 }}
                           />
                           <Button
                             size="small"
@@ -344,14 +347,14 @@ const AdminUserDetail: React.FC = () => {
                               setEditComment(rating.comment || '');
                             }}
                           >
-                            Edit
+                            {t('common.edit')}
                           </Button>
                           <Button
                             size="small"
                             color="error"
                             onClick={() => handleDeleteRating(rating.id)}
                           >
-                            Delete
+                            {t('common.delete')}
                           </Button>
                         </Box>
                       </Stack>
@@ -366,7 +369,7 @@ const AdminUserDetail: React.FC = () => {
                             color="text.secondary"
                             sx={{ fontStyle: 'italic' }}
                           >
-                            No comment
+                            {t('admin.noCommentShort')}
                           </Typography>
                         )}
                       </Box>
@@ -408,7 +411,7 @@ const AdminUserDetail: React.FC = () => {
                                     <Typography
                                       variant="caption"
                                       sx={{
-                                        fontWeight: 'bold',
+                                        fontWeight: 700,
                                         color:
                                           reply.user === user.username
                                             ? 'primary.main'
@@ -426,7 +429,7 @@ const AdminUserDetail: React.FC = () => {
                                           setEditReplyText(reply.text);
                                         }}
                                       >
-                                        Edit
+                                        {t('common.edit')}
                                       </Button>
                                       <Button
                                         size="small"
@@ -434,7 +437,7 @@ const AdminUserDetail: React.FC = () => {
                                         sx={{ minWidth: 0, p: 0, fontSize: '0.7rem' }}
                                         onClick={() => handleDeleteReply(reply.id)}
                                       >
-                                        Delete
+                                        {t('common.delete')}
                                       </Button>
                                     </Box>
                                   </Stack>
@@ -452,7 +455,7 @@ const AdminUserDetail: React.FC = () => {
                 </CardContent>
               </GlassCard>
             ))}
-            {user.ratings.length === 0 && <EmptyState title="No ratings yet." />}
+            {user.ratings.length === 0 && <EmptyState title={t('admin.noRatingsYet')} />}
           </Stack>
         </Box>
       )}
@@ -462,7 +465,7 @@ const AdminUserDetail: React.FC = () => {
           <Typography
             variant="h6"
             gutterBottom
-            sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}
+            sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}
           >
             <SecurityIcon /> {t('admin.ipHistory')}
           </Typography>
@@ -471,12 +474,12 @@ const AdminUserDetail: React.FC = () => {
               <ListItem key={idx} divider={idx < user.ips.length - 1}>
                 <ListItemText
                   primary={ip}
-                  primaryTypographyProps={{ sx: { fontWeight: 'bold', fontFamily: 'monospace' } }}
+                  primaryTypographyProps={{ sx: { fontWeight: 700, fontFamily: 'monospace' } }}
                 />
               </ListItem>
             ))}
             {user.ips.length === 0 && (
-              <Typography variant="caption">No IP history available.</Typography>
+              <Typography variant="caption">{t('admin.noIpHistory')}</Typography>
             )}
           </List>
         </GlassPaper>
@@ -485,7 +488,7 @@ const AdminUserDetail: React.FC = () => {
       {activeTab === 2 && (
         <FormCard
           title={t('admin.dangerZone')}
-          subtitle="Deleting this user will permanently remove their profile, all their ratings, replies, and IP history. This action is irreversible."
+          subtitle={t('admin.deleteUserWarning')}
           danger
           asForm={false}
           actions={
@@ -495,14 +498,14 @@ const AdminUserDetail: React.FC = () => {
               size="large"
               startIcon={<DeleteIcon />}
               onClick={handleDelete}
-              sx={{ borderRadius: 2, fontWeight: 'bold', px: 4 }}
+              sx={{ borderRadius: 2, fontWeight: 700, px: 4 }}
             >
               {t('admin.deleteUser')}
             </Button>
           }
         >
           <Typography variant="body2" color="text.secondary">
-            Proceed only if the user has been reviewed for policy violations or requested deletion.
+            {t('admin.deleteUserNote')}
           </Typography>
         </FormCard>
       )}

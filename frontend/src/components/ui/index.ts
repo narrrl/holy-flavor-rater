@@ -5,6 +5,8 @@ export { SectionHeader, type SectionHeaderProps } from './SectionHeader';
 export { HeroBackdrop, type HeroBackdropProps } from './HeroBackdrop';
 export { ReviewRow, type ReviewRowProps, type ReviewRowData } from './ReviewRow';
 export { FlavorCard, type FlavorCardProps, type FlavorCardData } from './FlavorCard';
+export { FlavorThumb, type FlavorThumbProps } from './FlavorThumb';
+export { FlavorGrid, type FlavorGridProps } from './FlavorGrid';
 export { FormCard, type FormCardProps } from './FormCard';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { BackButton, type BackButtonProps } from './BackButton';

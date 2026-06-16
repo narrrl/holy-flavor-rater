@@ -57,7 +57,7 @@ const AdminFlavors: React.FC = () => {
       setConfirmOpen(false);
     } catch (err: any) {
       const errorMsg = err.response?.data?.error || err.message;
-      notify({ message: `Error: ${errorMsg}`, severity: 'error' });
+      notify({ message: t('admin.errorPrefix', { message: errorMsg }), severity: 'error' });
     } finally {
       setIsMerging(false);
     }
@@ -67,7 +67,7 @@ const AdminFlavors: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+      <Typography variant="h5" sx={{ mb: 3, fontWeight: 700 }}>
         {t('admin.manageFlavors', { defaultValue: 'Manage Flavors' })}
       </Typography>
 

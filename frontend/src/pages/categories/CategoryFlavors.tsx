@@ -9,6 +9,7 @@ import {
   HeroBackdrop,
   SectionHeader,
   FlavorCard,
+  FlavorGrid,
   EmptyState,
   BackButton,
 } from '../../components/ui';
@@ -39,17 +40,7 @@ const CategoryFlavors: React.FC = () => {
       {flavors.length === 0 ? (
         <EmptyState title={t('home.noCategoryFlavors')} subtitle={t('home.noCategoryFlavorsSub')} />
       ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(auto-fill, minmax(260px, 1fr))',
-              lg: 'repeat(auto-fill, minmax(240px, 1fr))',
-            },
-            gap: 3,
-          }}
-        >
+        <FlavorGrid>
           {flavors.map((flavor) => (
             <FlavorCard
               key={flavor.id}
@@ -58,7 +49,7 @@ const CategoryFlavors: React.FC = () => {
               caption={`${flavor.ratings.length} ${t('common.reviews')}`}
             />
           ))}
-        </Box>
+        </FlavorGrid>
       )}
     </PageShell>
   );

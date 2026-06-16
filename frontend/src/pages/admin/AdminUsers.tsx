@@ -69,7 +69,7 @@ const AdminUsers = () => {
         sx={{ mb: 2 }}
         spacing={2}
       >
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
           {t('admin.users')} ({filtered.length})
         </Typography>
         <TextField
@@ -88,7 +88,7 @@ const AdminUsers = () => {
             <GlassCard key={user.id} intensity="subtle" sx={{ borderRadius: 3 }}>
               <CardContent sx={{ p: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                     {user.username}
                   </Typography>
                   <IconButton
@@ -103,14 +103,14 @@ const AdminUsers = () => {
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                   <Chip
-                    label={user.is_active ? 'Active' : 'Inactive'}
+                    label={user.is_active ? t('common.active') : t('common.inactive')}
                     color={user.is_active ? 'success' : 'default'}
                     size="small"
                     sx={{ height: 20, fontSize: '0.65rem' }}
                   />
                   {user.is_superuser && (
                     <Chip
-                      label="Admin"
+                      label={t('admin.roleAdmin')}
                       color="secondary"
                       size="small"
                       sx={{ height: 20, fontSize: '0.65rem' }}
@@ -126,14 +126,14 @@ const AdminUsers = () => {
           <Table>
             <TableHead sx={{ bgcolor: 'action.hover' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>ID</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>User</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Joined</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>IP History</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">
-                  Actions
+                <TableCell sx={{ fontWeight: 700 }}>{t('admin.colId')}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>{t('admin.colUser')}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>{t('admin.colEmail')}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>{t('admin.colStatus')}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>{t('admin.colJoined')}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>{t('admin.colIp')}</TableCell>
+                <TableCell sx={{ fontWeight: 700 }} align="right">
+                  {t('admin.colActions')}
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -142,12 +142,12 @@ const AdminUsers = () => {
                 <TableRow key={user.id} hover>
                   <TableCell>{user.id}</TableCell>
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
                       {user.username}
                     </Typography>
                     {user.is_superuser && (
                       <Chip
-                        label="Superuser"
+                        label={t('admin.roleSuperuser')}
                         size="small"
                         color="secondary"
                         sx={{ height: 16, fontSize: '0.6rem' }}
@@ -157,7 +157,7 @@ const AdminUsers = () => {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Chip
-                      label={user.is_active ? 'Active' : 'Inactive'}
+                      label={user.is_active ? t('common.active') : t('common.inactive')}
                       color={user.is_active ? 'success' : 'default'}
                       size="small"
                     />

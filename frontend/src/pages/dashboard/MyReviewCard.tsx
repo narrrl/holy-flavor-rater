@@ -27,7 +27,7 @@ import StatusBadge from '../../components/StatusBadge';
 import MentionTextField from '../../components/MentionTextField';
 import RichText from '../../components/RichText';
 import { formatDate } from '../../utils/date';
-import { GlassCard } from '../../components/ui';
+import { GlassCard, FlavorThumb } from '../../components/ui';
 import { useToast } from '../../hooks/useToast';
 import { useConfirm } from '../../hooks/useConfirm';
 
@@ -111,7 +111,7 @@ const MyReviewCard: React.FC<MyReviewCardProps> = ({ rating, currentUsername }) 
       <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
         {isEditing ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               {t('dashboard.editingReview', { flavor: rating.flavor_name })}
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center">
@@ -141,29 +141,15 @@ const MyReviewCard: React.FC<MyReviewCardProps> = ({ rating, currentUsername }) 
               }}
             >
               <Box sx={{ display: 'flex', gap: 2, minWidth: 0, flex: 1 }}>
-                <Box
-                  sx={{
-                    width: { xs: 56, sm: 64 },
-                    height: { xs: 56, sm: 64 },
-                    bgcolor: 'background.default',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1.5,
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={rating.flavor_image || undefined}
-                    alt={rating.flavor_name}
-                    sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                </Box>
+                <FlavorThumb
+                  src={rating.flavor_image}
+                  name={rating.flavor_name}
+                  size={{ xs: 56, sm: 64 }}
+                />
                 <Box sx={{ minWidth: 0, flex: 1 }}>
                   <Typography
                     variant={isXs ? 'subtitle1' : 'h6'}
-                    sx={{ fontWeight: 'bold', lineHeight: 1.2, wordBreak: 'break-word' }}
+                    sx={{ fontWeight: 700, lineHeight: 1.2, wordBreak: 'break-word' }}
                   >
                     <Link
                       to={`/flavor/${rating.flavor}`}
@@ -223,15 +209,15 @@ const MyReviewCard: React.FC<MyReviewCardProps> = ({ rating, currentUsername }) 
                 size="small"
                 startIcon={<CommentIcon fontSize="small" />}
                 onClick={() => setExpanded((v) => !v)}
-                sx={{ textTransform: 'none', fontWeight: 'bold', color: 'text.secondary' }}
+                sx={{ textTransform: 'none', fontWeight: 700, color: 'text.secondary' }}
               >
                 {rating.replies.length} {t('common.replies')}
               </Button>
               <Box sx={{ flexGrow: 1 }} />
-              <Button size="small" sx={{ fontWeight: 'bold' }} onClick={startEdit}>
+              <Button size="small" sx={{ fontWeight: 700 }} onClick={startEdit}>
                 {t('common.edit')}
               </Button>
-              <Button size="small" color="error" sx={{ fontWeight: 'bold' }} onClick={handleDelete}>
+              <Button size="small" color="error" sx={{ fontWeight: 700 }} onClick={handleDelete}>
                 {t('common.delete')}
               </Button>
             </Stack>
@@ -251,10 +237,7 @@ const MyReviewCard: React.FC<MyReviewCardProps> = ({ rating, currentUsername }) 
                         mb: 0.5,
                       }}
                     >
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}
-                      >
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.85rem' }}>
                         {reply.user}
                         {reply.user === currentUsername && (
                           <VerifiedIcon

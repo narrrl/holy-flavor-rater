@@ -44,7 +44,7 @@ const RatingForm: React.FC<RatingFormProps> = ({ flavorId }) => {
   return (
     <GlassCard intensity="default">
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
           {t('flavorDetail.rateThisFlavor')}
         </Typography>
         <form onSubmit={handleSubmit}>
@@ -67,7 +67,7 @@ const RatingForm: React.FC<RatingFormProps> = ({ flavorId }) => {
             variant="contained"
             type="submit"
             disabled={!score || createRating.isPending}
-            sx={{ mt: 2, borderRadius: 2, fontWeight: 'bold' }}
+            sx={{ mt: 2, borderRadius: 2, fontWeight: 700 }}
           >
             {t('flavorDetail.submitReview')}
           </Button>

@@ -63,7 +63,7 @@ const Dashboard: React.FC = () => {
       <RecommendationsSection enabled={!!data} />
 
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: '900', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
           {t('dashboard.myReviews')}
         </Typography>
         <MyReviewsTab

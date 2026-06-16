@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CardContent, Chip, Grid, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
+import { Box, CardContent, Chip, Skeleton, Stack, Tooltip, Typography } from '@mui/material';
 import RecommendIcon from '@mui/icons-material/Recommend';
 import GroupsIcon from '@mui/icons-material/Groups';
 import { Link } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { useSimilarFlavors } from '../../../api/queries/useSimilarFlavors';
 import type { SimilarFlavor } from '../../../api/types';
 import RatingBadge from '../../../components/RatingBadge';
 import StatusBadge from '../../../components/StatusBadge';
-import { GlassCard } from '../../../components/ui';
+import { GlassCard, FlavorGrid } from '../../../components/ui';
 
 export interface SimilarFlavorsSectionProps {
   flavorId: number | undefined;
@@ -68,7 +68,7 @@ const SimilarCard: React.FC<{ item: SimilarFlavor }> = ({ item }) => {
           <Typography
             variant="subtitle2"
             sx={{
-              fontWeight: 'bold',
+              fontWeight: 700,
               mb: 0.5,
               display: '-webkit-box',
               WebkitLineClamp: 1,
@@ -88,7 +88,7 @@ const SimilarCard: React.FC<{ item: SimilarFlavor }> = ({ item }) => {
               label={t('flavorDetail.similarCoRaters', { count: item.co_raters })}
               color="primary"
               variant="outlined"
-              sx={{ fontWeight: 'bold', maxWidth: '100%' }}
+              sx={{ fontWeight: 700, maxWidth: '100%' }}
             />
           </Tooltip>
         </CardContent>
@@ -110,13 +110,11 @@ const SimilarFlavorsSection: React.FC<SimilarFlavorsSectionProps> = ({ flavorId 
     return (
       <Box sx={{ mt: 4 }}>
         <Skeleton variant="text" width={280} height={36} sx={{ mb: 2 }} />
-        <Grid container spacing={2}>
+        <FlavorGrid compact>
           {Array.from({ length: 4 }).map((_, i) => (
-            <Grid key={i} size={{ xs: 6, sm: 4, md: 3 }}>
-              <Skeleton variant="rounded" height={240} sx={{ borderRadius: 2 }} />
-            </Grid>
+            <Skeleton key={i} variant="rounded" height={240} sx={{ borderRadius: 2 }} />
           ))}
-        </Grid>
+        </FlavorGrid>
       </Box>
     );
   }
@@ -127,17 +125,15 @@ const SimilarFlavorsSection: React.FC<SimilarFlavorsSectionProps> = ({ flavorId 
     <Box sx={{ mt: 4 }}>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
         <RecommendIcon color="primary" />
-        <Typography variant="h6" sx={{ fontWeight: '900' }}>
+        <Typography variant="h6" sx={{ fontWeight: 900 }}>
           {t('flavorDetail.similarHeading')}
         </Typography>
       </Stack>
-      <Grid container spacing={2}>
+      <FlavorGrid compact>
         {data.map((item) => (
-          <Grid key={item.id} size={{ xs: 6, sm: 4, md: 3 }}>
-            <SimilarCard item={item} />
-          </Grid>
+          <SimilarCard key={item.id} item={item} />
         ))}
-      </Grid>
+      </FlavorGrid>
     </Box>
   );
 };

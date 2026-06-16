@@ -30,7 +30,7 @@ const Footer: React.FC = () => {
             mb: 2,
           }}
         >
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 700 }}>
             © {year} Holy Flavors Archive
           </Typography>
 

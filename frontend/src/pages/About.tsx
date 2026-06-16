@@ -68,7 +68,7 @@ const About: React.FC = () => {
         </Typography>
 
         <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
             {t('about.contact')}:
           </Typography>
           <Typography variant="body2">
@@ -85,7 +85,7 @@ const About: React.FC = () => {
         </Box>
 
         <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
             {t('about.responsible')}
           </Typography>
           <Typography variant="body2">

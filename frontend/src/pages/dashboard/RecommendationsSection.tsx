@@ -40,7 +40,7 @@ const RecommendationsSection: React.FC<RecommendationsSectionProps> = ({ enabled
     <Box>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
         <AutoAwesomeIcon color="primary" />
-        <Typography variant="h6" sx={{ fontWeight: '900' }}>
+        <Typography variant="h6" sx={{ fontWeight: 900 }}>
           {t('dashboard.recHeading')}
         </Typography>
       </Stack>

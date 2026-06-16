@@ -58,7 +58,7 @@ const VerifyEmail: React.FC = () => {
         {status === 'loading' && (
           <Box>
             <CircularProgress size={60} sx={{ mb: 4 }} />
-            <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
               Verifying your account...
             </Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
@@ -70,7 +70,7 @@ const VerifyEmail: React.FC = () => {
         {status === 'success' && (
           <Box>
             <CheckCircleOutlineIcon color="success" sx={{ fontSize: 80, mb: 2 }} />
-            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
               {t('auth.verifySuccess')}
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 4 }}>
@@ -91,7 +91,7 @@ const VerifyEmail: React.FC = () => {
         {status === 'error' && (
           <Box>
             <ErrorOutlineIcon color="error" sx={{ fontSize: 80, mb: 2 }} />
-            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 2 }}>
+            <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>
               Verification Failed
             </Typography>
             <Alert severity="error" sx={{ mb: 4, textAlign: 'left' }}>

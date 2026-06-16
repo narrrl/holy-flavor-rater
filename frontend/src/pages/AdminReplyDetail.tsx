@@ -33,27 +33,27 @@ const AdminReplyDetail: React.FC = () => {
     if (error) navigate('/admin-panel');
   }, [error, navigate]);
 
-  useTitle(reply ? `${t('admin.manageReply')}` : 'Reply Management');
+  useTitle(reply ? `${t('admin.manageReply')}` : t('admin.replyMgmtTitle'));
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!id) return;
     try {
       await updateReply.mutateAsync({ replyId: Number(id), text });
-      notify({ message: 'Reply updated!', severity: 'success' });
+      notify({ message: t('admin.replyUpdated'), severity: 'success' });
     } catch {
-      notify({ message: 'Update failed', severity: 'error' });
+      notify({ message: t('admin.updateFailed'), severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
+    if (!(await confirm({ message: t('admin.deleteReplyConfirm'), danger: true }))) return;
     try {
       await deleteReply.mutateAsync(Number(id));
       navigate('/admin-panel');
     } catch {
-      notify({ message: 'Delete failed', severity: 'error' });
+      notify({ message: t('admin.deleteFailed'), severity: 'error' });
     }
   };
 
@@ -83,7 +83,7 @@ const AdminReplyDetail: React.FC = () => {
 
       <Box sx={{ maxWidth: 560, width: '100%' }}>
         <FormCard
-          title={`Reply by ${reply.user}`}
+          title={t('admin.replyByLabel', { user: reply.user })}
           onSubmit={handleUpdate}
           actions={
             <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
