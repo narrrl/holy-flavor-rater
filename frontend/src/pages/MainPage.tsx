@@ -35,7 +35,7 @@ import {
   EmptyState,
 } from '../components/ui';
 import MainPageRecommendations from './MainPageRecommendations';
-import { CategoryBrowseGrid, QuickStatsStrip } from '../components/home/DesktopHomeSections';
+import { CategoryBrowseGrid } from '../components/home/DesktopHomeSections';
 import { useCategories } from '../api/queries/useCategories';
 
 const TOP_LIMIT = 5;
@@ -272,16 +272,6 @@ const MainPage: React.FC = () => {
             </Button>
           </Box>
         </GlassCard>
-      )}
-
-      {/* Desktop-only featured strip — fills the wider canvas */}
-      {isDesktop && (
-        <QuickStatsStrip
-          topName={currentTop?.name}
-          topScore={currentTop?.average_rating ?? undefined}
-          newestName={newestFlavors[0]?.name}
-          categoryCount={categories.length}
-        />
       )}
 
       {/* Hall of Fame */}

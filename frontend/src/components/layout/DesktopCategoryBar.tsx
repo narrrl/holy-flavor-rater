@@ -3,6 +3,7 @@ import { Box, Button, alpha } from '@mui/material';
 import type { Theme } from '@mui/material';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import CollectionsBookmarkOutlinedIcon from '@mui/icons-material/CollectionsBookmarkOutlined';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -66,7 +67,12 @@ export const DesktopCategoryBar = ({ categories }: DesktopCategoryBarProps) => {
           scrollbarWidth: 'none',
         }}
       >
-        <Button component={Link} to="/" disableRipple sx={tabSx(isActive('/'))}>
+        <Button
+          component={Link}
+          to="/"
+          disableRipple
+          sx={{ ...tabSx(isActive('/')), ml: -1.75 }}
+        >
           <HomeOutlinedIcon sx={{ fontSize: '1.1rem', mr: 0.75 }} />
           {t('nav.home')}
         </Button>
@@ -75,6 +81,18 @@ export const DesktopCategoryBar = ({ categories }: DesktopCategoryBarProps) => {
           <Button component={Link} to="/community" disableRipple sx={tabSx(isActive('/community'))}>
             <GroupsOutlinedIcon sx={{ fontSize: '1.1rem', mr: 0.75 }} />
             {t('nav.community')}
+          </Button>
+        )}
+
+        {user && (
+          <Button
+            component={Link}
+            to="/dashboard"
+            disableRipple
+            sx={tabSx(isActive('/dashboard'))}
+          >
+            <CollectionsBookmarkOutlinedIcon sx={{ fontSize: '1.1rem', mr: 0.75 }} />
+            {t('nav.dashboard')}
           </Button>
         )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { styled, alpha } from '@mui/material/styles';
+import type { SxProps, Theme } from '@mui/material/styles';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 
@@ -24,9 +25,12 @@ const StyledAppBar = styled(AppBar, {
 export interface GlassAppBarProps {
   children: ReactNode;
   threshold?: number;
+  /** Extra styles merged onto the inner Toolbar — e.g. to constrain its content
+   * to the page-content column so the bar aligns with the main content edges. */
+  toolbarSx?: SxProps<Theme>;
 }
 
-export const GlassAppBar = ({ children, threshold = 12 }: GlassAppBarProps) => {
+export const GlassAppBar = ({ children, threshold = 12, toolbarSx }: GlassAppBarProps) => {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -38,7 +42,14 @@ export const GlassAppBar = ({ children, threshold = 12 }: GlassAppBarProps) => {
 
   return (
     <StyledAppBar position="sticky" elevation={0} scrolled={scrolled}>
-      <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } }}>
+      <Toolbar
+        sx={
+          [
+            { minHeight: { xs: 56, sm: 64 }, px: { xs: 1, sm: 4, md: 6 } },
+            toolbarSx || {},
+          ] as SxProps<Theme>
+        }
+      >
         {children}
       </Toolbar>
     </StyledAppBar>

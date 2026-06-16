@@ -45,7 +45,7 @@ export const DesktopTopBar = () => {
   const unreadCount = user?.unread_notifications_count || 0;
 
   return (
-    <GlassAppBar>
+    <GlassAppBar toolbarSx={{ maxWidth: 1400, width: '100%', mx: 'auto', px: { md: 6 } }}>
       <BrandMark />
 
       <GlobalSearch />
