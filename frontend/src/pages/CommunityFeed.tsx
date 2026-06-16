@@ -24,7 +24,6 @@ import SendIcon from '@mui/icons-material/Send';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PeopleIcon from '@mui/icons-material/People';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   useCommunityFeed,
@@ -41,7 +40,14 @@ import { formatDate } from '../utils/date';
 import { useTranslation } from 'react-i18next';
 import MentionTextField from '../components/MentionTextField';
 import RatingBadge from '../components/RatingBadge';
-import { PageShell, HeroBackdrop, SectionHeader, GlassCard, EmptyState } from '../components/ui';
+import {
+  PageShell,
+  HeroBackdrop,
+  SectionHeader,
+  GlassCard,
+  EmptyState,
+  BackButton,
+} from '../components/ui';
 import { useToast } from '../hooks/useToast';
 
 const SidebarCard: React.FC<{
@@ -96,11 +102,6 @@ const CommunityFeed: React.FC = () => {
     user.username.toLowerCase().includes(followingSearch.toLowerCase()),
   );
 
-  const handleGoBack = () => {
-    if (window.history.length > 1) navigate(-1);
-    else navigate('/');
-  };
-
   useEffect(() => {
     if (!isAuthed) navigate('/login');
   }, [isAuthed, navigate]);
@@ -126,7 +127,7 @@ const CommunityFeed: React.FC = () => {
       await createReply.mutateAsync({ ratingId, text });
       setReplyInputs((prev) => ({ ...prev, [ratingId]: '' }));
     } catch {
-      notify({ message: 'Failed to send reply', severity: 'error' });
+      notify({ message: t('common.replyFailed'), severity: 'error' });
     }
   };
 
@@ -141,14 +142,7 @@ const CommunityFeed: React.FC = () => {
 
   return (
     <PageShell hero={<HeroBackdrop variant="minimal" />}>
-      <Button
-        variant="outlined"
-        onClick={handleGoBack}
-        startIcon={<ArrowBackIcon />}
-        sx={{ alignSelf: 'flex-start', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
-      >
-        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-      </Button>
+      <BackButton />
 
       <SectionHeader title={t('community.title')} subtitle={t('community.subtitle')} />
 
@@ -249,7 +243,7 @@ const CommunityFeed: React.FC = () => {
                             color="text.secondary"
                             sx={{ fontStyle: 'italic' }}
                           >
-                            No comment provided.
+                            {t('common.noComment')}
                           </Typography>
                         )}
                       </Box>

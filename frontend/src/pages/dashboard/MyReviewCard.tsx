@@ -73,16 +73,16 @@ const MyReviewCard: React.FC<MyReviewCardProps> = ({ rating, currentUsername }) 
       await updateRating.mutateAsync({ id: rating.id, score: editScore, comment: editComment });
       setIsEditing(false);
     } catch {
-      notify({ message: 'Failed to update review', severity: 'error' });
+      notify({ message: t('flavorDetail.reviewUpdateFailed'), severity: 'error' });
     }
   };
 
   const handleDelete = async () => {
-    if (!(await confirm({ message: 'Delete this review?', danger: true }))) return;
+    if (!(await confirm({ message: t('common.confirmDeleteReview'), danger: true }))) return;
     try {
       await deleteRating.mutateAsync(rating.id);
     } catch {
-      notify({ message: 'Failed to delete review', severity: 'error' });
+      notify({ message: t('flavorDetail.reviewDeleteFailed'), severity: 'error' });
     }
   };
 
@@ -93,16 +93,16 @@ const MyReviewCard: React.FC<MyReviewCardProps> = ({ rating, currentUsername }) 
       setReplyInput('');
       setExpanded(true);
     } catch {
-      notify({ message: 'Failed to send reply', severity: 'error' });
+      notify({ message: t('common.replyFailed'), severity: 'error' });
     }
   };
 
   const handleDeleteReply = async (replyId: number) => {
-    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
+    if (!(await confirm({ message: t('common.confirmDeleteReply'), danger: true }))) return;
     try {
       await deleteReply.mutateAsync(replyId);
     } catch {
-      notify({ message: 'Failed to delete reply', severity: 'error' });
+      notify({ message: t('flavorDetail.replyDeleteFailed'), severity: 'error' });
     }
   };
 

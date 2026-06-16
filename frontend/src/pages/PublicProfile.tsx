@@ -110,7 +110,7 @@ const PublicProfile: React.FC = () => {
       });
       refetchFollowing();
     } catch {
-      notify({ message: 'Failed to update follow status. Please login.', severity: 'error' });
+      notify({ message: t('profile.followFailed'), severity: 'error' });
     }
   };
 
@@ -122,7 +122,7 @@ const PublicProfile: React.FC = () => {
       });
       refetchFollowing();
     } catch {
-      notify({ message: 'Failed', severity: 'error' });
+      notify({ message: t('common.actionFailed'), severity: 'error' });
     }
   };
 
@@ -133,17 +133,17 @@ const PublicProfile: React.FC = () => {
       await addComment.mutateAsync({ userId: data.id, text: newComment });
       setNewComment('');
     } catch {
-      notify({ message: 'Failed to add comment', severity: 'error' });
+      notify({ message: t('profile.commentAddFailed'), severity: 'error' });
     }
   };
 
   const handleDeleteComment = async (commentId: number) => {
     if (!data) return;
-    if (!(await confirm({ message: 'Delete this comment?', danger: true }))) return;
+    if (!(await confirm({ message: t('common.confirmDeleteComment'), danger: true }))) return;
     try {
       await deleteCommentMutation.mutateAsync({ userId: data.id, commentId });
     } catch {
-      notify({ message: 'Failed to delete comment', severity: 'error' });
+      notify({ message: t('profile.commentDeleteFailed'), severity: 'error' });
     }
   };
 
@@ -160,7 +160,7 @@ const PublicProfile: React.FC = () => {
   if (!data)
     return (
       <PageShell>
-        <Typography>Profile not found.</Typography>
+        <Typography>{t('profile.notFound')}</Typography>
       </PageShell>
     );
 
@@ -344,7 +344,7 @@ const PublicProfile: React.FC = () => {
                 {!data.avatar && data.username.charAt(0).toUpperCase()}
               </Avatar>
               {data.ratings.length > 50 && (
-                <Tooltip title="Master Collector">
+                <Tooltip title={t('profile.masterCollector')}>
                   <VerifiedIcon
                     color="primary"
                     sx={{
@@ -482,10 +482,10 @@ const PublicProfile: React.FC = () => {
             '& .Mui-selected': { color: 'primary.main' },
           }}
         >
-          <Tab label="Ratings" />
-          <Tab label="Guestbook" />
-          <Tab label="Followers" />
-          <Tab label="Following" />
+          <Tab label={t('profile.tabRatings')} />
+          <Tab label={t('profile.tabGuestbook')} />
+          <Tab label={t('profile.tabFollowers')} />
+          <Tab label={t('profile.tabFollowing')} />
         </Tabs>
       </GlassSurface>
 
@@ -515,7 +515,7 @@ const PublicProfile: React.FC = () => {
             </Box>
 
             {currentRatings.length === 0 ? (
-              <EmptyState title="No ratings in this category" />
+              <EmptyState title={t('profile.noRatingsCategory')} />
             ) : (
               <Stack spacing={10}>
                 {tiers.map((tier) => {
@@ -676,7 +676,7 @@ const PublicProfile: React.FC = () => {
             {currentUser && (
               <Box sx={{ mb: 5 }}>
                 <FormCard
-                  title="Leave a message"
+                  title={t('profile.leaveMessage')}
                   onSubmit={handleAddComment}
                   actions={
                     <Button
@@ -685,7 +685,7 @@ const PublicProfile: React.FC = () => {
                       endIcon={<SendIcon />}
                       sx={{ borderRadius: 2, px: 5, fontWeight: '900', textTransform: 'none' }}
                     >
-                      Send Message
+                      {t('support.reply')}
                     </Button>
                   }
                 >
@@ -693,7 +693,7 @@ const PublicProfile: React.FC = () => {
                     fullWidth
                     multiline
                     rows={3}
-                    placeholder="Say something about their taste..."
+                    placeholder={t('profile.guestbookPlaceholder')}
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                   />
@@ -704,8 +704,8 @@ const PublicProfile: React.FC = () => {
             <Stack spacing={2.5}>
               {data.comments.length === 0 ? (
                 <EmptyState
-                  title="No entries in the guestbook yet."
-                  subtitle="Be the first to leave a message!"
+                  title={t('profile.guestbookEmpty')}
+                  subtitle={t('profile.guestbookEmptySub')}
                 />
               ) : (
                 data.comments.map((comment) => (
@@ -786,7 +786,7 @@ const PublicProfile: React.FC = () => {
           <Grid container spacing={3}>
             {data.followers.length === 0 ? (
               <Grid size={12}>
-                <EmptyState title="No followers yet." />
+                <EmptyState title={t('profile.noFollowers')} />
               </Grid>
             ) : (
               data.followers.map(renderUserCard)
@@ -798,7 +798,7 @@ const PublicProfile: React.FC = () => {
           <Grid container spacing={3}>
             {data.following.length === 0 ? (
               <Grid size={12}>
-                <EmptyState title="Not following anyone yet." />
+                <EmptyState title={t('profile.noFollowing')} />
               </Grid>
             ) : (
               data.following.map(renderUserCard)

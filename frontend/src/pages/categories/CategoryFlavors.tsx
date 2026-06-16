@@ -1,7 +1,6 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Box, CircularProgress, Button } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useParams } from 'react-router-dom';
+import { Box, CircularProgress } from '@mui/material';
 import { useTitle } from '../../hooks/useTitle';
 import { useTranslation } from 'react-i18next';
 import { useCategoryFlavors } from '../../api/queries/useCategoryFlavors';
@@ -11,24 +10,16 @@ import {
   SectionHeader,
   FlavorCard,
   EmptyState,
+  BackButton,
 } from '../../components/ui';
 
 const CategoryFlavors: React.FC = () => {
   const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const { data: flavors = [], isLoading: loading } = useCategoryFlavors(slug);
   const categoryName = flavors[0]?.category_name || '';
 
-  const handleGoBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
-  };
-
-  useTitle(categoryName || 'Flavors');
+  useTitle(categoryName || t('home.flavorsFallback'));
 
   if (loading)
     return (
@@ -41,19 +32,15 @@ const CategoryFlavors: React.FC = () => {
 
   return (
     <PageShell hero={<HeroBackdrop variant="mesh" />}>
-      <Button
-        variant="outlined"
-        onClick={handleGoBack}
-        startIcon={<ArrowBackIcon />}
-        sx={{ alignSelf: 'flex-start', borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
-      >
-        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-      </Button>
+      <BackButton />
 
-      <SectionHeader title={categoryName || 'Flavors'} />
+      <SectionHeader title={categoryName || t('home.flavorsFallback')} />
 
       {flavors.length === 0 ? (
-        <EmptyState title="No flavors here yet" subtitle="Check back soon." />
+        <EmptyState
+          title={t('home.noCategoryFlavors')}
+          subtitle={t('home.noCategoryFlavorsSub')}
+        />
       ) : (
         <Box
           sx={{
@@ -71,7 +58,7 @@ const CategoryFlavors: React.FC = () => {
               key={flavor.id}
               flavor={flavor}
               showCategory={false}
-              caption={`${flavor.ratings.length} reviews`}
+              caption={`${flavor.ratings.length} ${t('common.reviews')}`}
             />
           ))}
         </Box>

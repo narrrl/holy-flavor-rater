@@ -252,9 +252,9 @@ const App: React.FC = () => {
                   path="*"
                   element={
                     <Box sx={{ p: 4, textAlign: 'center' }}>
-                      <Typography variant="h5">404 - Page Not Found</Typography>
+                      <Typography variant="h5">{t('common.notFoundTitle')}</Typography>
                       <Button component={Link} to="/" sx={{ mt: 2 }}>
-                        Back to Home
+                        {t('common.backToHome')}
                       </Button>
                     </Box>
                   }

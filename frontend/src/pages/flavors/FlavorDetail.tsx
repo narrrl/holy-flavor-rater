@@ -30,7 +30,6 @@ import {
 } from '../../api/mutations/useRatingMutations';
 import { useUpdateReply } from '../../api/mutations/useReplyMutations';
 import { useTitle } from '../../hooks/useTitle';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import CommentIcon from '@mui/icons-material/Comment';
@@ -51,6 +50,7 @@ import {
   HeroGallery,
   ScoreInput,
   RatingDistribution,
+  BackButton,
 } from '../../components/ui';
 import RatingForm from './components/RatingForm';
 import SimilarFlavorsSection from './components/SimilarFlavorsSection';
@@ -119,7 +119,7 @@ const FlavorDetail: React.FC = () => {
       await updateFlavor.mutateAsync({ id, data: editFlavorData });
       setIsAdminEditing(false);
     } catch {
-      notify({ message: 'Admin update failed', severity: 'error' });
+      notify({ message: t('flavorDetail.adminUpdateFailed'), severity: 'error' });
     }
   };
 
@@ -134,7 +134,7 @@ const FlavorDetail: React.FC = () => {
       setUploadingImage(true);
       await updateFlavor.mutateAsync({ id, data: formData, isFormData: true });
     } catch {
-      notify({ message: 'Image upload failed', severity: 'error' });
+      notify({ message: t('flavorDetail.imageUploadFailed'), severity: 'error' });
     } finally {
       setUploadingImage(false);
     }
@@ -153,7 +153,7 @@ const FlavorDetail: React.FC = () => {
       setReplyInputs({ ...replyInputs, [ratingId]: '' });
       setExpandedReplies((prev) => ({ ...prev, [ratingId]: true }));
     } catch {
-      notify({ message: 'Failed to submit reply', severity: 'error' });
+      notify({ message: t('common.replyFailed'), severity: 'error' });
     }
   };
 
@@ -163,25 +163,25 @@ const FlavorDetail: React.FC = () => {
       await updateReply.mutateAsync({ replyId, text: editReplyText });
       setEditingReplyId(null);
     } catch {
-      notify({ message: 'Failed to update reply', severity: 'error' });
+      notify({ message: t('flavorDetail.replyUpdateFailed'), severity: 'error' });
     }
   };
 
   const handleDeleteReply = async (replyId: number) => {
-    if (!(await confirm({ message: 'Delete this reply?', danger: true }))) return;
+    if (!(await confirm({ message: t('common.confirmDeleteReply'), danger: true }))) return;
     try {
       await deleteReplyMutation.mutateAsync(replyId);
     } catch {
-      notify({ message: 'Failed to delete reply', severity: 'error' });
+      notify({ message: t('flavorDetail.replyDeleteFailed'), severity: 'error' });
     }
   };
 
   const handleDeleteRating = async (ratingId: number) => {
-    if (!(await confirm({ message: 'Delete this review?', danger: true }))) return;
+    if (!(await confirm({ message: t('common.confirmDeleteReview'), danger: true }))) return;
     try {
       await deleteRatingMutation.mutateAsync(ratingId);
     } catch {
-      notify({ message: 'Failed to delete review', severity: 'error' });
+      notify({ message: t('flavorDetail.reviewDeleteFailed'), severity: 'error' });
     }
   };
 
@@ -196,15 +196,7 @@ const FlavorDetail: React.FC = () => {
       await updateRating.mutateAsync({ id: ratingId, score: editScore, comment: editComment });
       setEditMode(null);
     } catch {
-      notify({ message: 'Failed to update review', severity: 'error' });
-    }
-  };
-
-  const handleGoBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
+      notify({ message: t('flavorDetail.reviewUpdateFailed'), severity: 'error' });
     }
   };
 
@@ -225,20 +217,7 @@ const FlavorDetail: React.FC = () => {
 
   return (
     <PageShell hero={<HeroBackdrop variant="minimal" />}>
-      <Button
-        variant="outlined"
-        onClick={handleGoBack}
-        startIcon={<ArrowBackIcon />}
-        sx={{
-          alignSelf: 'flex-start',
-          borderRadius: 2,
-          textTransform: 'none',
-          fontWeight: 'bold',
-          color: 'text.secondary',
-        }}
-      >
-        {window.history.length > 1 ? t('common.back') : t('common.backToHome')}
-      </Button>
+      <BackButton />
 
       <Grid container spacing={4}>
         {/* Left: Product Info Card */}
@@ -268,7 +247,7 @@ const FlavorDetail: React.FC = () => {
                         size="small"
                         onClick={() => setIsAdminEditing(true)}
                       >
-                        Edit Product (Admin)
+                        {t('flavorDetail.editProductAdmin')}
                       </Button>
                     ) : (
                       <Stack direction="row" spacing={1}>
@@ -279,14 +258,14 @@ const FlavorDetail: React.FC = () => {
                           variant="contained"
                           onClick={handleAdminUpdate}
                         >
-                          Save
+                          {t('common.save')}
                         </Button>
                         <Button
                           startIcon={<CancelIcon />}
                           size="small"
                           onClick={() => setIsAdminEditing(false)}
                         >
-                          Cancel
+                          {t('common.cancel')}
                         </Button>
                       </Stack>
                     )}
@@ -296,7 +275,7 @@ const FlavorDetail: React.FC = () => {
                 {isAdminEditing ? (
                   <Stack spacing={2} sx={{ mb: 2 }}>
                     <TextField
-                      label="Name"
+                      label={t('flavorDetail.nameLabel')}
                       fullWidth
                       size="small"
                       value={editFlavorData.name}
@@ -305,7 +284,7 @@ const FlavorDetail: React.FC = () => {
                       }
                     />
                     <TextField
-                      label="Description"
+                      label={t('flavorDetail.descriptionLabel')}
                       fullWidth
                       size="small"
                       multiline
@@ -316,7 +295,7 @@ const FlavorDetail: React.FC = () => {
                       }
                     />
                     <TextField
-                      label="Shop URL"
+                      label={t('flavorDetail.shopUrlLabel')}
                       fullWidth
                       size="small"
                       value={editFlavorData.shop_url}
@@ -333,7 +312,9 @@ const FlavorDetail: React.FC = () => {
                         fullWidth
                         disabled={uploadingImage}
                       >
-                        {uploadingImage ? 'Uploading...' : 'Upload Custom Image'}
+                        {uploadingImage
+                          ? t('flavorDetail.uploading')
+                          : t('flavorDetail.uploadImage')}
                         <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
                       </Button>
                     </Box>
@@ -347,7 +328,7 @@ const FlavorDetail: React.FC = () => {
                           }
                         />
                       }
-                      label="In Stock"
+                      label={t('flavorDetail.inStock')}
                     />
                     <FormControlLabel
                       control={
@@ -358,7 +339,7 @@ const FlavorDetail: React.FC = () => {
                           }
                         />
                       }
-                      label="Legacy / Limited"
+                      label={t('flavorDetail.legacyLimited')}
                     />
                     <Divider sx={{ my: 1 }} />
                   </Stack>

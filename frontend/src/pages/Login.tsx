@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { Typography, TextField, Button, Tab, Tabs, Alert, Stack, Box } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from 'react-i18next';
-import { PageShell, GlassCard, FormCard } from '../components/ui';
+import { PageShell, GlassCard, FormCard, BackButton } from '../components/ui';
 
 interface ApiError {
   response?: { data?: { error?: string; non_field_errors?: string[] } };
@@ -63,7 +62,10 @@ const Login: React.FC = () => {
       setIsVerifying(true);
       setMessage({ type: 'success', text: t('auth.signupSuccess') });
     } catch (err) {
-      setMessage({ type: 'error', text: readError(err).response?.data?.error || 'Signup failed' });
+      setMessage({
+        type: 'error',
+        text: readError(err).response?.data?.error || t('auth.signupFailed'),
+      });
     }
   };
 
@@ -79,7 +81,7 @@ const Login: React.FC = () => {
     } catch (err) {
       setMessage({
         type: 'error',
-        text: readError(err).response?.data?.error || 'Verification failed',
+        text: readError(err).response?.data?.error || t('auth.verifyFailed'),
       });
       setShowResend(true);
     }
@@ -94,7 +96,7 @@ const Login: React.FC = () => {
     } catch (err) {
       setMessage({
         type: 'error',
-        text: readError(err).response?.data?.error || 'Failed to resend code',
+        text: readError(err).response?.data?.error || t('auth.resendFailed'),
       });
     }
   };
@@ -105,9 +107,9 @@ const Login: React.FC = () => {
     try {
       await api.post('users/request_password_reset/', { email });
       setResetStep(2);
-      setMessage({ type: 'success', text: 'If an account exists, a reset code has been sent.' });
+      setMessage({ type: 'success', text: t('auth.resetRequested') });
     } catch {
-      setMessage({ type: 'error', text: 'An error occurred. Please try again later.' });
+      setMessage({ type: 'error', text: t('auth.genericError') });
     }
   };
 
@@ -120,14 +122,17 @@ const Login: React.FC = () => {
         code: verificationCode,
         password,
       });
-      setMessage({ type: 'success', text: 'Password reset successful! You can now login.' });
+      setMessage({ type: 'success', text: t('auth.resetSuccess') });
       setIsResetting(false);
       setResetStep(1);
       setTab(0);
       setPassword('');
       setVerificationCode('');
     } catch (err) {
-      setMessage({ type: 'error', text: readError(err).response?.data?.error || 'Reset failed' });
+      setMessage({
+        type: 'error',
+        text: readError(err).response?.data?.error || t('auth.resetFailed'),
+      });
     }
   };
 
@@ -158,7 +163,7 @@ const Login: React.FC = () => {
                 {t('auth.backToAuth')}
               </Button>
               <Button variant="contained" type="submit">
-                Verify
+                {t('auth.verifyButton')}
               </Button>
             </>
           }
@@ -170,7 +175,7 @@ const Login: React.FC = () => {
           />
           <TextField
             fullWidth
-            label="Verification Code"
+            label={t('auth.verificationCodeLabel')}
             value={verificationCode}
             onChange={(e) => setVerificationCode(e.target.value)}
             autoFocus
@@ -182,7 +187,7 @@ const Login: React.FC = () => {
     if (isResetting) {
       return (
         <FormCard
-          title="Reset Password"
+          title={t('auth.resetTitle')}
           onSubmit={resetStep === 1 ? handleRequestReset : handleCompleteReset}
           actions={
             <>
@@ -193,17 +198,17 @@ const Login: React.FC = () => {
                   setMessage(null);
                 }}
               >
-                Back to Login
+                {t('auth.backToLogin')}
               </Button>
               <Button variant="contained" type="submit">
-                {resetStep === 1 ? 'Send Reset Code' : 'Reset Password'}
+                {resetStep === 1 ? t('auth.sendResetCode') : t('auth.resetButton')}
               </Button>
             </>
           }
         >
           <TextField
             fullWidth
-            label="Email"
+            label={t('auth.emailLabel')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={resetStep === 2}
@@ -212,13 +217,13 @@ const Login: React.FC = () => {
             <>
               <TextField
                 fullWidth
-                label="Reset Code"
+                label={t('auth.resetCodeLabel')}
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
               />
               <TextField
                 fullWidth
-                label="New Password"
+                label={t('auth.newPasswordLabel')}
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -254,13 +259,13 @@ const Login: React.FC = () => {
         >
           <TextField
             fullWidth
-            label="Username"
+            label={t('auth.usernameLabel')}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
           <TextField
             fullWidth
-            label="Password"
+            label={t('auth.passwordLabel')}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -281,20 +286,20 @@ const Login: React.FC = () => {
       >
         <TextField
           fullWidth
-          label="Username"
+          label={t('auth.usernameLabel')}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
         <TextField
           fullWidth
-          label="Email"
+          label={t('auth.emailLabel')}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <TextField
           fullWidth
-          label="Password"
+          label={t('auth.passwordLabel')}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -307,15 +312,7 @@ const Login: React.FC = () => {
 
   return (
     <PageShell>
-      <Button
-        variant="outlined"
-        component={Link}
-        to="/"
-        startIcon={<ArrowBackIcon />}
-        sx={{ alignSelf: 'flex-start', textTransform: 'none', borderRadius: 2 }}
-      >
-        Back to Home
-      </Button>
+      <BackButton to="/" />
 
       <Box sx={{ maxWidth: 480, width: '100%', mx: 'auto' }}>
         <Stack spacing={2}>
