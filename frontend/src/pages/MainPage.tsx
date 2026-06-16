@@ -9,6 +9,7 @@ import {
   IconButton,
   Skeleton,
   useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -34,6 +35,8 @@ import {
   EmptyState,
 } from '../components/ui';
 import MainPageRecommendations from './MainPageRecommendations';
+import { CategoryBrowseGrid, QuickStatsStrip } from '../components/home/DesktopHomeSections';
+import { useCategories } from '../api/queries/useCategories';
 
 const TOP_LIMIT = 5;
 const AUTO_ADVANCE_MS = 6000;
@@ -91,6 +94,8 @@ const MainPage: React.FC = () => {
   const [autoPlay, setAutoPlay] = useState(true);
   const [hovered, setHovered] = useState(false);
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
+  const muiTheme = useTheme();
+  const isDesktop = useMediaQuery(muiTheme.breakpoints.up('md'));
   const touchStartX = useRef<number | null>(null);
 
   const query = new URLSearchParams(location.search).get('q') || '';
@@ -100,6 +105,7 @@ const MainPage: React.FC = () => {
   const { data: searchResults = [], isLoading: searchLoading } = useFlavorSearch(query);
   const { data: topFlavorsAll = [], isLoading: topLoading } = useTopFlavors(null);
   const { data: newestFlavors = [], isLoading: newestLoading } = useNewestFlavors();
+  const { data: categories = [] } = useCategories();
 
   const topFlavors = topFlavorsAll
     .filter((f) => f.category_slug !== 'packs-and-other')
@@ -266,6 +272,16 @@ const MainPage: React.FC = () => {
             </Button>
           </Box>
         </GlassCard>
+      )}
+
+      {/* Desktop-only featured strip — fills the wider canvas */}
+      {isDesktop && (
+        <QuickStatsStrip
+          topName={currentTop?.name}
+          topScore={currentTop?.average_rating ?? undefined}
+          newestName={newestFlavors[0]?.name}
+          categoryCount={categories.length}
+        />
       )}
 
       {/* Hall of Fame */}
@@ -526,6 +542,9 @@ const MainPage: React.FC = () => {
           <EmptyState title={t('home.noTopFlavors')} />
         )}
       </Box>
+
+      {/* Desktop-only category browser */}
+      {isDesktop && <CategoryBrowseGrid categories={categories} />}
 
       {/* Algorithmic discovery: personalized (members) or popular picks (visitors) */}
       <MainPageRecommendations isLoggedIn={isLoggedIn} />

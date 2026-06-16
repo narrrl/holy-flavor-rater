@@ -8,7 +8,6 @@ import {
   SwipeableDrawer,
   CircularProgress,
   Badge,
-  alpha,
   useMediaQuery,
   useTheme as useMuiTheme,
 } from '@mui/material';
@@ -22,8 +21,10 @@ import { GlobalSearch } from './app/GlobalSearch';
 import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { useDrawerAnchor } from './hooks/useDrawerAnchor';
-import { NavSidebar, NAV_SIDEBAR_WIDTH } from './components/layout/NavSidebar';
+import { NavSidebar } from './components/layout/NavSidebar';
 import { BrandMark } from './components/layout/BrandMark';
+import { DesktopTopBar } from './components/layout/DesktopTopBar';
+import { DesktopCategoryBar } from './components/layout/DesktopCategoryBar';
 import { useCategories } from './api/queries/useCategories';
 import { NotificationMenu } from './components/layout/NotificationMenu';
 import { RequireSuperuser } from './components/auth/RequireSuperuser';
@@ -144,6 +145,8 @@ const App: React.FC = () => {
         </GlassAppBar>
       )}
 
+      {!isMobile && <DesktopTopBar />}
+
       {isMobile && (
         <SwipeableDrawer
           anchor={mobileAnchor}
@@ -167,33 +170,9 @@ const App: React.FC = () => {
         </SwipeableDrawer>
       )}
 
-      <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
-        {!isMobile && (
-          <Box
-            component="aside"
-            sx={{
-              width: NAV_SIDEBAR_WIDTH,
-              flexShrink: 0,
-              position: 'sticky',
-              top: 0,
-              alignSelf: 'flex-start',
-              height: '100vh',
-              borderRight: '1px solid',
-              borderColor: (theme) => theme.tokens.glass.border,
-              bgcolor: (theme) =>
-                alpha(
-                  theme.palette.background.default,
-                  theme.palette.mode === 'light' ? 0.65 : 0.45,
-                ),
-              backdropFilter: (theme) => theme.tokens.glass.blurStrong,
-              WebkitBackdropFilter: (theme) => theme.tokens.glass.blurStrong,
-              zIndex: 1,
-            }}
-          >
-            <NavSidebar categories={categories} showSearch showNotifications />
-          </Box>
-        )}
+      {!isMobile && <DesktopCategoryBar categories={categories} />}
 
+      <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
         <Box
           component="main"
           sx={{
