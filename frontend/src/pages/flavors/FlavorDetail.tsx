@@ -572,12 +572,16 @@ const FlavorDetail: React.FC = () => {
                           <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                             <MentionTextField
                               placeholder={t('community.writeReply')}
+                              multiline
+                              rows={2}
                               value={replyInputs[rating.id] || ''}
                               onChange={(val) =>
                                 setReplyInputs({ ...replyInputs, [rating.id]: val })
                               }
                               onKeyDown={(e) =>
-                                e.key === 'Enter' && !e.shiftKey && handleReplySubmit(rating.id)
+                                (e.metaKey || e.ctrlKey) &&
+                                e.key === 'Enter' &&
+                                handleReplySubmit(rating.id)
                               }
                             />
                             <Button

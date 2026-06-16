@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { Typography, TextField, Button, Tab, Tabs, Alert, Stack, Box } from '@mui/material';
+import {
+  Typography,
+  TextField,
+  Button,
+  Tab,
+  Tabs,
+  Alert,
+  Stack,
+  Box,
+  IconButton,
+  InputAdornment,
+  LinearProgress,
+} from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useTitle } from '../hooks/useTitle';
@@ -12,6 +26,93 @@ interface ApiError {
 }
 
 const readError = (err: unknown): ApiError => err as ApiError;
+
+// Mirror of the backend password validators (password_policy.rs): min 8 chars,
+// not entirely numeric. Returns an i18n key for the first failure, or null.
+const validatePassword = (pw: string): string | null => {
+  if (pw.length === 0) return null;
+  if (pw.length < 8) return 'auth.passwordTooShort';
+  if (/^\d+$/.test(pw)) return 'auth.passwordNumericOnly';
+  return null;
+};
+
+// Heuristic 0–4 strength score (length + character-class variety).
+const scorePassword = (pw: string): number => {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+  if (/\d/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  return Math.min(score, 4);
+};
+
+const PasswordStrengthMeter: React.FC<{ password: string }> = ({ password }) => {
+  const { t } = useTranslation();
+  const score = scorePassword(password);
+  const levels = [
+    { label: t('auth.strengthWeak'), color: 'error.main' },
+    { label: t('auth.strengthWeak'), color: 'error.main' },
+    { label: t('auth.strengthFair'), color: 'warning.main' },
+    { label: t('auth.strengthGood'), color: 'info.main' },
+    { label: t('auth.strengthStrong'), color: 'success.main' },
+  ];
+  const level = levels[score];
+  return (
+    <Box sx={{ mt: 1 }}>
+      <LinearProgress
+        variant="determinate"
+        value={(score / 4) * 100}
+        sx={{ height: 6, borderRadius: 3, '& .MuiLinearProgress-bar': { bgcolor: level.color } }}
+      />
+      <Typography variant="caption" sx={{ color: level.color, fontWeight: 600 }}>
+        {t('auth.passwordStrength')}: {level.label}
+      </Typography>
+    </Box>
+  );
+};
+
+const PasswordField: React.FC<{
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: boolean;
+  helperText?: string;
+  showStrength?: boolean;
+}> = ({ label, value, onChange, error, helperText, showStrength }) => {
+  const { t } = useTranslation();
+  const [show, setShow] = useState(false);
+  return (
+    <Box>
+      <TextField
+        fullWidth
+        label={label}
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        error={error}
+        helperText={helperText}
+        slotProps={{
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShow((s) => !s)}
+                  edge="end"
+                  size="small"
+                  aria-label={show ? t('auth.hidePassword') : t('auth.showPassword')}
+                >
+                  {show ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          },
+        }}
+      />
+      {showStrength && value.length > 0 && <PasswordStrengthMeter password={value} />}
+    </Box>
+  );
+};
 
 const Login: React.FC = () => {
   const { t } = useTranslation();
@@ -185,6 +286,7 @@ const Login: React.FC = () => {
     }
 
     if (isResetting) {
+      const resetPwError = validatePassword(password);
       return (
         <FormCard
           title={t('auth.resetTitle')}
@@ -200,7 +302,11 @@ const Login: React.FC = () => {
               >
                 {t('auth.backToLogin')}
               </Button>
-              <Button variant="contained" type="submit">
+              <Button
+                variant="contained"
+                type="submit"
+                disabled={resetStep === 2 && (password.length === 0 || !!resetPwError)}
+              >
                 {resetStep === 1 ? t('auth.sendResetCode') : t('auth.resetButton')}
               </Button>
             </>
@@ -221,12 +327,13 @@ const Login: React.FC = () => {
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
               />
-              <TextField
-                fullWidth
+              <PasswordField
                 label={t('auth.newPasswordLabel')}
-                type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
+                error={!!resetPwError}
+                helperText={resetPwError ? t(resetPwError) : undefined}
+                showStrength
               />
             </>
           )}
@@ -263,23 +370,22 @@ const Login: React.FC = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
-          <TextField
-            fullWidth
-            label={t('auth.passwordLabel')}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <PasswordField label={t('auth.passwordLabel')} value={password} onChange={setPassword} />
         </FormCard>
       );
     }
 
+    const signupPwError = validatePassword(password);
     return (
       <FormCard
         title={t('auth.signupTitle')}
         onSubmit={handleSignup}
         actions={
-          <Button variant="contained" type="submit">
+          <Button
+            variant="contained"
+            type="submit"
+            disabled={password.length === 0 || !!signupPwError}
+          >
             {t('auth.signupTitle')}
           </Button>
         }
@@ -297,12 +403,13 @@ const Login: React.FC = () => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <TextField
-          fullWidth
+        <PasswordField
           label={t('auth.passwordLabel')}
-          type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={setPassword}
+          error={!!signupPwError}
+          helperText={signupPwError ? t(signupPwError) : undefined}
+          showStrength
         />
       </FormCard>
     );

@@ -287,9 +287,13 @@ const MyReviewCard: React.FC<MyReviewCardProps> = ({ rating, currentUsername }) 
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <MentionTextField
                       placeholder={t('community.writeReply')}
+                      multiline
+                      rows={2}
                       value={replyInput}
                       onChange={setReplyInput}
-                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleReplySubmit()}
+                      onKeyDown={(e) =>
+                        (e.metaKey || e.ctrlKey) && e.key === 'Enter' && handleReplySubmit()
+                      }
                     />
                   </Box>
                   <Button

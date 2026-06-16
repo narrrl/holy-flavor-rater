@@ -9,29 +9,22 @@ import {
   Button,
   Grid,
   List,
-  ListItemAvatar,
   ListItemText,
   ListItemButton,
   Pagination,
-  TextField,
   IconButton,
   Collapse,
   Link as MuiLink,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
 import CommentIcon from '@mui/icons-material/Comment';
 import SendIcon from '@mui/icons-material/Send';
 import WhatshotIcon from '@mui/icons-material/Whatshot';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import PeopleIcon from '@mui/icons-material/People';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   useCommunityFeed,
   useFollowedTopFlavors,
-  useFollowingList,
   type FeedRating,
 } from '../api/queries/useCommunityFeed';
-import { useNotificationsQuery } from '../api/queries/useNotifications';
 import { useCreateReply } from '../api/mutations/useRatingMutations';
 import { useTitle } from '../hooks/useTitle';
 import { useAuth } from '../hooks/useAuth';
@@ -81,26 +74,18 @@ const CommunityFeed: React.FC = () => {
   const navigate = useNavigate();
   const { notify } = useToast();
   const [page, setPage] = useState(1);
-  const [followingSearch, setFollowingSearch] = useState('');
   const [replyInputs, setReplyInputs] = useState<Record<number, string>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<number, boolean>>({});
 
   const { user } = useAuth();
   const isAuthed = !!user;
   const { data: feed, isLoading: feedLoading, error: feedError } = useCommunityFeed(page);
-  const { data: following = [] } = useFollowingList();
-  const { data: notificationsAll = [] } = useNotificationsQuery(isAuthed);
   const { data: topFollowed = [] } = useFollowedTopFlavors();
   const createReply = useCreateReply();
 
   const ratings: FeedRating[] = feed?.ratings ?? [];
   const totalPages = feed?.totalPages ?? 1;
-  const notifications = notificationsAll.slice(0, 5);
   const loading = feedLoading;
-
-  const filteredFollowing = following.filter((user) =>
-    user.username.toLowerCase().includes(followingSearch.toLowerCase()),
-  );
 
   useEffect(() => {
     if (!isAuthed) navigate('/login');
@@ -322,12 +307,14 @@ const CommunityFeed: React.FC = () => {
                         <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                           <MentionTextField
                             placeholder={t('community.writeReply')}
+                            multiline
+                            rows={2}
                             value={replyInputs[rating.id] || ''}
                             onChange={(val) =>
                               setReplyInputs((prev) => ({ ...prev, [rating.id]: val }))
                             }
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
+                              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
                                 handleReplySubmit(rating.id);
                               }
                             }}
@@ -361,98 +348,6 @@ const CommunityFeed: React.FC = () => {
 
         <Grid size={{ xs: 12, lg: 4 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <SidebarCard
-              icon={<NotificationsIcon color="primary" fontSize="small" />}
-              title={t('community.notifications')}
-            >
-              <List disablePadding>
-                {notifications.length === 0 ? (
-                  <Box sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      {t('community.noNotifications')}
-                    </Typography>
-                  </Box>
-                ) : (
-                  notifications.map((n) => {
-                    const handleClick = () => {
-                      if (n.notification_type === 'follow') {
-                        navigate(`/profile/${n.actor_username}`);
-                      } else if (n.flavor_id) {
-                        navigate(`/flavor/${n.flavor_id}`);
-                      }
-                    };
-                    return (
-                      <ListItemButton key={n.id} onClick={handleClick} sx={{ py: 1.5 }}>
-                        <ListItemAvatar sx={{ minWidth: 40 }}>
-                          <Avatar
-                            src={n.actor_avatar || undefined}
-                            sx={{ width: 30, height: 30, fontSize: '0.8rem' }}
-                          >
-                            {n.actor_username.charAt(0)}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
-                              <strong>{n.actor_username}</strong>{' '}
-                              {n.notification_type === 'reply'
-                                ? t('community.notifReply')
-                                : n.notification_type === 'mention'
-                                  ? t('community.notifMention')
-                                  : n.notification_type === 'follow'
-                                    ? t('community.notifFollow')
-                                    : n.notification_type}
-                            </Typography>
-                          }
-                          secondary={formatDate(n.created_at)}
-                          secondaryTypographyProps={{ sx: { fontSize: '0.7rem' } }}
-                        />
-                      </ListItemButton>
-                    );
-                  })
-                )}
-              </List>
-            </SidebarCard>
-
-            <SidebarCard
-              icon={<PeopleIcon color="primary" fontSize="small" />}
-              title={t('nav.following')}
-            >
-              <Box sx={{ p: 1.5 }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder={t('community.searchFriends')}
-                  value={followingSearch}
-                  onChange={(e) => setFollowingSearch(e.target.value)}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <SearchIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                      ),
-                    },
-                  }}
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1 } }}
-                />
-              </Box>
-              <List disablePadding sx={{ maxHeight: 250, overflowY: 'auto' }}>
-                {filteredFollowing.map((user) => (
-                  <ListItemButton key={user.id} component={Link} to={`/profile/${user.username}`}>
-                    <Avatar
-                      src={user.avatar || undefined}
-                      sx={{ width: 28, height: 28, mr: 2, fontSize: '0.8rem' }}
-                    >
-                      {user.username.charAt(0)}
-                    </Avatar>
-                    <ListItemText
-                      primary={user.username}
-                      primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-            </SidebarCard>
-
             <SidebarCard
               icon={<WhatshotIcon color="error" fontSize="small" />}
               title={t('community.topRated')}

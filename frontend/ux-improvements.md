@@ -21,9 +21,9 @@ Tracking doc from the frontend/UX audit. Items grouped by priority. Check off as
 
 - [x] **#5 Hall of Fame carousel** (`MainPage.tsx`) — added 6s auto-advance (stops on manual control, pauses on hover, off for reduced-motion), touch swipe, on-card overlay arrows on mobile (header arrows desktop-only), and featured quote now picks the highest-scored comment instead of the first.
 - [x] **#6 Admin edit leaks into product card** (`FlavorDetail.tsx`) — extracted to `components/AdminFlavorEditDialog.tsx`; card keeps a clean read view, edit opens a focused dialog.
-- [ ] **#7 CommunityFeed duplication** — in-page notifications + following duplicate the nav/global menus.
-- [ ] **#8 Reply Enter-to-submit on multiline** — surprising; blocks newlines.
-- [ ] **#9 Login password UX** — no show/hide toggle, no strength hint, no inline validation.
+- [x] **#7 CommunityFeed duplication** (`CommunityFeed.tsx`) — dropped the in-page Notifications + Following sidebar cards (NavSidebar already provides both: NotificationMenu popup + Following collapse). Kept the unique "Circle's Top Rated" card. Removed now-dead queries/state/imports.
+- [x] **#8 Reply Enter-to-submit on multiline** (`CommunityFeed.tsx`, `FlavorDetail.tsx`, `MyReviewCard.tsx`) — reply fields are now `multiline rows={2}`; plain Enter inserts a newline, submit moved to Ctrl/Cmd+Enter (no longer hijacks Enter, no longer blocks newlines).
+- [x] **#9 Login password UX** (`Login.tsx`) — added a `PasswordField` with show/hide toggle (all password inputs), a 0–4 strength meter on signup + reset-new-password, and inline validation mirroring the backend (min 8 chars, not entirely numeric) that gates the submit button.
 
 ## 🟢 Design-system cleanup
 
