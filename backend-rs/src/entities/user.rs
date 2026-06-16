@@ -25,7 +25,6 @@ pub struct Model {
     pub avatar: Option<String>,
     pub language: String,
     pub selected_banner_id: Option<i32>,
-    pub drawer_anchor: String,
     /// Dedicated account-deletion confirmation code + its expiry. Kept separate
     /// from `email_confirmation_code` so other code-driven flows (email confirm,
     /// password reset) can never clobber an in-flight deletion code, and

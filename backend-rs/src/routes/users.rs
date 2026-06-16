@@ -63,7 +63,6 @@ const THEMES: &[&str] = &[
     "t0p_clancy",
 ];
 const LANGUAGES: &[&str] = &["en", "de"];
-const DRAWER_ANCHORS: &[&str] = &["left", "right"];
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -434,12 +433,6 @@ async fn update_preferences(
             updated = true;
         }
     }
-    if let Some(da) = data.get("drawer_anchor").and_then(|v| v.as_str()) {
-        if DRAWER_ANCHORS.contains(&da) {
-            active.drawer_anchor = Set(da.to_string());
-            updated = true;
-        }
-    }
 
     // selected_banner: present + non-null. "" clears; otherwise must be enabled.
     match data.get("selected_banner") {
@@ -489,7 +482,6 @@ async fn update_preferences(
         "status": "preferences updated",
         "theme": saved.theme,
         "language": saved.language,
-        "drawer_anchor": saved.drawer_anchor,
         "selected_banner": saved.selected_banner_id,
     })))
 }
@@ -763,7 +755,6 @@ async fn signup(
         avatar: Set(None),
         language: Set("en".into()),
         selected_banner_id: Set(None),
-        drawer_anchor: Set("right".into()),
         ..Default::default()
     }
     .insert(&state.db)

@@ -109,7 +109,6 @@ pub struct UserOut {
     pub email: String,
     pub theme: String,
     pub language: String,
-    pub drawer_anchor: String,
     pub avatar: Option<String>,
     pub following_count: i64,
     pub followers_count: i64,

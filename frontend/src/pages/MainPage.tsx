@@ -9,7 +9,6 @@ import {
   IconButton,
   Skeleton,
   useMediaQuery,
-  useTheme,
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -94,8 +93,6 @@ const MainPage: React.FC = () => {
   const [autoPlay, setAutoPlay] = useState(true);
   const [hovered, setHovered] = useState(false);
   const prefersReducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
-  const muiTheme = useTheme();
-  const isDesktop = useMediaQuery(muiTheme.breakpoints.up('md'));
   const touchStartX = useRef<number | null>(null);
 
   const query = new URLSearchParams(location.search).get('q') || '';
@@ -533,8 +530,8 @@ const MainPage: React.FC = () => {
         )}
       </Box>
 
-      {/* Desktop-only category browser */}
-      {isDesktop && <CategoryBrowseGrid categories={categories} />}
+      {/* Category browser */}
+      <CategoryBrowseGrid categories={categories} />
 
       {/* Algorithmic discovery: personalized (members) or popular picks (visitors) */}
       <MainPageRecommendations isLoggedIn={isLoggedIn} />

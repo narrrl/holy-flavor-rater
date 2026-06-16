@@ -758,7 +758,6 @@ pub async fn build_users(
             email: u.email,
             theme: u.theme,
             language: u.language,
-            drawer_anchor: u.drawer_anchor,
         })
         .collect())
 }
