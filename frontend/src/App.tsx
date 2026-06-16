@@ -24,7 +24,7 @@ import { useDrawerAnchor } from './hooks/useDrawerAnchor';
 import { NavSidebar } from './components/layout/NavSidebar';
 import { BrandMark } from './components/layout/BrandMark';
 import { DesktopTopBar } from './components/layout/DesktopTopBar';
-import { DesktopCategoryBar } from './components/layout/DesktopCategoryBar';
+import { CategoryBar } from './components/layout/CategoryBar';
 import { useCategories } from './api/queries/useCategories';
 import { NotificationMenu } from './components/layout/NotificationMenu';
 import { RequireSuperuser } from './components/auth/RequireSuperuser';
@@ -170,7 +170,7 @@ const App: React.FC = () => {
         </SwipeableDrawer>
       )}
 
-      {!isMobile && <DesktopCategoryBar categories={categories} />}
+      <CategoryBar categories={categories} />
 
       <Box sx={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
         <Box

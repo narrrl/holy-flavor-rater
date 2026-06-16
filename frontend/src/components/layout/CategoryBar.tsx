@@ -7,16 +7,17 @@ import CollectionsBookmarkOutlinedIcon from '@mui/icons-material/CollectionsBook
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../hooks/useAuth';
 
-export interface DesktopCategoryBarProps {
+export interface CategoryBarProps {
   categories: { name: string; slug: string }[];
 }
 
 /**
- * Desktop horizontal nav (md+), pinned just under the top bar. Categories are
- * the dominant browse axis here — laid out as a scrollable row of tabs — with
- * Home / Community as primary links on the left. Replaces the old left rail.
+ * Horizontal nav pinned just under the top bar on every breakpoint. Categories
+ * are the dominant browse axis — laid out as a scrollable row of tabs — with
+ * Home / Community / Dashboard as primary links on the left. Replaces the old
+ * left rail on desktop and mirrors the same sticky chrome on mobile.
  */
-export const DesktopCategoryBar = ({ categories }: DesktopCategoryBarProps) => {
+export const CategoryBar = ({ categories }: CategoryBarProps) => {
   const { t } = useTranslation();
   const location = useLocation();
   const { user } = useAuth();
@@ -43,7 +44,7 @@ export const DesktopCategoryBar = ({ categories }: DesktopCategoryBarProps) => {
       component="nav"
       sx={{
         position: 'sticky',
-        top: 64,
+        top: { xs: 56, sm: 64 },
         zIndex: (theme) => theme.zIndex.appBar - 1,
         borderBottom: '1px solid',
         borderColor: (theme) => theme.tokens.glass.border,
@@ -57,17 +58,22 @@ export const DesktopCategoryBar = ({ categories }: DesktopCategoryBarProps) => {
         sx={{
           maxWidth: 1400,
           mx: 'auto',
-          px: { md: 6 },
+          px: { xs: 1, sm: 4, md: 6 },
           display: 'flex',
           alignItems: 'center',
-          gap: 1,
-          minHeight: 52,
+          gap: { xs: 0.5, md: 1 },
+          minHeight: { xs: 46, md: 52 },
           overflowX: 'auto',
           '&::-webkit-scrollbar': { display: 'none' },
           scrollbarWidth: 'none',
         }}
       >
-        <Button component={Link} to="/" disableRipple sx={{ ...tabSx(isActive('/')), ml: -1.75 }}>
+        <Button
+          component={Link}
+          to="/"
+          disableRipple
+          sx={{ ...tabSx(isActive('/')), ml: { xs: -0.5, md: -1.75 } }}
+        >
           <HomeOutlinedIcon sx={{ fontSize: '1.1rem', mr: 0.75 }} />
           {t('nav.home')}
         </Button>
