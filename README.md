@@ -142,4 +142,7 @@ Set these in `.env` (see also `backend-rs/.env.example`):
 - `EMAIL_*`: SMTP settings for transactional email (unset `EMAIL_HOST` logs to console).
 
 ## 📄 License
-MIT
+
+This project is source-available under a proprietary license that permits personal, non-commercial self-hosting. See the [LICENSE](file:///home/narl/dev/private/Holy-Flavor-Rater/LICENSE) file for the full text.
+
+Copyright (c) 2026 Nils Pukropp <contact@narl.io>.
