@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-backend/venv/
 .venv/
 env/
 venv/
@@ -9,21 +8,18 @@ ENV/
 # Databases
 *.sqlite3
 db.sqlite3
-backend/db.sqlite3-shm
-backend/db.sqlite3-wal
+data/db.sqlite3-shm
+data/db.sqlite3-wal
 
 # Python cache
 __pycache__/
 *.py[cod]
 *$py.class
-backend/**/__pycache__/
 
-# Django specific
-backend/staticfiles/
-backend/media/
-backend/django_cache/
-backend/backups/
-backend/.seeded
+# Data specific
+data/media/
+data/backups/
+data/.seeded
 
 # React/Vite build
 dist/

@@ -23,15 +23,14 @@ pub struct Config {
     /// can't use a wildcard, so this is an explicit allow-list.
     pub cors_allowed_origins: Vec<String>,
     pub email: EmailConfig,
-    /// Directory of banner JSON configs (Django's `backend/banners/`).
+    /// Directory of banner JSON configs (`data/banners/`).
     pub banners_dir: String,
     /// Directory of legacy flavor JSON dumps (repo-root `legacy/`).
     pub legacy_dir: String,
-    /// Output directory for database/media backups (Django's `backend/backups/`).
+    /// Output directory for database/media backups (`data/backups/`).
     pub backup_dir: String,
-    /// Whether the in-process job scheduler runs. MUST be false while Django's
-    /// Celery `beat` still owns scheduling — otherwise jobs fire twice against
-    /// the shared `api_job` table. Flip to true only after disabling Django beat.
+    /// Whether the in-process job scheduler runs. Production (docker compose)
+    /// sets this to true on exactly one instance to own job scheduling.
     pub enable_scheduler: bool,
 }
 
@@ -76,12 +75,12 @@ impl Config {
                 // `mode=rw` (not `rwc`): the shared DB is created/owned by Django
                 // and must already exist. `rwc` would silently create an empty DB
                 // if the path were wrong, masking a misconfiguration.
-                .unwrap_or_else(|_| "sqlite://../backend/db.sqlite3?mode=rw".to_string()),
+                .unwrap_or_else(|_| "sqlite://../data/db.sqlite3?mode=rw".to_string()),
             secret_key: env::var("SECRET_KEY")
                 .map_err(|_| anyhow::anyhow!("SECRET_KEY must be set (match Django's)"))?,
             bind_addr: env::var("BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:8001".to_string()),
             media_url: env::var("MEDIA_URL").unwrap_or_else(|_| "media/".to_string()),
-            media_root: env::var("MEDIA_ROOT").unwrap_or_else(|_| "../backend/media".to_string()),
+            media_root: env::var("MEDIA_ROOT").unwrap_or_else(|_| "../data/media".to_string()),
             jwt_cookie_secure: env_bool("JWT_AUTH_COOKIE_SECURE", false),
             frontend_url: env::var("FRONTEND_URL")
                 .unwrap_or_else(|_| "http://localhost:5173".to_string())
@@ -122,9 +121,9 @@ impl Config {
                     .unwrap_or_else(|| "noreply@localhost".to_string()),
             },
             banners_dir: env::var("BANNERS_DIR")
-                .unwrap_or_else(|_| "../backend/banners".to_string()),
+                .unwrap_or_else(|_| "../data/banners".to_string()),
             legacy_dir: env::var("LEGACY_DIR").unwrap_or_else(|_| "../legacy".to_string()),
-            backup_dir: env::var("BACKUP_DIR").unwrap_or_else(|_| "../backend/backups".to_string()),
+            backup_dir: env::var("BACKUP_DIR").unwrap_or_else(|_| "../data/backups".to_string()),
             // Default OFF so ad-hoc `cargo run` instances don't run jobs.
             // Production (docker compose) sets ENABLE_SCHEDULER=true on the one
             // instance that should own `api_job` scheduling.

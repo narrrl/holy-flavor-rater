@@ -1,17 +1,13 @@
 # holy_backend_rs — Rust backend (strangler migration)
 
-Incremental Rust rewrite of the Django backend. Both backends run side by side
-and **share the same SQLite file**; an nginx proxy routes already-ported
-endpoint groups to Rust and everything else to Django. Endpoints move group by
-group until Django can be retired.
+Rust backend for the Holy Flavor Rater. The original Django backend has been fully retired and deleted.
 
 - **Web**: Axum 0.8 + utoipa (OpenAPI) + Swagger UI
-- **DB**: SeaORM over the existing SQLite (`backend/db.sqlite3`), schema unchanged
+- **DB**: SeaORM over the SQLite database (`data/db.sqlite3`), schema unchanged
 - **Auth**: SimpleJWT-compatible — verifies *and issues* HS256 tokens signed
-  with the same `SECRET_KEY` as Django (`Authorization: Bearer` or `access_token`
-  cookie). Login/refresh/verify/logout are ported; tokens are interchangeable
-  with Django (verified both directions).
-- **Jobs**: tokio-cron-scheduler in-process (not yet wired; replaces Celery+beat)
+  with the `SECRET_KEY` (`Authorization: Bearer` or `access_token`
+  cookie). Login/refresh/verify/logout are ported.
+- **Jobs**: tokio-cron-scheduler in-process (replaces Celery+beat)
 
 ## Ported so far (read slice)
 
@@ -200,7 +196,7 @@ The Rust backend is the production API; Django/Celery/Redis were retired after
 the strangler migration completed. `docker compose` (`docker-compose.yml` +
 `docker-compose.override.yml`) runs two services: `backend-rs` (`holy-rust:8001`)
 and `frontend` (nginx). nginx serves the SPA, proxies `/api` to the Rust backend,
-and serves `/media` from the shared `./backend/media` bind mount; see
+and serves `/media` from the shared `./data/media` bind mount; see
 `frontend/nginx.conf`.
 
 `X-Forwarded-Proto`/`Host` are required: absolute URLs (image links, pagination
@@ -212,8 +208,8 @@ the peer address otherwise).
 Run a single `backend-rs` instance with `ENABLE_SCHEDULER=true`
 (`RUST_ENABLE_SCHEDULER` in `.env`); any additional instances must leave it off.
 
-The canonical data lives in host bind mounts — `backend/db.sqlite3` (WAL on) and
-`backend/media/` — and survives image rebuilds. Keep them.
+The canonical data lives in host bind mounts — `data/db.sqlite3` (WAL on) and
+`data/media/` — and survives image rebuilds. Keep them.
 
 ## Caveats / parity TODO
 

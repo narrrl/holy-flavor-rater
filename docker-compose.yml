@@ -20,19 +20,19 @@ services:
       - DOMAIN=${DOMAIN:-localhost}
       - BIND_ADDR=0.0.0.0:8001
       - SECRET_KEY=${SECRET_KEY}
-      - DATABASE_URL=sqlite:///srv/backend/db.sqlite3?mode=rw
-      - MEDIA_ROOT=/srv/backend/media
+      - DATABASE_URL=sqlite:///srv/data/db.sqlite3?mode=rw
+      - MEDIA_ROOT=/srv/data/media
       - MEDIA_URL=media/
-      - BANNERS_DIR=/srv/backend/banners
+      - BANNERS_DIR=/srv/data/banners
       - LEGACY_DIR=/srv/legacy
-      - BACKUP_DIR=/srv/backend/backups
+      - BACKUP_DIR=/srv/data/backups
       - FRONTEND_URL=${FRONTEND_URL:-http://${DOMAIN:-localhost}}
       - JWT_AUTH_COOKIE_SECURE=${JWT_AUTH_COOKIE_SECURE:-true}
       # Rust owns api_job scheduling (Celery beat retired).
       - ENABLE_SCHEDULER=${RUST_ENABLE_SCHEDULER:-true}
       - RUST_LOG=${RUST_LOG:-info,holy_backend_rs=info,sea_orm=warn}
     volumes:
-      - ./backend:/srv/backend
+      - ./data:/srv/data
       - ./legacy:/srv/legacy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health/"]
@@ -62,7 +62,7 @@ services:
     volumes:
       # Serve /media/ straight from the shared mount (read-only) so media is
       # independent of the backend being up.
-      - ./backend/media:/usr/share/nginx/media:ro
+      - ./data/media:/usr/share/nginx/media:ro
     depends_on:
       backend-rs:
         condition: service_healthy

@@ -36,14 +36,14 @@ The easiest way to get the full stack (Rust backend + Frontend) running behind a
     ```
     The stack brings up two containers: `backend-rs` (`holy-rust:8001`, the Rust API) and `frontend` (Nginx — serves the SPA, proxies `/api` to the backend, serves `/media` from the shared mount). `docker-compose.override.yml` adds the Traefik production overlay.
 
-    The Rust backend reads the existing `backend/db.sqlite3` directly (no migration step). Seeding (flavor catalog, legacy data, banners) runs as background jobs — trigger them from the admin Jobs tab or let the scheduler run them.
+    The Rust backend reads the existing `data/db.sqlite3` directly (no migration step). Seeding (flavor catalog, legacy data, banners) runs as background jobs — trigger them from the admin Jobs tab or let the scheduler run them.
 
 ### Option 2: Local Manual Setup (Development)
 
 #### Backend
 ```bash
 cd backend-rs
-cp .env.example .env       # set SECRET_KEY; point DATABASE_URL at ../backend/db.sqlite3
+cp .env.example .env       # set SECRET_KEY; point DATABASE_URL at ../data/db.sqlite3
 cargo run                  # listens on 0.0.0.0:8001
 ```
 
@@ -54,7 +54,7 @@ npm install
 npm run dev
 ```
 
-> The Rust backend uses the existing SQLite database under `backend/db.sqlite3`. The `backend/` directory is retained as the data store (db, `media/`, `banners/`) and historical reference for the retired Django implementation — it is no longer run.
+> The Rust backend uses the existing SQLite database under `data/db.sqlite3`. The `data/` directory is retained as the data store (db, `media/`, `banners/`, `backups/`).
 
 ---
 
@@ -96,13 +96,13 @@ Run by the scheduler on their interval, or triggered from the admin Jobs tab (`P
 - `sync_flavors`: Syncs the latest products from the official Holy Energy (Shopify) catalog.
 - `cleanup_duplicates`: Merges duplicate entries and maintains rating integrity.
 - `seed_legacy`: Loads retired flavors from `legacy/*.json`.
-- `seed_banners`: Updates procedurally generated banner configurations from `backend/banners/*.json`.
-- `backup_db`: Creates a consistent SQLite + media snapshot in `backend/backups/`.
+- `seed_banners`: Updates procedurally generated banner configurations from `data/banners/*.json`.
+- `backup_db`: Creates a consistent SQLite + media snapshot in `data/backups/`.
 
 #### Categories
 `sync_flavors` derives a flavor's category from the Shopify `product_type` (e.g. `42 - Syrup Bottle` → **Syrup**), stripping the numeric prefix and form-factor word. Any new drink line Holy ships **auto-creates** its category on the next sync. Packs, shakers, merch, stickers and other non-drink types funnel to **Packs and other**.
 
-`sync_flavors` only assigns a category when it **creates** a row — existing flavors keep their original category. To re-shelve already-stored rows, the retired Django app's `recategorize_flavors` management command remains available under `backend/` for occasional manual use (it is not part of the Rust job registry).
+`sync_flavors` only assigns a category when it **creates** a row — existing flavors keep their original category. To re-shelve already-stored rows, you can run manual SQL updates directly against the SQLite database.
 
 ---
 
@@ -112,7 +112,7 @@ Run by the scheduler on their interval, or triggered from the admin Jobs tab (`P
 ```bash
 bash scripts/backup.sh
 ```
-Creates a `.tar.gz` (DB + media) in `backend/backups/`. WAL-safe: uses `sqlite3 .backup` when available, otherwise copies the DB plus its `-wal`/`-shm` sidecars. The backend also runs `backup_db` on its own schedule.
+Creates a `.tar.gz` (DB + media) in `data/backups/`. WAL-safe: uses `sqlite3 .backup` when available, otherwise copies the DB plus its `-wal`/`-shm` sidecars. The backend also runs `backup_db` on its own schedule.
 
 **Automating with Cron** — nightly at 2:00 AM:
 ```bash
@@ -124,8 +124,8 @@ Creates a `.tar.gz` (DB + media) in `backend/backups/`. WAL-safe: uses `sqlite3 
 2. Stop the containers: `docker compose down`
 3. Replace the current files:
    ```bash
-   cp extracted_folder/db.sqlite3 backend/db.sqlite3
-   cp -r extracted_folder/media/* backend/media/
+   cp extracted_folder/db.sqlite3 data/db.sqlite3
+   cp -r extracted_folder/media/* data/media/
    ```
 4. Restart: `docker compose up -d`
 

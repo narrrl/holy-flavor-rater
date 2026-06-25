@@ -12,9 +12,9 @@ cd "$ROOT_DIR"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_NAME="full_snapshot_$TIMESTAMP"
-TEMP_DIR="backend/backups/$BACKUP_NAME"
-FINAL_DEST="backend/backups"
-DB_SRC="backend/db.sqlite3"
+TEMP_DIR="data/backups/$BACKUP_NAME"
+FINAL_DEST="data/backups"
+DB_SRC="data/db.sqlite3"
 
 echo "========================================"
 echo "   Starting Full Project Backup...      "
@@ -38,7 +38,7 @@ fi
 
 # 2. Media.
 echo "Backing up media..."
-cp -r backend/media "$TEMP_DIR/media"
+cp -r data/media "$TEMP_DIR/media"
 
 # 3. Compress.
 echo "Compressing..."
