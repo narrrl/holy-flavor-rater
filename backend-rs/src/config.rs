@@ -120,8 +120,7 @@ impl Config {
                     .or_else(|| env::var("EMAIL_HOST_USER").ok().filter(|s| !s.is_empty()))
                     .unwrap_or_else(|| "noreply@localhost".to_string()),
             },
-            banners_dir: env::var("BANNERS_DIR")
-                .unwrap_or_else(|_| "../data/banners".to_string()),
+            banners_dir: env::var("BANNERS_DIR").unwrap_or_else(|_| "../data/banners".to_string()),
             legacy_dir: env::var("LEGACY_DIR").unwrap_or_else(|_| "../legacy".to_string()),
             backup_dir: env::var("BACKUP_DIR").unwrap_or_else(|_| "../data/backups".to_string()),
             // Default OFF so ad-hoc `cargo run` instances don't run jobs.

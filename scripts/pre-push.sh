@@ -7,10 +7,18 @@ echo "========================================"
 echo "   Running Pre-Push Integrity Checks    "
 echo "========================================"
 
-# 1. Frontend Build
+# 1. Frontend Formatting & Build
 echo ""
-echo "Step 1: Checking Frontend Build..."
+echo "Step 1: Formatting Frontend..."
 cd "$ROOT_DIR/frontend"
+if ! npm run format; then
+    echo ""
+    echo "❌ ERROR: Frontend formatting failed."
+    exit 1
+fi
+
+echo ""
+echo "Step 2: Checking Frontend Build..."
 if ! npm run build; then
     echo ""
     echo "❌ ERROR: Frontend build failed."
@@ -20,7 +28,7 @@ fi
 
 # 2. Rust backend checks
 echo ""
-echo "Step 2: Checking Rust backend..."
+echo "Step 3: Checking Rust backend..."
 cd "$ROOT_DIR/backend-rs"
 
 if ! cargo fmt --check; then
