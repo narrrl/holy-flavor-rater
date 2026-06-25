@@ -9,11 +9,11 @@ echo "========================================"
 
 # 1. Frontend Formatting & Build
 echo ""
-echo "Step 1: Formatting Frontend..."
+echo "Step 1: Checking Frontend Formatting..."
 cd "$ROOT_DIR/frontend"
-if ! npm run format; then
+if ! npm run format:check; then
     echo ""
-    echo "❌ ERROR: Frontend formatting failed."
+    echo "❌ ERROR: Frontend formatting issues found. Run 'npm run format' in frontend/."
     exit 1
 fi
 

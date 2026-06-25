@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '25'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Format Check
+        run: npm run format:check
+        working-directory: frontend
+
+      - name: Test
+        run: npm test -- --run
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+  backend-check:
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: "ci-test-key"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend-rs/target
+          key: cargo-${{ hashFiles('backend-rs/Cargo.lock') }}
+
+      - name: Fetch common-passwords list
+        run: |
+          mkdir -p assets
+          curl -fsSL -o assets/common-passwords.txt.gz \
+            "https://raw.githubusercontent.com/django/django/${DJANGO_PASSWORDS_TAG}/django/contrib/auth/common-passwords.txt.gz"
+          echo "${DJANGO_PASSWORDS_SHA256}  assets/common-passwords.txt.gz" | sha256sum -c -
+        working-directory: backend-rs
+        env:
+          DJANGO_PASSWORDS_TAG: "5.2"
+          DJANGO_PASSWORDS_SHA256: "3c1baed62596de36860824eb3f436d5932d37ca8b06e59df78f5a44ec175afe4"
+
+      - name: Format Check
+        run: cargo fmt --check
+        working-directory: backend-rs
+
+      - name: Clippy
+        run: cargo clippy --all-targets
+        working-directory: backend-rs
+
+      - name: Build
+        run: cargo build --locked
+        working-directory: backend-rs
+
+      - name: Run Tests
+        run: cargo test --locked
+        working-directory: backend-rs
