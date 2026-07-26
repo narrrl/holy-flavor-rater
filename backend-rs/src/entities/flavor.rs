@@ -29,6 +29,14 @@ pub struct Model {
     /// startup migration in `db.rs`; may be NULL on rows predating it.
     #[sea_orm(column_type = "Json", nullable)]
     pub aliases: Option<Json>,
+    /// Shopify variant ids of this flavor's product, as a JSON list of strings.
+    /// Written by `sync_flavors`; read by `sync_reviews`, which only ever sees a
+    /// variant id (reviews.io calls it `sku`) and has to resolve it back to a
+    /// flavor. For the Syrup special case the flavor *is* a variant, so this
+    /// holds that single id. Added by the guarded startup migration in `db.rs`;
+    /// NULL on rows that predate it or haven't been re-synced yet.
+    #[sea_orm(column_type = "Json", nullable)]
+    pub variant_ids: Option<Json>,
     /// Django stores naive UTC text ("YYYY-MM-DD HH:MM:SS.ffffff"); we treat it
     /// as UTC when formatting to DRF's ISO-8601 `...Z` output.
     pub created_at: ChronoDateTime,

@@ -11,7 +11,7 @@ echo "========================================"
 echo ""
 echo "Step 1: Checking Frontend Formatting..."
 cd "$ROOT_DIR/frontend"
-if ! npm run format:check; then
+if ! bun run format:check; then
     echo ""
     echo "❌ ERROR: Frontend formatting issues found. Run 'npm run format' in frontend/."
     exit 1
@@ -19,7 +19,7 @@ fi
 
 echo ""
 echo "Step 2: Checking Frontend Build..."
-if ! npm run build; then
+if ! bun run build; then
     echo ""
     echo "❌ ERROR: Frontend build failed."
     echo "   Please fix build errors before pushing."

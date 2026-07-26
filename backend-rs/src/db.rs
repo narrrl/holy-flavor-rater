@@ -94,6 +94,52 @@ async fn ensure_schema(conn: &DatabaseConnection) -> anyhow::Result<()> {
             .to_owned(),
     ))
     .await?;
+    // Shopify variant ids belonging to this flavor's product, as a JSON list of
+    // strings. Populated by `sync_flavors`; `sync_reviews` needs it because the
+    // reviews.io feed identifies a product by *variant* id (its `sku` field),
+    // while `external_id` holds the *product* id for everything but Syrup.
+    add_column_if_missing(
+        conn,
+        "api_flavor",
+        "variant_ids",
+        "ALTER TABLE api_flavor ADD COLUMN variant_ids TEXT",
+    )
+    .await?;
+    // Rust-owned table (no Django model): shop reviews pulled from reviews.io by
+    // the `sync_reviews` job, used as an anonymous prior under the community
+    // recommender. Deliberately stores no personal data — the reviewer is a
+    // salted hash of the upstream reviewer id, and the review body, author name
+    // and city from the upstream payload are all discarded on ingest.
+    // UNIQUE(source, external_id) makes re-ingesting a page a no-op.
+    conn.execute(Statement::from_string(
+        DatabaseBackend::Sqlite,
+        "CREATE TABLE IF NOT EXISTS external_review (\
+            id INTEGER PRIMARY KEY AUTOINCREMENT, \
+            source VARCHAR(32) NOT NULL, \
+            external_id VARCHAR(64) NOT NULL, \
+            reviewer_key VARCHAR(64) NOT NULL, \
+            flavor_id INTEGER NOT NULL, \
+            rating INTEGER NOT NULL, \
+            reviewed_at DATETIME NOT NULL, \
+            created_at DATETIME NOT NULL, \
+            UNIQUE(source, external_id))"
+            .to_owned(),
+    ))
+    .await?;
+    conn.execute(Statement::from_string(
+        DatabaseBackend::Sqlite,
+        "CREATE INDEX IF NOT EXISTS idx_external_review_flavor \
+            ON external_review(flavor_id)"
+            .to_owned(),
+    ))
+    .await?;
+    conn.execute(Statement::from_string(
+        DatabaseBackend::Sqlite,
+        "CREATE INDEX IF NOT EXISTS idx_external_review_reviewer \
+            ON external_review(reviewer_key)"
+            .to_owned(),
+    ))
+    .await?;
     Ok(())
 }
 

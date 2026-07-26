@@ -164,7 +164,11 @@ async fn similar(
         })
         .collect();
 
-    let sims = similar_flavors(id, &inputs, SIMILAR_LIMIT);
+    // Anonymous shop reviews widen the co-rating graph well past what our own
+    // tasters have covered (cached; see `crate::reviews`).
+    let external = crate::reviews::signals(&state).await?;
+
+    let sims = similar_flavors(id, &inputs, &external, SIMILAR_LIMIT);
     if sims.is_empty() {
         return Ok(Json(Vec::new()));
     }
@@ -192,6 +196,7 @@ async fn similar(
                 is_available: f.is_available,
                 similarity: s.similarity,
                 co_raters: s.co_raters,
+                external_co_reviewers: s.external_co_reviewers,
             })
         })
         .collect();
@@ -268,7 +273,9 @@ async fn popular(
         })
         .collect();
 
-    let recs = recommend(POPULAR_SENTINEL, &inputs, POPULAR_LIMIT);
+    let external = crate::reviews::signals(&state).await?;
+
+    let recs = recommend(POPULAR_SENTINEL, &inputs, &external, POPULAR_LIMIT);
     if recs.is_empty() {
         return Ok(Json(Vec::new()));
     }
@@ -297,6 +304,7 @@ async fn popular(
                 is_available: f.is_available,
                 predicted_score: rec.predicted_score,
                 contributing_neighbours: rec.contributing_neighbours,
+                external_reviews: rec.external_reviews,
                 reason: rec.source.as_str().to_string(),
             })
         })

@@ -1467,7 +1467,11 @@ async fn recommendations(
         })
         .collect();
 
-    let recs = recommend(uid, &inputs, RECOMMENDATION_LIMIT);
+    // Anonymous shop reviews back the prior under the community's own ratings
+    // (cached; see `crate::reviews`).
+    let external = crate::reviews::signals(&state).await?;
+
+    let recs = recommend(uid, &inputs, &external, RECOMMENDATION_LIMIT);
     if recs.is_empty() {
         return Ok(Json(Vec::new()));
     }
@@ -1497,6 +1501,7 @@ async fn recommendations(
                 is_available: f.is_available,
                 predicted_score: rec.predicted_score,
                 contributing_neighbours: rec.contributing_neighbours,
+                external_reviews: rec.external_reviews,
                 reason: rec.source.as_str().to_string(),
             })
         })

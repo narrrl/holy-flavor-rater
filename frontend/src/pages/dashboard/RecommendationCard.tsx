@@ -15,7 +15,9 @@ export interface RecommendationCardProps {
 
 /**
  * A single recommended flavor. The reason chip is **count-only** (no neighbour
- * names, per product decision): CF → "N tasters like you", popularity → "Popular".
+ * names, per product decision): CF → "N tasters like you", popularity →
+ * "Popular", shop → "N shop buyers" for flavors nobody here has rated yet, whose
+ * score comes from the anonymous reviews.io feed alone.
  */
 const RecommendationCard: React.FC<RecommendationCardProps> = ({ rec }) => {
   const { t } = useTranslation();
@@ -23,7 +25,9 @@ const RecommendationCard: React.FC<RecommendationCardProps> = ({ rec }) => {
   const reasonLabel =
     rec.reason === 'cf'
       ? t('dashboard.recReasonCf', { count: rec.contributing_neighbours })
-      : t('dashboard.recReasonPopular');
+      : rec.reason === 'shop'
+        ? t('dashboard.recReasonShop', { count: rec.external_reviews })
+        : t('dashboard.recReasonPopular');
 
   return (
     <GlassCard

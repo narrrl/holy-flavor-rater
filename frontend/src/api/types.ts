@@ -59,8 +59,10 @@ export interface Recommendation {
   predicted_score: number;
   /** "N tasters like you" count (cf) or rating count (popular). */
   contributing_neighbours: number;
-  /** "cf" | "popular" — frontend picks the reason copy. */
-  reason: 'cf' | 'popular';
+  /** Anonymous shop reviews (reviews.io) backing this flavor; 0 if none. */
+  external_reviews: number;
+  /** "cf" | "popular" | "shop" (no community ratings yet — shop reviews only). */
+  reason: 'cf' | 'popular' | 'shop';
 }
 
 export interface DashboardData {
@@ -81,8 +83,10 @@ export interface SimilarFlavor {
   average_rating: number | null;
   is_legacy: boolean;
   is_available: boolean;
-  /** Adjusted-cosine similarity to the target flavor, in (0, 1]. */
+  /** Blended, confidence-discounted similarity. Ranking only — not a "% match". */
   similarity: number;
   /** Users who rated both this flavor and the target. */
   co_raters: number;
+  /** Anonymous shop reviewers who liked both this flavor and the target. */
+  external_co_reviewers: number;
 }

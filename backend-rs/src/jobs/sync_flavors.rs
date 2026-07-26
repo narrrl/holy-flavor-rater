@@ -163,6 +163,13 @@ impl BackgroundJob for SyncFlavors {
                     .and_then(|a| a.as_bool())
                     .unwrap_or(false)
             });
+            // Every variant of this product maps back to this flavor — that's how
+            // `sync_reviews` resolves a reviews.io `sku` (a variant id) to a flavor.
+            let variant_ids: Vec<String> = variants
+                .iter()
+                .filter_map(|v| v.get("id").and_then(|x| x.as_i64()))
+                .map(|id| id.to_string())
+                .collect();
             let images = p
                 .get("images")
                 .and_then(|v| v.as_array())
@@ -196,6 +203,7 @@ impl BackgroundJob for SyncFlavors {
                 image_url,
                 &image_urls,
                 &pid.to_string(),
+                &variant_ids,
             )
             .await?;
             if was_created {
@@ -457,6 +465,8 @@ async fn sync_syrup_variants(
             image_url,
             &image_urls,
             &variant_id.to_string(),
+            // A syrup flavor *is* one variant, so it owns exactly that sku.
+            std::slice::from_ref(&variant_id.to_string()),
         )
         .await?;
         if was_created {
@@ -486,6 +496,7 @@ async fn upsert_flavor(
     image_url: Option<String>,
     image_urls: &[String],
     dir_slug: &str,
+    variant_ids: &[String],
 ) -> anyhow::Result<bool> {
     let mut existing = Flavor::find()
         .filter(flavor::Column::ExternalId.eq(external_id))
@@ -561,6 +572,11 @@ async fn upsert_flavor(
     am.description = Set(description.to_string());
     am.shop_url = Set(shop_url);
     am.is_available = Set(is_available);
+    // Keep the last known variant list when Shopify hands us none, so a transient
+    // empty payload can't blind `sync_reviews` to this flavor's skus.
+    if !variant_ids.is_empty() {
+        am.variant_ids = Set(Some(json!(variant_ids)));
+    }
 
     if !local_paths.is_empty() {
         am.local_image_paths = Set(Some(json!(local_paths)));

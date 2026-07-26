@@ -18,6 +18,7 @@ mod pagination;
 mod password;
 mod password_policy;
 mod recommend;
+mod reviews;
 mod routes;
 mod search;
 mod service;
@@ -49,6 +50,20 @@ use crate::config::Config;
 use crate::openapi::ApiDoc;
 use crate::state::AppState;
 
+/// The job name from `--run-job <name>` (or `--run-job=<name>`), if present.
+fn run_job_arg() -> Option<String> {
+    let mut args = std::env::args().skip(1);
+    while let Some(arg) = args.next() {
+        if let Some(name) = arg.strip_prefix("--run-job=") {
+            return Some(name.to_string());
+        }
+        if arg == "--run-job" {
+            return args.next();
+        }
+    }
+    None
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let _ = dotenvy::dotenv();
@@ -68,7 +83,30 @@ async fn main() -> anyhow::Result<()> {
             tokio::sync::Mutex::new(std::collections::HashSet::new()),
         ),
         security: std::sync::Arc::new(crate::throttle::Security::new()),
+        external_signals: std::sync::Arc::new(crate::reviews::SignalCache::default()),
     };
+
+    // `--run-job <name>`: run one background job to completion and exit, without
+    // starting the server. The scheduler and the admin trigger endpoint are the
+    // normal paths; this exists for one-off operational runs (a first backfill, a
+    // re-sync after a data fix) where neither is convenient. It bypasses the
+    // scheduler entirely, so it's safe to use on an instance that doesn't own
+    // `api_job` — but don't run a job here that's already running elsewhere.
+    if let Some(job_name) = run_job_arg() {
+        let Some(job) = jobs::lookup(&job_name) else {
+            let known: Vec<&str> = jobs::registry().iter().map(|j| j.name()).collect();
+            anyhow::bail!("unknown job {job_name:?}; known jobs: {}", known.join(", "));
+        };
+        tracing::info!(job = %job_name, "running job from the command line");
+        jobs::run_job(&state, job).await;
+        let row = jobs::get_or_create_row(&state.db, &job_name).await?;
+        println!("{}\n{}", row.status, row.last_output);
+        if !row.error_message.is_empty() {
+            eprintln!("{}", row.error_message);
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
 
     // Background scheduler: runs jobs whose `interval_hours` has elapsed,
     // replacing Celery beat. Restart-safe (last_run persists in the DB).

@@ -18,6 +18,7 @@ mod scheduler;
 mod seed_banners;
 mod seed_legacy;
 mod sync_flavors;
+mod sync_reviews;
 
 use std::sync::Arc;
 
@@ -48,6 +49,7 @@ pub trait BackgroundJob: Send + Sync {
 pub fn registry() -> Vec<Arc<dyn BackgroundJob>> {
     vec![
         Arc::new(sync_flavors::SyncFlavors),
+        Arc::new(sync_reviews::SyncReviews),
         Arc::new(cleanup_duplicates::CleanupDuplicates),
         Arc::new(backup_db::BackupDb),
         Arc::new(seed_legacy::SeedLegacy),

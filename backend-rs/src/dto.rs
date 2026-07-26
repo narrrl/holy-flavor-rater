@@ -235,8 +235,12 @@ pub struct RecommendationOut {
     pub predicted_score: f64,
     /// "N tasters like you" count (CF) or the flavor's rating count (popularity).
     pub contributing_neighbours: i64,
-    /// `"cf"` or `"popular"` — frontend picks the reason copy. Names are never
-    /// surfaced (privacy decision).
+    /// Anonymous shop reviews (reviews.io) backing this flavor. 0 when the feed
+    /// hasn't been synced or doesn't cover it.
+    pub external_reviews: i64,
+    /// `"cf"`, `"popular"` or `"shop"` (nobody here has rated it yet; the score
+    /// comes from shop reviews alone) — the frontend picks the reason copy. Names
+    /// are never surfaced (privacy decision).
     pub reason: String,
 }
 
@@ -252,10 +256,12 @@ pub struct SimilarFlavorOut {
     pub average_rating: Option<f64>,
     pub is_legacy: bool,
     pub is_available: bool,
-    /// Adjusted-cosine similarity to the target flavor, in (0, 1].
+    /// Blended similarity to the target flavor, in (0, 1].
     pub similarity: f64,
     /// Users who rated both this flavor and the target (the confidence count).
     pub co_raters: i64,
+    /// Anonymous shop reviewers who liked both this flavor and the target.
+    pub external_co_reviewers: i64,
 }
 
 #[derive(Serialize, ToSchema)]

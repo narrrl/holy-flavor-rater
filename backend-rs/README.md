@@ -147,11 +147,16 @@ management command / Celery task. All endpoints require `IsAdminUser` (`is_staff
 layer with a single abstraction:
 
 - `BackgroundJob` async trait (`name`, `display_name`, `run`) + a `registry()` of
-  5 jobs: `sync_flavors`, `cleanup_duplicates`, `backup_db`, `seed_legacy`,
-  `seed_banners`. `run_job()` is the lifecycle wrapper — it writes status /
+  6 jobs: `sync_flavors`, `sync_reviews`, `cleanup_duplicates`, `backup_db`,
+  `seed_legacy`, `seed_banners`. `run_job()` is the lifecycle wrapper — it writes status /
   `last_run` / `last_output` / `error_message` into the `api_job` row (parity
   with Django's `_run_command_job`) and a per-process concurrency guard
   (`Arc<Mutex<HashSet>>`) prevents the same job running twice.
+- **CLI escape hatch**: `holy_backend_rs --run-job <name>` runs one job to
+  completion and exits without starting the server, for one-off operational runs
+  (a first backfill, a re-sync after a data fix). It bypasses the scheduler, so
+  it's safe on an instance that doesn't own `api_job` — just don't run a job that
+  is already running elsewhere.
 - **Scheduler** (`scheduler.rs`): an in-process 60 s poller replacing Celery
   beat. Each tick, any registry job whose row has `interval_hours > 0` and is due
   (`last_run` null, or `now - last_run >= interval_hours`) and not already running
@@ -172,6 +177,40 @@ Django-data parity for the shared DB + media tree:
   `created_at`), re-points replies/notifications, inherits `external_id`, in a txn.
 - `sync_flavors` is a full port including the **Syrup** special-case (the single
   bundle product's variants expand into individual `Flavor` rows keyed by variant id).
+  It also records each flavor's Shopify `variant_ids`, which `sync_reviews` needs.
+
+### Shop reviews (`sync_reviews`) — no Django equivalent
+
+Pulls the public reviews.io timeline for the Holy store and keeps the product
+reviews whose `sku` (a Shopify **variant** id) resolves to a flavor we track,
+excluding the packs/merch category. About a quarter of product reviews map; the
+rest are mix boxes, shakers and regional bundles that say nothing about a single
+flavor. Newest-first crawl: deep on the first run, then stops after three
+consecutive pages with nothing new (typically 2–3 requests), 250 ms apart.
+
+**Privacy:** the upstream payload carries the reviewer's name, city and review
+text; none of it is stored. The `external_review` row keeps only a salted hash of
+the upstream reviewer id, the flavor, the 1–5 rating and the date. The hash exists
+solely so the recommender can distinguish "one buyer liked both of these" from
+"two unrelated buyers". This is a ratings signal, not a mirror of their reviews.
+
+**How the recommender uses it** (`src/recommend.rs`) — deliberately *not* as extra
+rows in the rating matrix, since the feed is 1–5 stars, heavily inflated (72% are
+5★) and mostly single-review reviewers whose zero variance the correlation maths
+discards anyway. Instead:
+
+- **Informed prior** in the popularity ranking: a flavor's community score is
+  shrunk toward the shop consensus for that flavor (recentred onto the 1–10 scale)
+  rather than toward the flat catalog mean. Prior strength is capped, so a solid
+  community verdict always outweighs it. Flavors with no community ratings at all
+  become candidates for the first time, tagged `reason: "shop"`.
+- **Co-occurrence layer** in `/flavors/{id}/similar/`: cosine over "which anonymous
+  buyers liked both", blended with the community's adjusted cosine by confidence.
+  Meaningful even when every rating involved was 5★. A negative community
+  correlation vetoes the pair outright.
+
+Aggregates are cached in-process for 10 minutes (`src/reviews.rs`) and invalidated
+by the job; scanning the whole table per request would be far too expensive.
 
 Verified live against a copy of the production SQLite: scheduler dispatched the
 due `sync_flavors` job which fetched `weareholy.com` and reported

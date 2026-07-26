@@ -32,6 +32,17 @@ pub struct Config {
     /// Whether the in-process job scheduler runs. Production (docker compose)
     /// sets this to true on exactly one instance to own job scheduling.
     pub enable_scheduler: bool,
+    /// reviews.io store slug the `sync_reviews` job pulls shop reviews for.
+    pub reviews_store: String,
+    /// Hard cap on pages `sync_reviews` fetches in one run. Mainly an escape hatch
+    /// for bounding a first-run backfill (or a dry run) — the incremental sync
+    /// stops on its own long before this.
+    pub reviews_max_pages: usize,
+    /// Salt for the one-way hash of upstream reviewer ids (`REVIEWS_HASH_SALT`,
+    /// falling back to `SECRET_KEY`). Changing it re-pseudonymises new rows only —
+    /// existing `external_review` rows keep their old keys and would no longer
+    /// join up with them, so truncate the table if you ever rotate this.
+    pub reviews_hash_salt: String,
 }
 
 impl Config {
@@ -127,6 +138,21 @@ impl Config {
             // Production (docker compose) sets ENABLE_SCHEDULER=true on the one
             // instance that should own `api_job` scheduling.
             enable_scheduler: env_bool("ENABLE_SCHEDULER", false),
+            reviews_store: env::var("REVIEWS_STORE")
+                .ok()
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| "holy".to_string()),
+            reviews_max_pages: env::var("REVIEWS_MAX_PAGES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .filter(|n| *n > 0)
+                .unwrap_or(2_000),
+            reviews_hash_salt: env::var("REVIEWS_HASH_SALT")
+                .ok()
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| {
+                    env::var("SECRET_KEY").unwrap_or_else(|_| "holy-reviews".to_string())
+                }),
         })
     }
 }

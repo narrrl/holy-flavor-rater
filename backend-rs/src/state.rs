@@ -5,6 +5,7 @@ use sea_orm::DatabaseConnection;
 use tokio::sync::Mutex;
 
 use crate::config::Config;
+use crate::reviews::SignalCache;
 use crate::throttle::Security;
 
 #[derive(Clone)]
@@ -18,4 +19,7 @@ pub struct AppState {
     /// Rate limiting + confirmation-code TTL/attempt state (replaces
     /// `django_ratelimit`). Shared across handlers via `Arc`.
     pub security: Arc<Security>,
+    /// Cached aggregate of the ingested shop reviews that back the recommender.
+    /// Too expensive to rebuild per request; see [`crate::reviews::signals`].
+    pub external_signals: Arc<SignalCache>,
 }

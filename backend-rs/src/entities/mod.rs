@@ -7,6 +7,7 @@
 
 pub mod banner;
 pub mod category;
+pub mod external_review;
 pub mod flavor;
 pub mod job;
 pub mod notification;
@@ -23,6 +24,7 @@ pub mod user_ip;
 pub mod prelude {
     pub use super::banner::Entity as Banner;
     pub use super::category::Entity as Category;
+    pub use super::external_review::Entity as ExternalReview;
     pub use super::flavor::Entity as Flavor;
     pub use super::job::Entity as Job;
     pub use super::notification::Entity as Notification;

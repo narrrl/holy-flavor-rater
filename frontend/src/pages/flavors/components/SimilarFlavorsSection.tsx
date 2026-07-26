@@ -81,12 +81,26 @@ const SimilarCard: React.FC<{ item: SimilarFlavor }> = ({ item }) => {
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
             {t(`categories.${item.category_slug}`, { defaultValue: item.category_name })}
           </Typography>
-          <Tooltip title={t('flavorDetail.similarTooltip')}>
+          {/* Pairs the community hasn't co-rated yet can still surface, backed by
+              anonymous shop reviewers — don't claim "0 rated both" for those. */}
+          <Tooltip
+            title={t(
+              item.co_raters > 0
+                ? 'flavorDetail.similarTooltip'
+                : 'flavorDetail.similarShopTooltip',
+            )}
+          >
             <Chip
               size="small"
               icon={<GroupsIcon />}
-              label={t('flavorDetail.similarCoRaters', { count: item.co_raters })}
-              color="primary"
+              label={
+                item.co_raters > 0
+                  ? t('flavorDetail.similarCoRaters', { count: item.co_raters })
+                  : t('flavorDetail.similarShopCoReviewers', {
+                      count: item.external_co_reviewers,
+                    })
+              }
+              color={item.co_raters > 0 ? 'primary' : 'default'}
               variant="outlined"
               sx={{ fontWeight: 700, maxWidth: '100%' }}
             />
