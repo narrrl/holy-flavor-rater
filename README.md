@@ -50,8 +50,8 @@ cargo run                  # listens on 0.0.0.0:8001
 #### Frontend
 ```bash
 cd frontend
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 > The Rust backend uses the existing SQLite database under `data/db.sqlite3`. The `data/` directory is retained as the data store (db, `media/`, `banners/`, `backups/`).

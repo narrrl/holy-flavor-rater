@@ -1,6 +1,6 @@
 # --- Build stage ------------------------------------------------------------
 # Pin the toolchain image; the crate is edition 2021 with no nightly features.
-FROM rust:1-slim-bookworm AS build
+FROM rust:1-slim-trixie AS build
 
 WORKDIR /build
 
@@ -36,7 +36,9 @@ RUN touch src/main.rs && cargo build --release \
     && strip target/release/holy_backend_rs
 
 # --- Runtime stage ----------------------------------------------------------
-FROM debian:bookworm-slim
+# Must stay on the same Debian release as the build stage — the binary links
+# against that release's glibc.
+FROM debian:trixie-slim
 
 # curl for the container healthcheck; ca-certificates for outbound HTTPS
 # (Shopify sync, SMTP over TLS).

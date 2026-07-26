@@ -3,7 +3,7 @@ import type { components } from './schema';
 export type Schemas = components['schemas'];
 
 // Re-exported from generated OpenAPI schema.
-// Regenerate with `npm run openapi:sync` after backend serializer changes.
+// Regenerate with `bun run openapi:sync` after backend serializer changes.
 export type Banner = Schemas['Banner'];
 export type Category = Schemas['Category'];
 export type Flavor = Schemas['Flavor'];

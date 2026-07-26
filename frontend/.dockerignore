@@ -4,3 +4,5 @@ dist/
 .idea/
 .vscode/
 npm-debug.log
+bun-debug.log
+package-lock.json

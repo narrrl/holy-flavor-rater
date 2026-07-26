@@ -13,7 +13,7 @@ echo "Step 1: Checking Frontend Formatting..."
 cd "$ROOT_DIR/frontend"
 if ! bun run format:check; then
     echo ""
-    echo "❌ ERROR: Frontend formatting issues found. Run 'npm run format' in frontend/."
+    echo "❌ ERROR: Frontend formatting issues found. Run 'bun run format' in frontend/."
     exit 1
 fi
 

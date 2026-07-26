@@ -1,8 +1,11 @@
 # --- Build Stage ---
-FROM node:lts-alpine AS build-stage
+# Bun replaces npm for install + scripts. bun.lock is the lockfile of record
+# (package-lock.json is gone); --frozen-lockfile fails the build loudly if it
+# has drifted from package.json instead of quietly resolving something else.
+FROM oven/bun:1.3-alpine AS build-stage
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 COPY . .
 
 # Pass VITE environment variables during build
@@ -20,10 +23,12 @@ ENV VITE_IMPRESSUM_CITY=${VITE_IMPRESSUM_CITY}
 ENV VITE_IMPRESSUM_EMAIL=${VITE_IMPRESSUM_EMAIL}
 ENV VITE_IMPRESSUM_PHONE=${VITE_IMPRESSUM_PHONE}
 
-RUN npm run build
+RUN bun run build
 
 # --- Production Stage ---
-FROM nginx:stable-alpine
+# nginx 1.30 is the current stable branch (identical to `stable-alpine` today),
+# pinned so a rebuild can't silently roll onto the next branch.
+FROM nginx:1.30-alpine
 # Copy built files
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
